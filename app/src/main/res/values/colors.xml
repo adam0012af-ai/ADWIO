@@ -1,0 +1,11 @@
+<resources>
+    <color name="adwio_bg">#09070F</color>
+    <color name="adwio_surface">#171321</color>
+    <color name="adwio_surface_2">#211A31</color>
+    <color name="adwio_text">#F8F6FF</color>
+    <color name="adwio_muted">#AAA2BD</color>
+    <color name="adwio_purple">#7B2CFF</color>
+    <color name="adwio_magenta">#D62CFF</color>
+    <color name="adwio_cyan">#30D5FF</color>
+    <color name="adwio_green">#58E68B</color>
+</resources>

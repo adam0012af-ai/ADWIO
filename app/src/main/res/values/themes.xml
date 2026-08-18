@@ -1,0 +1,11 @@
+<resources>
+    <style name="Theme.ADWIO" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:navigationBarColor">@color/adwio_bg</item>
+        <item name="android:statusBarColor">@color/adwio_bg</item>
+        <item name="colorPrimary">@color/adwio_purple</item>
+        <item name="colorSecondary">@color/adwio_cyan</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>

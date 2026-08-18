@@ -1,0 +1,13 @@
+<resources>
+    <style name="MenuButton" parent="Widget.MaterialComponents.Button.TextButton">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">58dp</item>
+        <item name="android:layout_marginBottom">8dp</item>
+        <item name="android:focusable">true</item>
+        <item name="android:textColor">@color/adwio_text</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:gravity">center_vertical|start</item>
+        <item name="android:paddingStart">20dp</item>
+        <item name="android:background">@drawable/bg_focus</item>
+    </style>
+</resources>

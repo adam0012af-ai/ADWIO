@@ -1,0 +1,39 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@drawable/bg_gradient">
+    <LinearLayout android:layout_width="520dp" android:layout_height="wrap_content"
+        android:layout_gravity="center" android:orientation="vertical"
+        android:padding="36dp" android:background="@drawable/bg_card">
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="ADD PLAYLIST" android:textColor="@color/adwio_text"
+            android:textSize="30sp" android:textStyle="bold"/>
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_marginTop="6dp" android:text="Enter your account details"
+            android:textColor="@color/adwio_muted" android:textSize="15sp"/>
+        <EditText android:id="@+id/usernameInput"
+            android:layout_width="match_parent" android:layout_height="62dp"
+            android:layout_marginTop="30dp" android:hint="@string/username"
+            android:singleLine="true" android:textColor="@color/adwio_text"
+            android:textColorHint="@color/adwio_muted" android:paddingHorizontal="18dp"
+            android:background="@drawable/bg_focus"/>
+        <EditText android:id="@+id/passwordInput"
+            android:layout_width="match_parent" android:layout_height="62dp"
+            android:layout_marginTop="14dp" android:hint="@string/password"
+            android:inputType="textPassword" android:singleLine="true"
+            android:textColor="@color/adwio_text" android:textColorHint="@color/adwio_muted"
+            android:paddingHorizontal="18dp" android:background="@drawable/bg_focus"/>
+        <Button android:id="@+id/signInButton"
+            android:layout_width="match_parent" android:layout_height="64dp"
+            android:layout_marginTop="22dp" android:text="@string/sign_in"
+            android:textColor="@color/adwio_text" android:textSize="17sp"
+            android:background="@drawable/bg_focus"/>
+        <ProgressBar android:id="@+id/progressBar"
+            android:layout_width="38dp" android:layout_height="38dp"
+            android:layout_gravity="center_horizontal" android:layout_marginTop="14dp"
+            android:visibility="gone"/>
+        <TextView android:id="@+id/errorText"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="10dp" android:gravity="center"
+            android:textColor="#FF7A90" android:textSize="14sp"/>
+    </LinearLayout>
+</FrameLayout>
