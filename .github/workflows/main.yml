@@ -1,4 +1,4 @@
-name: Unpack ADWIO Project
+name: Unpack ADWIO Professional Update
 
 on:
   workflow_dispatch:
@@ -6,7 +6,7 @@ on:
       zip_name:
         description: "ZIP file name in repository root"
         required: true
-        default: "ADWIO_Player.zip"
+        default: "ADWIO_Player_Professional_Update.zip"
 
 jobs:
   unpack:
@@ -18,31 +18,45 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Unpack project
+      - name: Unpack professional update
         env:
           ZIP_NAME: ${{ github.event.inputs.zip_name }}
         run: |
           set -e
-          rm -rf /tmp/adwio_unpack
-          mkdir -p /tmp/adwio_unpack
-          unzip -o "$ZIP_NAME" -d /tmp/adwio_unpack
 
-          # Copy project files but intentionally skip workflow files.
-          # GitHub App tokens cannot create/update workflow files without
-          # the separate "workflows" permission.
+          if [ ! -f "$ZIP_NAME" ]; then
+            echo "ZIP not found: $ZIP_NAME"
+            echo "Files in repository root:"
+            ls -la
+            exit 1
+          fi
+
+          rm -rf /tmp/adwio_professional_unpack
+          mkdir -p /tmp/adwio_professional_unpack
+
+          unzip -o "$ZIP_NAME" -d /tmp/adwio_professional_unpack
+
           rsync -a \
+            --delete \
             --exclude=".git" \
             --exclude=".github" \
             --exclude="UNPACK_WORKFLOW.yml" \
             --exclude="$ZIP_NAME" \
-            /tmp/adwio_unpack/ ./
+            /tmp/adwio_professional_unpack/ ./
 
           rm -f "$ZIP_NAME"
 
-      - name: Commit unpacked project
+      - name: Commit professional update
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
           git add -A
-          git commit -m "chore: unpack ADWIO project" || exit 0
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+
+          git commit -m "feat: apply ADWIO Professional update"
           git push
