@@ -19,47 +19,59 @@ class PlaylistActivity : BaseFullscreenActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        b = ActivityPlaylistBinding.inflate(layoutInflater)
-        setContentView(b.root)
 
-        store = PlaylistStore(this)
-        adapter = PlaylistAdapter(
-            onOpen = { profile ->
-                SessionStore(this).save(store.toSession(profile))
-                store.put(profile)
-                startActivity(Intent(this, HomeActivity::class.java))
-            },
-            onDelete = { profile ->
-                AlertDialog.Builder(this)
-                    .setTitle("Delete playlist?")
-                    .setMessage(profile.name)
-                    .setPositiveButton("Delete") { _, _ ->
-                        store.remove(profile.id)
-                        refresh()
-                    }
-                    .setNegativeButton("Cancel", null)
-                    .show()
+        runCatching {
+            b = ActivityPlaylistBinding.inflate(layoutInflater)
+            setContentView(b.root)
+
+            store = PlaylistStore(this)
+            adapter = PlaylistAdapter(
+                onOpen = { profile ->
+                    SessionStore(this).save(store.toSession(profile))
+                    store.put(profile)
+                    startActivity(Intent(this, HomeActivity::class.java))
+                },
+                onDelete = { profile ->
+                    AlertDialog.Builder(this)
+                        .setTitle("Delete playlist?")
+                        .setMessage(profile.name)
+                        .setPositiveButton("Delete") { _, _ ->
+                            store.remove(profile.id)
+                            refresh()
+                        }
+                        .setNegativeButton("Cancel", null)
+                        .show()
+                }
+            )
+
+            b.playlistRecycler.layoutManager = LinearLayoutManager(this)
+            b.playlistRecycler.adapter = adapter
+
+            val rawId = Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
+            val safeId = rawId?.takeIf { it.isNotBlank() } ?: "UNKNOWN"
+            val shortId = safeId.takeLast(10).uppercase()
+            b.deviceInfoText.text = "DEVICE ID\n$shortId\n\nMulti-server ready"
+
+            b.addPlaylistButton.setOnClickListener {
+                startActivity(Intent(this, LoginActivity::class.java))
             }
-        )
-
-        b.playlistRecycler.layoutManager = LinearLayoutManager(this)
-        b.playlistRecycler.adapter = adapter
-
-        val deviceId = Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
-        b.deviceInfoText.text = "DEVICE ID\n${deviceId.takeLast(10).uppercase()}\n\nMulti-server ready"
-
-        b.addPlaylistButton.setOnClickListener {
-            startActivity(Intent(this, LoginActivity::class.java))
+            b.addPlaylistButton.requestFocus()
+        }.onFailure { error ->
+            AlertDialog.Builder(this)
+                .setTitle("ADWIO startup error")
+                .setMessage(error.stackTraceToString().take(3500))
+                .setCancelable(false)
+                .setPositiveButton("Close") { _, _ -> finish() }
+                .show()
         }
-        b.addPlaylistButton.requestFocus()
     }
 
     override fun onResume() {
         super.onResume()
-        refresh()
+        if (::adapter.isInitialized && ::store.isInitialized) refresh()
     }
 
     private fun refresh() {
-        adapter.submit(store.list())
+        runCatching { adapter.submit(store.list()) }
     }
 }

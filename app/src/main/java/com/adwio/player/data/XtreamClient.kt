@@ -24,13 +24,31 @@ class XtreamClient {
                 val body = get(url) ?: continue
                 val auth = Regex("\"auth\"\\s*:\\s*\"?1\"?").containsMatchIn(body)
                 if (auth) {
-                    val expires = Regex("\"exp_date\"\\s*:\\s*\"?([^\",}]*)").find(body)?.groupValues?.getOrNull(1)
-                    val status = Regex("\"status\"\\s*:\\s*\"([^\"]*)").find(body)?.groupValues?.getOrNull(1)
+                    val expires = Regex("\"exp_date\"\\s*:\\s*\"?([^\",}]*)")
+                        .find(body)?.groupValues?.getOrNull(1)
+                    val status = Regex("\"status\"\\s*:\\s*\"([^\"]*)")
+                        .find(body)?.groupValues?.getOrNull(1)
                     return Session(username, password, server, expires, status)
                 }
-            } catch (_: Exception) {}
+            } catch (_: Exception) {
+            }
         }
         return null
+    }
+
+    fun loadCategories(session: Session, type: MediaType): List<CategoryModel> {
+        val action = when (type) {
+            MediaType.LIVE -> "get_live_categories"
+            MediaType.MOVIE -> "get_vod_categories"
+            MediaType.SERIES -> "get_series_categories"
+        }
+        val raw = get("${apiBase(session)}&action=$action") ?: return listOf(CategoryModel("", "All"))
+        val parsed = parseRows(raw).mapNotNull { row ->
+            val id = numberString(row["category_id"]) ?: return@mapNotNull null
+            val name = row["category_name"]?.toString()?.takeIf { it.isNotBlank() } ?: "Category"
+            CategoryModel(id, name)
+        }
+        return listOf(CategoryModel("", "All")) + parsed
     }
 
     fun loadLive(session: Session) = loadStreams(session, "get_live_streams", MediaType.LIVE)
@@ -45,8 +63,8 @@ class XtreamClient {
                 id = id,
                 name = row["name"]?.toString() ?: "Series",
                 streamUrl = "",
-                logoUrl = row["cover"]?.toString(),
-                categoryId = row["category_id"]?.toString(),
+                logoUrl = row["cover"]?.toString()?.takeIf { it.isNotBlank() },
+                categoryId = numberString(row["category_id"]),
                 type = MediaType.SERIES,
                 meta = row["rating"]?.toString()
             )
@@ -66,12 +84,11 @@ class XtreamClient {
                 val row = any as? Map<*, *> ?: return@forEachIndexed
                 val id = numberString(row["id"]) ?: return@forEachIndexed
                 val ext = row["container_extension"]?.toString()?.takeIf { it.isNotBlank() } ?: "mp4"
-                val title = row["title"]?.toString()
-                    ?: row["info"]?.let { info -> (info as? Map<*, *>)?.get("movie_image")?.toString() }
-                    ?: "Episode ${index + 1}"
+                val title = row["title"]?.toString()?.takeIf { it.isNotBlank() } ?: "Episode ${index + 1}"
                 val epNum = numberString(row["episode_num"])?.toIntOrNull() ?: (index + 1)
                 val base = session.server.baseUrl.trimEnd('/')
-                val streamUrl = "$base/series/${enc(session.username)}/${enc(session.password)}/$id.$ext"
+                val streamUrl =
+                    "$base/series/${enc(session.username)}/${enc(session.password)}/$id.$ext"
                 result += EpisodeModel(id, title, season, epNum, streamUrl, ext)
             }
         }
@@ -94,7 +111,7 @@ class XtreamClient {
                 name = row["name"]?.toString() ?: "Untitled",
                 streamUrl = url,
                 logoUrl = row["stream_icon"]?.toString()?.takeIf { it.isNotBlank() },
-                categoryId = row["category_id"]?.toString(),
+                categoryId = numberString(row["category_id"]),
                 type = type,
                 meta = row["rating"]?.toString()
             )
@@ -132,7 +149,7 @@ class XtreamClient {
     private fun get(url: String): String? {
         val request = Request.Builder()
             .url(url)
-            .header("User-Agent", "ADWIO-Player/1.0")
+            .header("User-Agent", "ADWIO-Player/2.1")
             .build()
 
         client.newCall(request).execute().use { response ->
@@ -141,5 +158,6 @@ class XtreamClient {
         }
     }
 
-    private fun enc(value: String): String = URLEncoder.encode(value, Charsets.UTF_8.name())
+    private fun enc(value: String): String =
+        URLEncoder.encode(value, Charsets.UTF_8.name())
 }
