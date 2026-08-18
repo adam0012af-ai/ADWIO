@@ -1,0 +1,17 @@
+ADWIO Player - GitHub Upload
+
+1) Upload ADWIO_Player.zip to the root of your ADWIO repository.
+2) Create this file manually in GitHub:
+   .github/workflows/unpack-adwio.yml
+   Paste the contents of unpack-adwio.yml into it.
+3) Open Actions > Unpack ADWIO Project > Run workflow.
+4) Keep the default ZIP name: ADWIO_Player.zip
+5) The workflow unpacks the project, removes the ZIP, commits the files, and pushes them to main.
+6) After that, the project already contains:
+   .github/workflows/build-apk.yml
+7) Open Actions > Build ADWIO APK > Run workflow.
+8) When it completes, open the run > Artifacts > ADWIO-Player-debug.
+9) Download the artifact ZIP and install app-debug.apk for testing.
+
+Package: com.adwio.player
+App: ADWIO Player
