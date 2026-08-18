@@ -15,16 +15,28 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Unpack project
         env:
           ZIP_NAME: ${{ github.event.inputs.zip_name }}
         run: |
           set -e
+          rm -rf /tmp/adwio_unpack
           mkdir -p /tmp/adwio_unpack
           unzip -o "$ZIP_NAME" -d /tmp/adwio_unpack
-          rsync -a --exclude=".git" --exclude="$ZIP_NAME" /tmp/adwio_unpack/ ./
+
+          # Copy project files but intentionally skip workflow files.
+          # GitHub App tokens cannot create/update workflow files without
+          # the separate "workflows" permission.
+          rsync -a \
+            --exclude=".git" \
+            --exclude=".github" \
+            --exclude="UNPACK_WORKFLOW.yml" \
+            --exclude="$ZIP_NAME" \
+            /tmp/adwio_unpack/ ./
+
           rm -f "$ZIP_NAME"
 
       - name: Commit unpacked project
