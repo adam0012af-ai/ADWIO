@@ -15,27 +15,37 @@ android {
         buildConfigField("String", "APP_NAME", "\"ADWIO Player\"")
     }
 
+    val keystorePath = System.getenv("ADWIO_KEYSTORE_PATH")
+    val keystorePassword = System.getenv("ADWIO_KEYSTORE_PASSWORD")
+    val keyAliasEnv = System.getenv("ADWIO_KEY_ALIAS")
+    val keyPasswordEnv = System.getenv("ADWIO_KEY_PASSWORD")
+
+    val hasReleaseSigning =
+        !keystorePath.isNullOrBlank() &&
+        !keystorePassword.isNullOrBlank() &&
+        !keyAliasEnv.isNullOrBlank() &&
+        !keyPasswordEnv.isNullOrBlank()
 
     signingConfigs {
-        create("release") {
-            val keystorePath = System.getenv("ADWIO_KEYSTORE_PATH")
-                ?: throw GradleException("ADWIO_KEYSTORE_PATH is required for release builds")
-            storeFile = file(keystorePath)
-            storePassword = System.getenv("ADWIO_KEYSTORE_PASSWORD")
-                ?: throw GradleException("ADWIO_KEYSTORE_PASSWORD is required")
-            keyAlias = System.getenv("ADWIO_KEY_ALIAS")
-                ?: throw GradleException("ADWIO_KEY_ALIAS is required")
-            keyPassword = System.getenv("ADWIO_KEY_PASSWORD")
-                ?: throw GradleException("ADWIO_KEY_PASSWORD is required")
-            enableV1Signing = true
-            enableV2Signing = true
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = file(keystorePath!!)
+                storePassword = keystorePassword
+                keyAlias = keyAliasEnv
+                keyPassword = keyPasswordEnv
+                enableV1Signing = true
+                enableV2Signing = true
+            }
         }
     }
 
     buildTypes {
         getByName("release") {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("release")
+
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 
