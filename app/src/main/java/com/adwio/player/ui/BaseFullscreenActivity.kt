@@ -9,12 +9,12 @@ import androidx.appcompat.app.AppCompatActivity
 abstract class BaseFullscreenActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        applyFullscreen()
+        runCatching { applyFullscreen() }
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
-        if (hasFocus) applyFullscreen()
+        if (hasFocus) runCatching { applyFullscreen() }
     }
 
     private fun applyFullscreen() {
