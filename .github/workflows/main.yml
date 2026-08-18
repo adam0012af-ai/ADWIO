@@ -1,62 +1,63 @@
-name: Unpack ADWIO Professional Update
+name: Apply ADWIO V3 Update
 
 on:
   workflow_dispatch:
-    inputs:
-      zip_name:
-        description: "ZIP file name in repository root"
-        required: true
-        default: "ADWIO_Player_Professional_Update.zip"
+
+permissions:
+  contents: write
 
 jobs:
-  unpack:
+  apply-update:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Unpack professional update
-        env:
-          ZIP_NAME: ${{ github.event.inputs.zip_name }}
+      - name: Install unzip
+        run: sudo apt-get update && sudo apt-get install -y unzip
+
+      - name: Check update package
         run: |
-          set -e
-
-          if [ ! -f "$ZIP_NAME" ]; then
-            echo "ZIP not found: $ZIP_NAME"
-            echo "Files in repository root:"
-            ls -la
+          if [ ! -f "ADWIO_Update_V3.zip" ]; then
+            echo "ERROR: ADWIO_Update_V3.zip not found in repository root."
             exit 1
           fi
 
-          rm -rf /tmp/adwio_professional_unpack
-          mkdir -p /tmp/adwio_professional_unpack
+      - name: Extract update package
+        run: |
+          rm -rf .adwio_update_tmp
+          mkdir -p .adwio_update_tmp
+          unzip -o ADWIO_Update_V3.zip -d .adwio_update_tmp
 
-          unzip -o "$ZIP_NAME" -d /tmp/adwio_professional_unpack
+      - name: Apply update files
+        run: |
+          if [ ! -d ".adwio_update_tmp/app" ]; then
+            echo "ERROR: app folder not found inside update package."
+            exit 1
+          fi
 
-          rsync -a \
-            --delete \
-            --exclude=".git" \
-            --exclude=".github" \
-            --exclude="UNPACK_WORKFLOW.yml" \
-            --exclude="$ZIP_NAME" \
-            /tmp/adwio_professional_unpack/ ./
+          cp -a .adwio_update_tmp/app/. app/
 
-          rm -f "$ZIP_NAME"
+      - name: Clean temporary files
+        run: rm -rf .adwio_update_tmp
 
-      - name: Commit professional update
+      - name: Show changed files
+        run: git status --short
+
+      - name: Commit update
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add -A
+          git add app
 
           if git diff --cached --quiet; then
-            echo "No changes to commit"
+            echo "No changes to commit."
             exit 0
           fi
 
-          git commit -m "feat: apply ADWIO Professional update"
+          git commit -m "Apply ADWIO V3 update"
           git push
