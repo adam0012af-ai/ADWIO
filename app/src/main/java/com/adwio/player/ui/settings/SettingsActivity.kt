@@ -1,0 +1,85 @@
+package com.adwio.player.ui.settings
+
+import android.os.Bundle
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
+import com.adwio.player.data.AppSettings
+import com.adwio.player.data.PlaybackHistory
+import com.adwio.player.data.SessionStore
+import com.adwio.player.databinding.ActivitySettingsBinding
+import com.adwio.player.ui.BaseFullscreenActivity
+
+class SettingsActivity : BaseFullscreenActivity() {
+    private lateinit var b: ActivitySettingsBinding
+    private lateinit var settings: AppSettings
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        b = ActivitySettingsBinding.inflate(layoutInflater)
+        setContentView(b.root)
+        settings = AppSettings(this)
+
+        b.autoplaySwitch.isChecked = settings.autoplayLastChannel
+        b.rememberSwitch.isChecked = settings.rememberPosition
+        b.refreshSwitch.isChecked = settings.autoRefresh
+
+        b.autoplaySwitch.setOnCheckedChangeListener { _, v -> settings.autoplayLastChannel = v }
+        b.rememberSwitch.setOnCheckedChangeListener { _, v -> settings.rememberPosition = v }
+        b.refreshSwitch.setOnCheckedChangeListener { _, v -> settings.autoRefresh = v }
+
+        updateButtons()
+
+        b.bufferButton.setOnClickListener {
+            val values = arrayOf("Small", "Normal", "Large")
+            val keys = arrayOf("small", "normal", "large")
+            val selected = keys.indexOf(settings.bufferMode).coerceAtLeast(1)
+            AlertDialog.Builder(this)
+                .setTitle("Buffer mode")
+                .setSingleChoiceItems(values, selected) { dialog, which ->
+                    settings.bufferMode = keys[which]
+                    updateButtons()
+                    dialog.dismiss()
+                }
+                .show()
+        }
+
+        b.aspectButton.setOnClickListener {
+            val values = arrayOf("Fit", "Fill", "Zoom")
+            val keys = arrayOf("fit", "fill", "zoom")
+            val selected = keys.indexOf(settings.aspectMode).coerceAtLeast(0)
+            AlertDialog.Builder(this)
+                .setTitle("Aspect ratio")
+                .setSingleChoiceItems(values, selected) { dialog, which ->
+                    settings.aspectMode = keys[which]
+                    updateButtons()
+                    dialog.dismiss()
+                }
+                .show()
+        }
+
+        b.clearCacheButton.setOnClickListener {
+            cacheDir.deleteRecursively()
+            Toast.makeText(this, "Cache cleared", Toast.LENGTH_SHORT).show()
+        }
+
+        b.clearHistoryButton.setOnClickListener {
+            PlaybackHistory(this).clear()
+            Toast.makeText(this, "Watch history cleared", Toast.LENGTH_SHORT).show()
+        }
+
+        b.resetSettingsButton.setOnClickListener {
+            settings.reset()
+            recreate()
+        }
+
+        b.logoutButton.setOnClickListener {
+            SessionStore(this).clear()
+            finishAffinity()
+        }
+    }
+
+    private fun updateButtons() {
+        b.bufferButton.text = "BUFFER: ${settings.bufferMode.uppercase()}"
+        b.aspectButton.text = "ASPECT: ${settings.aspectMode.uppercase()}"
+    }
+}

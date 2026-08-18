@@ -2,7 +2,7 @@ package com.adwio.player.ui.splash
 
 import android.content.Intent
 import android.os.Bundle
-import androidx.appcompat.app.AppCompatActivity
+import com.adwio.player.ui.BaseFullscreenActivity
 import androidx.lifecycle.lifecycleScope
 import com.adwio.player.R
 import com.adwio.player.data.SessionStore
@@ -11,7 +11,7 @@ import com.adwio.player.ui.playlist.PlaylistActivity
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-class SplashActivity : AppCompatActivity() {
+class SplashActivity : BaseFullscreenActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_splash)

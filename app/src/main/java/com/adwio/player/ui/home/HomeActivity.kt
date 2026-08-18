@@ -5,7 +5,7 @@ import android.os.Bundle
 import android.widget.ArrayAdapter
 import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
+import com.adwio.player.ui.BaseFullscreenActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.adwio.player.data.FavoritesStore
@@ -17,11 +17,12 @@ import com.adwio.player.data.model.MediaType
 import com.adwio.player.databinding.ActivityHomeBinding
 import com.adwio.player.ui.player.PlayerActivity
 import com.adwio.player.ui.playlist.PlaylistActivity
+import com.adwio.player.ui.settings.SettingsActivity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class HomeActivity : AppCompatActivity() {
+class HomeActivity : BaseFullscreenActivity() {
     private lateinit var b: ActivityHomeBinding
     private val api = XtreamClient()
     private lateinit var adapter: MediaAdapter
@@ -46,7 +47,7 @@ class HomeActivity : AppCompatActivity() {
         b.menuSeries.setOnClickListener { load(MediaType.SERIES) }
         b.menuSearch.setOnClickListener { showSearch() }
         b.menuFavorites.setOnClickListener { showFavorites() }
-        b.menuSettings.setOnClickListener { showSettings() }
+        b.menuSettings.setOnClickListener { startActivity(Intent(this, SettingsActivity::class.java)) }
 
         b.menuLive.requestFocus()
         load(MediaType.LIVE)
@@ -177,6 +178,7 @@ class HomeActivity : AppCompatActivity() {
         startActivity(Intent(this, PlayerActivity::class.java).apply {
             putExtra("url", url)
             putExtra("title", title)
+            putExtra("id", title + "|" + url)
         })
     }
 

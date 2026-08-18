@@ -10,9 +10,33 @@ android {
         applicationId = "com.adwio.player"
         minSdk = 23
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "2.0.0-professional"
         buildConfigField("String", "APP_NAME", "\"ADWIO Player\"")
+    }
+
+
+    signingConfigs {
+        create("release") {
+            val keystorePath = System.getenv("ADWIO_KEYSTORE_PATH")
+                ?: throw GradleException("ADWIO_KEYSTORE_PATH is required for release builds")
+            storeFile = file(keystorePath)
+            storePassword = System.getenv("ADWIO_KEYSTORE_PASSWORD")
+                ?: throw GradleException("ADWIO_KEYSTORE_PASSWORD is required")
+            keyAlias = System.getenv("ADWIO_KEY_ALIAS")
+                ?: throw GradleException("ADWIO_KEY_ALIAS is required")
+            keyPassword = System.getenv("ADWIO_KEY_PASSWORD")
+                ?: throw GradleException("ADWIO_KEY_PASSWORD is required")
+            enableV1Signing = true
+            enableV2Signing = true
+        }
+    }
+
+    buildTypes {
+        getByName("release") {
+            isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
+        }
     }
 
     buildFeatures {
@@ -34,6 +58,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.11.0")
     implementation("androidx.recyclerview:recyclerview:1.4.0")
     implementation("androidx.constraintlayout:constraintlayout:2.2.1")
+    implementation("androidx.preference:preference-ktx:1.2.1")
 
     implementation("androidx.media3:media3-exoplayer:1.10.1")
     implementation("androidx.media3:media3-exoplayer-hls:1.10.1")

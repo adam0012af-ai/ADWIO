@@ -26,3 +26,7 @@ The initial build contains the two bootstrap hosts supplied for testing. No user
 
 ## ADWIO Control
 The host list is isolated in `ServerRepository`, so a future signed remote-config layer can replace it without changing the login and content layers.
+
+
+## Professional update signing
+Release builds use a fixed signing key stored only in GitHub Actions Secrets. Keep the signing key offline and never commit it to the repository.
