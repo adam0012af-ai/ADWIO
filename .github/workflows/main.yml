@@ -1,4 +1,4 @@
-name: Apply ADWIO V3 Update
+name: Apply ADWIO V4 Verified Update
 
 on:
   workflow_dispatch:
@@ -9,55 +9,53 @@ permissions:
 jobs:
   apply-update:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Install unzip
-        run: sudo apt-get update && sudo apt-get install -y unzip
-
-      - name: Check update package
+      - name: Verify package exists
         run: |
-          if [ ! -f "ADWIO_Update_V3.zip" ]; then
-            echo "ERROR: ADWIO_Update_V3.zip not found in repository root."
-            exit 1
-          fi
+          test -f ADWIO_Update_V4.zip || { echo "ADWIO_Update_V4.zip NOT FOUND"; exit 1; }
 
-      - name: Extract update package
+      - name: Extract package
         run: |
-          rm -rf .adwio_update_tmp
-          mkdir -p .adwio_update_tmp
-          unzip -o ADWIO_Update_V3.zip -d .adwio_update_tmp
+          rm -rf .adwio_v4
+          mkdir .adwio_v4
+          unzip -o ADWIO_Update_V4.zip -d .adwio_v4
+          test -f .adwio_v4/app/build.gradle.kts || { echo "Invalid package: app/build.gradle.kts missing"; exit 1; }
+          test -f .adwio_v4/app/src/main/java/com/adwio/player/ui/playlist/PlaylistActivity.kt || { echo "Invalid package: PlaylistActivity missing"; exit 1; }
 
-      - name: Apply update files
+      - name: Verify V4 before applying
         run: |
-          if [ ! -d ".adwio_update_tmp/app" ]; then
-            echo "ERROR: app folder not found inside update package."
-            exit 1
-          fi
+          grep -q 'versionCode = 4' .adwio_v4/app/build.gradle.kts || { echo "V4 versionCode missing"; exit 1; }
+          grep -q 'versionName = "2.2.0"' .adwio_v4/app/build.gradle.kts || { echo "V4 versionName missing"; exit 1; }
+          grep -q 'safeId' .adwio_v4/app/src/main/java/com/adwio/player/ui/playlist/PlaylistActivity.kt || { echo "Crash fix missing"; exit 1; }
 
-          cp -a .adwio_update_tmp/app/. app/
+      - name: Apply V4
+        run: |
+          cp -a .adwio_v4/app/. app/
+          rm -rf .adwio_v4
 
-      - name: Clean temporary files
-        run: rm -rf .adwio_update_tmp
+      - name: Verify repository after applying
+        run: |
+          grep -q 'versionCode = 4' app/build.gradle.kts || { echo "APPLY FAILED: versionCode"; exit 1; }
+          grep -q 'versionName = "2.2.0"' app/build.gradle.kts || { echo "APPLY FAILED: versionName"; exit 1; }
+          grep -q 'safeId' app/src/main/java/com/adwio/player/ui/playlist/PlaylistActivity.kt || { echo "APPLY FAILED: crash fix"; exit 1; }
+          test -f app/src/main/res/layout/item_poster.xml || { echo "APPLY FAILED: poster layout"; exit 1; }
+          test -f app/src/main/res/layout/item_category.xml || { echo "APPLY FAILED: category layout"; exit 1; }
+          echo "ADWIO V4 VERIFIED SUCCESSFULLY"
+          git status --short
 
-      - name: Show changed files
-        run: git status --short
-
-      - name: Commit update
+      - name: Commit V4
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
           git add app
-
           if git diff --cached --quiet; then
-            echo "No changes to commit."
-            exit 0
+            echo "ERROR: No app changes detected"
+            exit 1
           fi
-
-          git commit -m "Apply ADWIO V3 update"
+          git commit -m "Apply verified ADWIO V4 update"
           git push
