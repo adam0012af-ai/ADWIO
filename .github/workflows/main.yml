@@ -9,30 +9,56 @@ permissions:
 jobs:
   apply:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - name: Verify ADWIO 3.8 package
         run: test -f ADWIO_Professional_3.8_FULL.zip
-      - name: Extract ADWIO 3.8
+
+      - name: Extract ADWIO 3.8 safely
+        shell: bash
         run: |
-          rm -rf .adwio38
-          mkdir .adwio38
-          unzip -q ADWIO_Professional_3.8_FULL.zip -d .adwio38
-          test -d .adwio38/ADWIO-main/app
-          rsync -a --delete --exclude='.git/' --exclude='ADWIO_Professional_3.8_FULL.zip' .adwio38/ADWIO-main/ ./
-          rm -rf .adwio38
+          set -euo pipefail
+
+          TMP_DIR="${RUNNER_TEMP}/adwio38"
+          rm -rf "$TMP_DIR"
+          mkdir -p "$TMP_DIR"
+
+          unzip -q ADWIO_Professional_3.8_FULL.zip -d "$TMP_DIR"
+
+          test -d "$TMP_DIR/ADWIO-main/app"
+
+          rsync -a --delete \
+            --exclude='.git/' \
+            --exclude='ADWIO_Professional_3.8_FULL.zip' \
+            --exclude='.github/workflows/apply-adwio-3.8.yml' \
+            "$TMP_DIR/ADWIO-main/" ./
+
       - name: Verify applied version
+        shell: bash
         run: |
+          set -euo pipefail
           grep -q 'versionCode = 15' app/build.gradle.kts
           grep -q 'versionName = "3.8.0"' app/build.gradle.kts
+
       - name: Commit and push
+        shell: bash
         run: |
+          set -euo pipefail
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
           git add -A
-          git diff --cached --quiet && exit 0
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+
           git commit -m "Apply ADWIO Professional 3.8"
           git push
