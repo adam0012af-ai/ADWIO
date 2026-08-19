@@ -14,10 +14,12 @@ class PlaylistStore(context: Context) {
         return raw.mapNotNull(::decode).sortedByDescending { it.lastUsedAt }
     }
 
+    fun find(id: String): PlaylistProfile? = list().firstOrNull { it.id == id }
+
     fun add(name: String, session: Session): PlaylistProfile {
         val profile = PlaylistProfile(
             id = UUID.randomUUID().toString(),
-            name = name.ifBlank { "Playlist ${list().size + 1}" },
+            name = name.ifBlank { "User ${list().size + 1}" },
             username = session.username,
             password = session.password,
             serverId = session.server.id,
@@ -43,7 +45,8 @@ class PlaylistStore(context: Context) {
     fun toSession(profile: PlaylistProfile) = Session(
         username = profile.username,
         password = profile.password,
-        server = ServerHost(profile.serverId, profile.serverName, profile.serverUrl)
+        server = ServerHost(profile.serverId, profile.serverName, profile.serverUrl),
+        displayName = profile.name
     )
 
     private fun encode(p: PlaylistProfile): String = listOf(

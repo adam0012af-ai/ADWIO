@@ -21,7 +21,7 @@ class M3uClient {
         .build()
 
     fun probe(url: String): Boolean {
-        val request = Request.Builder().url(url).header("User-Agent", "ADWIO-Player/3.9").build()
+        val request = Request.Builder().url(url).header("User-Agent", "ADWIO-Player/4.0").build()
         return runCatching {
             client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) return@use false
@@ -38,7 +38,7 @@ class M3uClient {
     }
 
     fun downloadTo(url: String, destination: File): Boolean {
-        val request = Request.Builder().url(url).header("User-Agent", "ADWIO-Player/3.9").build()
+        val request = Request.Builder().url(url).header("User-Agent", "ADWIO-Player/4.0").build()
         val temp = File(destination.parentFile, destination.name + ".tmp")
         return runCatching {
             client.newCall(request).execute().use { response ->
@@ -53,7 +53,7 @@ class M3uClient {
     }
 
     fun load(url: String): List<MediaItemModel> {
-        val request = Request.Builder().url(url).header("User-Agent", "ADWIO-Player/3.9").build()
+        val request = Request.Builder().url(url).header("User-Agent", "ADWIO-Player/4.0").build()
         return client.newCall(request).execute().use { response ->
             if (!response.isSuccessful) return emptyList()
             val source = response.body?.source() ?: return emptyList()

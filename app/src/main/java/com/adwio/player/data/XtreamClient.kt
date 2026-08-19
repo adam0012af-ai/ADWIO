@@ -10,9 +10,9 @@ import java.util.concurrent.TimeUnit
 
 class XtreamClient {
     private val client = OkHttpClient.Builder()
-        .connectTimeout(7, TimeUnit.SECONDS)
-        .readTimeout(12, TimeUnit.SECONDS)
-        .callTimeout(18, TimeUnit.SECONDS)
+        .connectTimeout(12, TimeUnit.SECONDS)
+        .readTimeout(90, TimeUnit.SECONDS)
+        .callTimeout(150, TimeUnit.SECONDS)
         .build()
 
     private val moshi = Moshi.Builder().build()
@@ -32,7 +32,22 @@ class XtreamClient {
                         .find(body)?.groupValues?.getOrNull(1)
                     val status = Regex("\"status\"\\s*:\\s*\"([^\"]*)")
                         .find(body)?.groupValues?.getOrNull(1)
-                    return Session(username, password, server, expires, status)
+                    val created = Regex("\\\"created_at\\\"\\s*:\\s*\\\"?([^\\\",}]*)")
+                        .find(body)?.groupValues?.getOrNull(1)
+                    val activeCons = Regex("\\\"active_cons\\\"\\s*:\\s*\\\"?([^\\\",}]*)")
+                        .find(body)?.groupValues?.getOrNull(1)
+                    val maxCons = Regex("\\\"max_connections\\\"\\s*:\\s*\\\"?([^\\\",}]*)")
+                        .find(body)?.groupValues?.getOrNull(1)
+                    return Session(
+                        username = username,
+                        password = password,
+                        server = server,
+                        expiresAt = expires,
+                        status = status,
+                        createdAt = created,
+                        activeConnections = activeCons,
+                        maxConnections = maxCons
+                    )
                 }
             } catch (_: Exception) {
             }
@@ -211,15 +226,25 @@ class XtreamClient {
     }
 
     private fun get(url: String): String? {
-        val request = Request.Builder()
-            .url(url)
-            .header("User-Agent", "ADWIO-Player/2.1")
-            .build()
+        repeat(2) { attempt ->
+            try {
+                val request = Request.Builder()
+                    .url(url)
+                    .header("User-Agent", "ADWIO-Player/4.0")
+                    .header("Accept", "application/json, text/plain, */*")
+                    .build()
 
-        client.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) return null
-            return response.body?.string()
+                client.newCall(request).execute().use { response ->
+                    if (response.isSuccessful) {
+                        val body = response.body?.string()
+                        if (!body.isNullOrBlank()) return body
+                    }
+                }
+            } catch (_: Exception) {
+                if (attempt == 1) return null
+            }
         }
+        return null
     }
 
     private fun normalizeBaseUrl(raw: String): String? {

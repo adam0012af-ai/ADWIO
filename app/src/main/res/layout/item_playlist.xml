@@ -1,1 +1,46 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="52dp" android:layout_marginBottom="4dp" android:orientation="horizontal" android:gravity="center_vertical" android:padding="8dp" android:focusable="true" android:background="@drawable/bg_focus"><ImageView android:layout_width="34dp" android:layout_height="34dp" android:src="@drawable/ic_adwio"/><LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="8dp" android:orientation="vertical"><TextView android:id="@+id/playlistNameText" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="@color/adwio_text" android:textSize="11sp" android:textStyle="bold"/><TextView android:id="@+id/playlistServerText" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="@color/adwio_muted" android:textSize="8sp"/></LinearLayout><TextView android:id="@+id/deletePlaylist" android:layout_width="30dp" android:layout_height="30dp" android:gravity="center" android:text="×" android:textSize="20sp" android:textColor="#FF7A90"/></LinearLayout>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="58dp"
+    android:layout_marginBottom="5dp"
+    android:background="@drawable/bg_card"
+    android:focusable="true"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingHorizontal="12dp">
+
+    <ImageView
+        android:layout_width="38dp"
+        android:layout_height="38dp"
+        android:src="@drawable/ic_user_modern"/>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/playlistNameText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/adwio_text"
+            android:textSize="11sp"
+            android:textStyle="bold"/>
+
+        <TextView
+            android:id="@+id/playlistServerText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textColor="@color/adwio_cyan"
+            android:textSize="8.5sp"/>
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="اضغط مطولاً للإدارة"
+        android:textColor="@color/adwio_muted"
+        android:textSize="7sp"/>
+</LinearLayout>

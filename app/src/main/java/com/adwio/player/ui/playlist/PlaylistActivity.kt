@@ -18,54 +18,56 @@ class PlaylistActivity : BaseFullscreenActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        b = ActivityPlaylistBinding.inflate(layoutInflater)
+        setContentView(b.root)
 
-        runCatching {
-            b = ActivityPlaylistBinding.inflate(layoutInflater)
-            setContentView(b.root)
-
-            store = PlaylistStore(this)
-            adapter = PlaylistAdapter(
-                onOpen = { profile ->
-                    SessionStore(this).save(store.toSession(profile))
-                    store.put(profile)
-                    startActivity(Intent(this, HomeActivity::class.java))
-                },
-                onDelete = { profile ->
-                    AlertDialog.Builder(this)
-                        .setTitle("Delete playlist?")
-                        .setMessage(profile.name)
-                        .setPositiveButton("Delete") { _, _ ->
-                            store.remove(profile.id)
-                            refresh()
+        store = PlaylistStore(this)
+        adapter = PlaylistAdapter(
+            onOpen = { profile ->
+                SessionStore(this).save(store.toSession(profile))
+                store.put(profile)
+                startActivity(Intent(this, HomeActivity::class.java).addFlags(
+                    Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                ))
+            },
+            onManage = { profile ->
+                AlertDialog.Builder(this)
+                    .setTitle(profile.name)
+                    .setItems(arrayOf("تعديل", "حذف")) { _, which ->
+                        when (which) {
+                            0 -> startActivity(
+                                Intent(this, LoginActivity::class.java)
+                                    .putExtra(LoginActivity.EXTRA_PROFILE_ID, profile.id)
+                            )
+                            1 -> AlertDialog.Builder(this)
+                                .setTitle("حذف المستخدم؟")
+                                .setMessage(profile.name)
+                                .setPositiveButton("حذف") { _, _ ->
+                                    store.remove(profile.id)
+                                    refresh()
+                                }
+                                .setNegativeButton("إلغاء", null)
+                                .show()
                         }
-                        .setNegativeButton("Cancel", null)
-                        .show()
-                }
-            )
-
-            b.playlistRecycler.layoutManager = LinearLayoutManager(this)
-            b.playlistRecycler.adapter = adapter
-
-            b.addPlaylistButton.setOnClickListener {
-                startActivity(Intent(this, LoginActivity::class.java))
+                    }
+                    .show()
             }
-            b.addPlaylistButton.requestFocus()
-        }.onFailure { error ->
-            AlertDialog.Builder(this)
-                .setTitle("ADWIO startup error")
-                .setMessage(error.stackTraceToString().take(3500))
-                .setCancelable(false)
-                .setPositiveButton("Close") { _, _ -> finish() }
-                .show()
+        )
+
+        b.playlistRecycler.layoutManager = LinearLayoutManager(this)
+        b.playlistRecycler.adapter = adapter
+        b.addPlaylistButton.setOnClickListener {
+            startActivity(Intent(this, LoginActivity::class.java))
         }
+        b.addPlaylistButton.requestFocus()
     }
 
     override fun onResume() {
         super.onResume()
-        if (::adapter.isInitialized && ::store.isInitialized) refresh()
+        refresh()
     }
 
     private fun refresh() {
-        runCatching { adapter.submit(store.list()) }
+        adapter.submit(store.list())
     }
 }

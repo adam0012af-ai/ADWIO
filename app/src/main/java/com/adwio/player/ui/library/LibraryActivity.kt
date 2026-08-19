@@ -109,7 +109,9 @@ class LibraryActivity : BaseFullscreenActivity() {
     private fun load() {
         val session = store.load() ?: return finish()
         b.titleText.text = when(type) { MediaType.LIVE -> getString(com.adwio.player.R.string.live_title); MediaType.MOVIE -> getString(com.adwio.player.R.string.movies_title); MediaType.SERIES -> getString(com.adwio.player.R.string.series_title) }
-        b.subtitleText.text = getString(com.adwio.player.R.string.loading_content)
+        b.subtitleText.text = "جاري تحميل المحتوى…"
+        b.contentRecycler.alpha = 0.35f
+        b.categoryRecycler.alpha = 0.35f
         lifecycleScope.launch {
             val result = withContext(Dispatchers.IO) { runCatching {
                 if (session.server.id == "m3u") {
@@ -117,12 +119,36 @@ class LibraryActivity : BaseFullscreenActivity() {
                     val items = all.filter { it.type == type }
                     m3u.categories(items, type) to items
                 } else {
-                    val cats = api.loadCategories(session, type)
-                    val items = when(type) { MediaType.LIVE -> api.loadLive(session); MediaType.MOVIE -> api.loadMovies(session); MediaType.SERIES -> api.loadSeries(session) }
+                    var cats = api.loadCategories(session, type)
+                    var items = when(type) {
+                        MediaType.LIVE -> api.loadLive(session)
+                        MediaType.MOVIE -> api.loadMovies(session)
+                        MediaType.SERIES -> api.loadSeries(session)
+                    }
+
+                    if (items.isEmpty()) {
+                        cats = api.loadCategories(session, type)
+                        items = when(type) {
+                            MediaType.LIVE -> api.loadLive(session)
+                            MediaType.MOVIE -> api.loadMovies(session)
+                            MediaType.SERIES -> api.loadSeries(session)
+                        }
+                    }
                     cats to items
                 }
             }}
             result.onSuccess { (cats, items) ->
+                b.contentRecycler.alpha = 1f
+                b.categoryRecycler.alpha = 1f
+
+                if (items.isEmpty()) {
+                    allItems = emptyList()
+                    categoryAdapter.submit(cats)
+                    submit(emptyList())
+                    b.subtitleText.text = "لم يتم تحميل المحتوى • استخدم تحديث المحتوى ثم حاول مرة أخرى"
+                    return@onSuccess
+                }
+
                 allItems = items
                 val allNamed = cats.map { if (it.id.isBlank()) it.copy(name = "ALL • ${items.size}") else it }
                 val tools = mutableListOf(CategoryModel(SEARCH_ID, getString(com.adwio.player.R.string.search)))
@@ -154,7 +180,11 @@ class LibraryActivity : BaseFullscreenActivity() {
                 }
                 if (intent.getBooleanExtra(EXTRA_FAVORITES, false)) showFavorites()
                 else if (intent.getBooleanExtra(EXTRA_SEARCH, false)) showSearch()
-            }.onFailure { b.subtitleText.text = getString(com.adwio.player.R.string.load_failed) }
+            }.onFailure {
+                b.contentRecycler.alpha = 1f
+                b.categoryRecycler.alpha = 1f
+                b.subtitleText.text = "تعذر تحميل المحتوى • حاول مرة أخرى"
+            }
         }
     }
 

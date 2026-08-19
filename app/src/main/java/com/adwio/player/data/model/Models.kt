@@ -13,7 +13,11 @@ data class Session(
     val password: String,
     val server: ServerHost,
     val expiresAt: String? = null,
-    val status: String? = null
+    val status: String? = null,
+    val displayName: String = "",
+    val createdAt: String? = null,
+    val activeConnections: String? = null,
+    val maxConnections: String? = null
 )
 
 data class CategoryModel(

@@ -19,6 +19,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class LoginActivity : BaseFullscreenActivity() {
+    companion object {
+        const val EXTRA_PROFILE_ID = "profile_id"
+    }
     private lateinit var b: ActivityLoginBinding
     private val api = XtreamClient()
     private val m3u = M3uClient()
@@ -39,6 +42,23 @@ class LoginActivity : BaseFullscreenActivity() {
             b.passwordInput.inputType = if (passwordVisible) InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD else InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
             b.passwordInput.setSelection(b.passwordInput.text?.length ?: 0)
         }
+        val editId = intent.getStringExtra(EXTRA_PROFILE_ID)
+        if (!editId.isNullOrBlank()) {
+            PlaylistStore(this).find(editId)?.let { profile ->
+                b.playlistNameInput.setText(profile.name)
+                if (profile.serverId == "m3u") {
+                    b.m3uRadio.isChecked = true
+                    b.m3uUrlInput.setText(profile.serverUrl)
+                } else {
+                    b.xtreamRadio.isChecked = true
+                    b.serverUrlInput.setText(profile.serverUrl)
+                    b.usernameInput.setText(profile.username)
+                    b.passwordInput.setText(profile.password)
+                }
+                b.signInButton.text = "حفظ"
+            }
+        }
+
         b.signInButton.setOnClickListener { connect() }
         b.playlistNameInput.requestFocus()
     }
@@ -69,11 +89,14 @@ class LoginActivity : BaseFullscreenActivity() {
         setLoading(true)
         lifecycleScope.launch {
             val available = withContext(Dispatchers.IO) {
-                runCatching { m3u.probe(url) }.getOrDefault(false)
+                runCatching {
+                    if (!m3u.probe(url)) false
+                    else m3u.load(url).isNotEmpty()
+                }.getOrDefault(false)
             }
             setLoading(false)
             if (!available) {
-                b.errorText.text = "Playlist is unavailable or the URL is invalid"
+                b.errorText.text = "لم يتم العثور على محتوى صالح في القائمة"
                 return@launch
             }
             val host = runCatching { java.net.URI(url).host ?: "M3U" }.getOrDefault("M3U")
@@ -86,9 +109,34 @@ class LoginActivity : BaseFullscreenActivity() {
     }
 
     private fun saveAndOpen(name: String, session: Session) {
-        SessionStore(this).save(session)
-        if (b.rememberMe.isChecked) PlaylistStore(this).add(name, session)
-        startActivity(Intent(this, HomeActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK))
+        val namedSession = session.copy(displayName = name)
+        SessionStore(this).save(namedSession)
+
+        if (b.rememberMe.isChecked) {
+            val store = PlaylistStore(this)
+            val editId = intent.getStringExtra(EXTRA_PROFILE_ID)
+            if (!editId.isNullOrBlank()) {
+                val old = store.find(editId)
+                if (old != null) {
+                    store.put(old.copy(
+                        name = name,
+                        username = namedSession.username,
+                        password = namedSession.password,
+                        serverId = namedSession.server.id,
+                        serverName = namedSession.server.name,
+                        serverUrl = namedSession.server.baseUrl
+                    ))
+                } else {
+                    store.add(name, namedSession)
+                }
+            } else {
+                store.add(name, namedSession)
+            }
+        }
+
+        startActivity(Intent(this, HomeActivity::class.java).addFlags(
+            Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        ))
     }
 
     private fun setLoading(v: Boolean) {

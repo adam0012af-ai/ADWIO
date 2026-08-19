@@ -8,7 +8,7 @@ import com.adwio.player.databinding.ItemPlaylistBinding
 
 class PlaylistAdapter(
     private val onOpen: (PlaylistProfile) -> Unit,
-    private val onDelete: (PlaylistProfile) -> Unit
+    private val onManage: (PlaylistProfile) -> Unit
 ) : RecyclerView.Adapter<PlaylistAdapter.VH>() {
 
     private val items = mutableListOf<PlaylistProfile>()
@@ -22,9 +22,14 @@ class PlaylistAdapter(
     inner class VH(val b: ItemPlaylistBinding) : RecyclerView.ViewHolder(b.root) {
         fun bind(item: PlaylistProfile) {
             b.playlistNameText.text = item.name
-            b.playlistServerText.text = item.serverName
+            b.playlistServerText.text = item.username.ifBlank {
+                if (item.serverId == "m3u") "M3U User" else "User"
+            }
             b.root.setOnClickListener { onOpen(item) }
-            b.deletePlaylist.setOnClickListener { onDelete(item) }
+            b.root.setOnLongClickListener {
+                onManage(item)
+                true
+            }
         }
     }
 
