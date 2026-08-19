@@ -20,54 +20,35 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-          cache: gradle
 
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
+      - name: Set up Gradle 9.5
+        uses: gradle/actions/setup-gradle@v6
         with:
-          channel: stable
-          cache: true
+          gradle-version: '9.5.0'
 
-      - name: Flutter version
-        run: flutter --version
-
-      - name: Get dependencies
-        run: flutter pub get
-
-      - name: Decode release keystore
+      - name: Decode ADWIO release keystore
         shell: bash
         run: |
-          echo "${{ secrets.ADWIO_KEYSTORE_BASE64 }}" | base64 --decode > android/app/ADWIO_release_FINAL.keystore
+          echo "${{ secrets.ADWIO_KEYSTORE_BASE64 }}" | base64 --decode > "$RUNNER_TEMP/ADWIO_release_FINAL.keystore"
 
-      - name: Create key.properties
+      - name: Build signed Release APK
+        env:
+          ADWIO_KEYSTORE_PATH: ${{ runner.temp }}/ADWIO_release_FINAL.keystore
+          ADWIO_KEYSTORE_PASSWORD: ${{ secrets.ADWIO_KEYSTORE_PASSWORD }}
+          ADWIO_KEY_ALIAS: ${{ secrets.ADWIO_KEY_ALIAS }}
+          ADWIO_KEY_PASSWORD: ${{ secrets.ADWIO_KEY_PASSWORD }}
+        run: gradle :app:assembleRelease --stacktrace
+
+      - name: Verify APK exists
         shell: bash
         run: |
-          cat > android/key.properties <<EOF
-          storePassword=${{ secrets.ADWIO_KEYSTORE_PASSWORD }}
-          keyPassword=${{ secrets.ADWIO_KEY_PASSWORD }}
-          keyAlias=${{ secrets.ADWIO_KEY_ALIAS }}
-          storeFile=ADWIO_release_FINAL.keystore
-          EOF
+          ls -lah app/build/outputs/apk/release/
+          test -f app/build/outputs/apk/release/app-release.apk
 
-      - name: Analyze project
-        run: flutter analyze
-
-      - name: Build signed release APK
-        run: flutter build apk --release
-
-      - name: Build signed release AAB
-        run: flutter build appbundle --release
-
-      - name: Upload signed APK
+      - name: Upload ADWIO Signed APK
         uses: actions/upload-artifact@v4
         with:
-          name: ADWIO-Signed-APK
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: ADWIO-Signed-Release
+          path: app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
-
-      - name: Upload signed AAB
-        uses: actions/upload-artifact@v4
-        with:
-          name: ADWIO-Signed-AAB
-          path: build/app/outputs/bundle/release/app-release.aab
-          if-no-files-found: error
+          retention-days: 30
