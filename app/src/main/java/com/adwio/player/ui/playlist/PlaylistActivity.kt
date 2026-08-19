@@ -2,7 +2,6 @@ package com.adwio.player.ui.playlist
 
 import android.content.Intent
 import android.os.Bundle
-import android.provider.Settings
 import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.adwio.player.data.PlaylistStore
@@ -46,11 +45,6 @@ class PlaylistActivity : BaseFullscreenActivity() {
 
             b.playlistRecycler.layoutManager = LinearLayoutManager(this)
             b.playlistRecycler.adapter = adapter
-
-            val rawId = Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
-            val safeId = rawId?.takeIf { it.isNotBlank() } ?: "UNKNOWN"
-            val shortId = safeId.takeLast(10).uppercase()
-            b.deviceInfoText.text = "DEVICE ID\n$shortId\n\nMulti-server ready"
 
             b.addPlaylistButton.setOnClickListener {
                 startActivity(Intent(this, LoginActivity::class.java))

@@ -1,5 +1,6 @@
 package com.adwio.player.ui.settings
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -10,6 +11,7 @@ import com.adwio.player.data.PlaybackHistory
 import com.adwio.player.data.SessionStore
 import com.adwio.player.databinding.ActivitySettingsBinding
 import com.adwio.player.ui.BaseFullscreenActivity
+import com.adwio.player.ui.about.AboutActivity
 
 class SettingsActivity : BaseFullscreenActivity() {
     private lateinit var b: ActivitySettingsBinding
@@ -121,6 +123,10 @@ class SettingsActivity : BaseFullscreenActivity() {
         b.logoutButton.setOnClickListener {
             SessionStore(this).clear()
             finishAffinity()
+        }
+
+        b.aboutButton.setOnClickListener {
+            startActivity(Intent(this, AboutActivity::class.java))
         }
     }
 

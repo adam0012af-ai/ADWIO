@@ -68,9 +68,14 @@ class LoginActivity : BaseFullscreenActivity() {
         if (url.isBlank()) { b.errorText.text = "Enter M3U URL"; return }
         setLoading(true)
         lifecycleScope.launch {
-            val items = withContext(Dispatchers.IO) { runCatching { m3u.load(url) }.getOrDefault(emptyList()) }
+            val available = withContext(Dispatchers.IO) {
+                runCatching { m3u.probe(url) }.getOrDefault(false)
+            }
             setLoading(false)
-            if (items.isEmpty()) { b.errorText.text = "Playlist is empty or unavailable"; return@launch }
+            if (!available) {
+                b.errorText.text = "Playlist is unavailable or the URL is invalid"
+                return@launch
+            }
             val host = runCatching { java.net.URI(url).host ?: "M3U" }.getOrDefault("M3U")
             getSharedPreferences("adwio_m3u", MODE_PRIVATE).edit()
                 .putString("active_url", url)
