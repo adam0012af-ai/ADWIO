@@ -1,4 +1,4 @@
-name: Apply ADWIO V5 Crash Fix
+name: Apply ADWIO Professional FINAL
 
 on:
   workflow_dispatch:
@@ -7,47 +7,123 @@ permissions:
   contents: write
 
 jobs:
-  apply-update:
+  apply:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Verify V5 package
+      - name: Verify final package exists
         run: |
-          test -f ADWIO_Update_V5.zip || { echo "ADWIO_Update_V5.zip NOT FOUND"; exit 1; }
-          rm -rf .adwio_v5
-          mkdir .adwio_v5
-          unzip -o ADWIO_Update_V5.zip -d .adwio_v5
-          grep -q 'versionCode = 5' .adwio_v5/app/build.gradle.kts || exit 1
-          grep -q 'android:name=".AdwioApplication"' .adwio_v5/app/src/main/AndroidManifest.xml || exit 1
-          test -f .adwio_v5/app/src/main/java/com/adwio/player/AdwioApplication.kt || exit 1
-          test -f .adwio_v5/app/src/main/java/com/adwio/player/ui/crash/CrashActivity.kt || exit 1
+          test -f ADWIO_Professional_FINAL.zip || {
+            echo "ADWIO_Professional_FINAL.zip not found in repository root"
+            exit 1
+          }
 
-      - name: Apply V5
+      - name: Prepare extraction
         run: |
-          cp -a .adwio_v5/app/. app/
-          rm -rf .adwio_v5
+          rm -rf _adwio_final_unpack
+          mkdir -p _adwio_final_unpack
+          unzip -q -o ADWIO_Professional_FINAL.zip -d _adwio_final_unpack
 
-      - name: Verify applied files
+      - name: Detect package root
+        id: pkg
+        shell: bash
         run: |
-          grep -q 'versionCode = 5' app/build.gradle.kts || exit 1
-          grep -q 'android:name=".AdwioApplication"' app/src/main/AndroidManifest.xml || exit 1
-          test -f app/src/main/java/com/adwio/player/AdwioApplication.kt || exit 1
-          test -f app/src/main/java/com/adwio/player/ui/crash/CrashActivity.kt || exit 1
-          echo "ADWIO V5 APPLIED AND VERIFIED"
-          git status --short
+          ROOT="_adwio_final_unpack"
 
-      - name: Commit V5
+          # If ZIP contains exactly one top-level folder and project files are inside it,
+          # use that folder as the package root.
+          ENTRY_COUNT=$(find "$ROOT" -mindepth 1 -maxdepth 1 | wc -l | tr -d ' ')
+          if [ "$ENTRY_COUNT" = "1" ]; then
+            ONLY_ENTRY=$(find "$ROOT" -mindepth 1 -maxdepth 1 | head -n 1)
+            if [ -d "$ONLY_ENTRY" ] && \
+               { [ -d "$ONLY_ENTRY/app" ] || [ -f "$ONLY_ENTRY/settings.gradle.kts" ]; }; then
+              ROOT="$ONLY_ENTRY"
+            fi
+          fi
+
+          echo "root=$ROOT" >> "$GITHUB_OUTPUT"
+          echo "Detected package root: $ROOT"
+
+      - name: Validate extracted project
+        shell: bash
+        run: |
+          ROOT="${{ steps.pkg.outputs.root }}"
+
+          test -d "$ROOT/app" || {
+            echo "Package is missing app/"
+            exit 1
+          }
+
+          test -f "$ROOT/settings.gradle.kts" || {
+            echo "Package is missing settings.gradle.kts"
+            exit 1
+          }
+
+          test -f "$ROOT/build.gradle.kts" || {
+            echo "Package is missing build.gradle.kts"
+            exit 1
+          }
+
+      - name: Apply Professional project
+        shell: bash
+        run: |
+          ROOT="${{ steps.pkg.outputs.root }}"
+
+          # Remove current project areas that the final package owns.
+          rm -rf app docs
+          rm -f build.gradle.kts settings.gradle.kts gradle.properties README.md .gitignore
+
+          # Keep .git and GitHub workflow directory intact while copying project files.
+          rsync -a \
+            --exclude='.git/' \
+            --exclude='.github/workflows/' \
+            --exclude='ADWIO_Professional_FINAL.zip' \
+            "$ROOT"/ ./
+
+          # If the final package contains workflows, copy them too.
+          if [ -d "$ROOT/.github/workflows" ]; then
+            mkdir -p .github/workflows
+            find .github/workflows -maxdepth 1 -type f -delete
+            cp -a "$ROOT/.github/workflows/." .github/workflows/
+          fi
+
+      - name: Clean old update archives
+        shell: bash
+        run: |
+          rm -f ADWIO_Update_V3.zip
+          rm -f ADWIO_Update_V4.zip
+          rm -f ADWIO_Update_V5.zip
+
+      - name: Preserve final package temporarily
+        run: |
+          echo "Final package will remain until this workflow commits successfully."
+
+      - name: Show applied tree
+        run: |
+          echo "Top-level project files:"
+          find . -maxdepth 2 \
+            -not -path './.git/*' \
+            -not -path './_adwio_final_unpack/*' \
+            | sort | head -n 250
+
+      - name: Remove extraction folder
+        run: rm -rf _adwio_final_unpack
+
+      - name: Commit applied Professional update
+        shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app
+
+          git add -A
+
           if git diff --cached --quiet; then
-            echo "No changes detected"
-            exit 1
+            echo "No project changes to commit."
+            exit 0
           fi
-          git commit -m "Apply ADWIO V5 crash diagnostic fix"
+
+          git commit -m "Apply ADWIO Professional FINAL"
           git push
