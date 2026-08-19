@@ -1,4 +1,4 @@
-name: Build ADWIO Professional 3.8 APK
+name: Build ADWIO Professional 3.9 APK
 
 on:
   workflow_dispatch:
@@ -11,24 +11,33 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
-      - uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '9.5.0'
-      - name: Verify source
-        run: |
-          grep -q 'versionCode = 15' app/build.gradle.kts
-          grep -q 'versionName = "3.8.0"' app/build.gradle.kts
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
       - name: Build debug APK
-        run: gradle --no-daemon :app:assembleDebug
+        run: |
+          if [ -x ./gradlew ]; then
+            ./gradlew --no-daemon :app:assembleDebug
+          else
+            gradle --no-daemon :app:assembleDebug
+          fi
+
+      - name: Verify APK
+        run: test -f app/build/outputs/apk/debug/app-debug.apk
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: ADWIO-Professional-3.8-debug-${{ github.run_number }}
+          name: ADWIO-Professional-3.9-debug-${{ github.run_number }}
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
