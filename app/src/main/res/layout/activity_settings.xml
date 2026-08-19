@@ -1,131 +1,27 @@
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:fillViewport="true"
-    android:background="@drawable/bg_gradient">
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:minHeight="420dp"
-        android:orientation="horizontal"
-        android:padding="18dp">
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:paddingEnd="18dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="SETTINGS"
-                android:textColor="@color/adwio_text"
-                android:textSize="27sp"
-                android:textStyle="bold"/>
-
-            <Switch
-                android:id="@+id/autoplaySwitch"
-                android:layout_width="match_parent"
-                android:layout_height="52dp"
-                android:layout_marginTop="12dp"
-                android:text="Auto-play last channel"
-                android:textColor="@color/adwio_text"
-                android:focusable="true"/>
-
-            <Switch
-                android:id="@+id/rememberSwitch"
-                android:layout_width="match_parent"
-                android:layout_height="52dp"
-                android:text="Remember movie/episode position"
-                android:textColor="@color/adwio_text"
-                android:focusable="true"/>
-
-            <Switch
-                android:id="@+id/refreshSwitch"
-                android:layout_width="match_parent"
-                android:layout_height="52dp"
-                android:text="Auto refresh playlists"
-                android:textColor="@color/adwio_text"
-                android:focusable="true"/>
-
-            <Switch android:id="@+id/backgroundSwitch" android:layout_width="match_parent" android:layout_height="52dp" android:text="Background playback" android:textColor="@color/adwio_text" android:focusable="true"/>
-            <Switch android:id="@+id/pipSwitch" android:layout_width="match_parent" android:layout_height="52dp" android:text="Picture in Picture" android:textColor="@color/adwio_text" android:focusable="true"/>
-            <Switch android:id="@+id/autoNextSwitch" android:layout_width="match_parent" android:layout_height="52dp" android:text="Auto next episode" android:textColor="@color/adwio_text" android:focusable="true"/>
-
-            <Button
-                android:id="@+id/bufferButton"
-                android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:text="BUFFER MODE"
-                android:background="@drawable/bg_focus"
-                android:textColor="@color/adwio_text"/>
-
-            <Button
-                android:id="@+id/aspectButton"
-                android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:layout_marginTop="7dp"
-                android:text="ASPECT RATIO"
-                android:background="@drawable/bg_focus"
-                android:textColor="@color/adwio_text"/>
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="TOOLS"
-                android:textColor="@color/adwio_muted"
-                android:textSize="14sp"
-                android:textStyle="bold"/>
-
-            <Button android:id="@+id/languageButton" android:layout_width="match_parent" android:layout_height="50dp" android:layout_marginTop="12dp" android:text="LANGUAGE" android:background="@drawable/bg_focus" android:textColor="@color/adwio_text"/>
-            <Button android:id="@+id/gridButton" android:layout_width="match_parent" android:layout_height="50dp" android:layout_marginTop="7dp" android:text="GRID DENSITY" android:background="@drawable/bg_focus" android:textColor="@color/adwio_text"/>
-            <Button android:id="@+id/startupButton" android:layout_width="match_parent" android:layout_height="50dp" android:layout_marginTop="7dp" android:text="STARTUP SCREEN" android:background="@drawable/bg_focus" android:textColor="@color/adwio_text"/>
-
-            <Button
-                android:id="@+id/clearCacheButton"
-                android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:layout_marginTop="12dp"
-                android:text="CLEAR CACHE"
-                android:background="@drawable/bg_focus"
-                android:textColor="@color/adwio_text"/>
-
-            <Button
-                android:id="@+id/clearHistoryButton"
-                android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:layout_marginTop="7dp"
-                android:text="CLEAR WATCH HISTORY"
-                android:background="@drawable/bg_focus"
-                android:textColor="@color/adwio_text"/>
-
-            <Button
-                android:id="@+id/resetSettingsButton"
-                android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:layout_marginTop="7dp"
-                android:text="RESET SETTINGS"
-                android:background="@drawable/bg_focus"
-                android:textColor="@color/adwio_text"/>
-
-            <Button
-                android:id="@+id/logoutButton"
-                android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:layout_marginTop="7dp"
-                android:text="LOG OUT"
-                android:background="@drawable/bg_focus"
-                android:textColor="#FF9BAE"/>
-        </LinearLayout>
-    </LinearLayout>
-</ScrollView>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/bg_gradient" android:fillViewport="true">
+<LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="8dp">
+<LinearLayout android:layout_width="match_parent" android:layout_height="30dp" android:gravity="center_vertical" android:orientation="horizontal"><ImageButton android:id="@+id/backButton" android:layout_width="28dp" android:layout_height="28dp" android:background="@android:color/transparent" android:padding="6dp" android:src="@drawable/ic_back" android:contentDescription="Back"/><TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="6dp" android:layout_weight="1" android:text="الإعدادات" android:textColor="@color/adwio_text" android:textSize="14sp" android:textStyle="bold"/></LinearLayout>
+<LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:orientation="horizontal">
+<LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:background="@drawable/bg_card" android:orientation="vertical" android:padding="7dp">
+<TextView android:layout_width="match_parent" android:layout_height="22dp" android:text="التشغيل" android:textColor="@color/adwio_cyan" android:textSize="9sp"/>
+<Switch android:id="@+id/autoplaySwitch" android:layout_width="match_parent" android:layout_height="34dp" android:text="تشغيل آخر قناة" android:textColor="@color/adwio_text" android:textSize="9.5sp"/>
+<Switch android:id="@+id/rememberSwitch" android:layout_width="match_parent" android:layout_height="34dp" android:text="حفظ موضع المشاهدة" android:textColor="@color/adwio_text" android:textSize="9.5sp"/>
+<Switch android:id="@+id/backgroundSwitch" android:layout_width="match_parent" android:layout_height="34dp" android:text="تشغيل بالخلفية" android:textColor="@color/adwio_text" android:textSize="9.5sp"/>
+<Switch android:id="@+id/pipSwitch" android:layout_width="match_parent" android:layout_height="34dp" android:text="صورة داخل صورة" android:textColor="@color/adwio_text" android:textSize="9.5sp"/>
+<Switch android:id="@+id/autoNextSwitch" android:layout_width="match_parent" android:layout_height="34dp" android:text="الحلقة التالية تلقائيًا" android:textColor="@color/adwio_text" android:textSize="9.5sp"/>
+<Switch android:id="@+id/refreshSwitch" android:layout_width="match_parent" android:layout_height="34dp" android:text="تحديث تلقائي" android:textColor="@color/adwio_text" android:textSize="9.5sp"/>
+</LinearLayout>
+<LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="6dp" android:background="@drawable/bg_card" android:orientation="vertical" android:padding="7dp">
+<TextView android:layout_width="match_parent" android:layout_height="22dp" android:text="التخصيص" android:textColor="@color/adwio_cyan" android:textSize="9sp"/>
+<Button android:id="@+id/bufferButton" android:layout_width="match_parent" android:layout_height="34dp" android:background="@drawable/bg_focus" android:textColor="@color/adwio_text" android:textSize="8.5sp" android:textAllCaps="false"/>
+<Button android:id="@+id/aspectButton" android:layout_width="match_parent" android:layout_height="34dp" android:layout_marginTop="4dp" android:background="@drawable/bg_focus" android:textColor="@color/adwio_text" android:textSize="8.5sp" android:textAllCaps="false"/>
+<Button android:id="@+id/languageButton" android:layout_width="match_parent" android:layout_height="34dp" android:layout_marginTop="4dp" android:background="@drawable/bg_focus" android:textColor="@color/adwio_text" android:textSize="8.5sp" android:textAllCaps="false"/>
+<Button android:id="@+id/gridButton" android:layout_width="match_parent" android:layout_height="34dp" android:layout_marginTop="4dp" android:background="@drawable/bg_focus" android:textColor="@color/adwio_text" android:textSize="8.5sp" android:textAllCaps="false"/>
+<Button android:id="@+id/startupButton" android:layout_width="match_parent" android:layout_height="34dp" android:layout_marginTop="4dp" android:background="@drawable/bg_focus" android:textColor="@color/adwio_text" android:textSize="8.5sp" android:textAllCaps="false"/>
+</LinearLayout></LinearLayout>
+<LinearLayout android:layout_width="match_parent" android:layout_height="36dp" android:layout_marginTop="6dp" android:orientation="horizontal">
+<Button android:id="@+id/clearCacheButton" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:background="@drawable/bg_card" android:text="مسح الكاش" android:textAllCaps="false" android:textColor="@color/adwio_text" android:textSize="8.5sp"/>
+<Button android:id="@+id/clearHistoryButton" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginStart="4dp" android:background="@drawable/bg_card" android:text="مسح السجل" android:textAllCaps="false" android:textColor="@color/adwio_text" android:textSize="8.5sp"/>
+<Button android:id="@+id/resetSettingsButton" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginStart="4dp" android:background="@drawable/bg_card" android:text="إعادة الضبط" android:textAllCaps="false" android:textColor="@color/adwio_text" android:textSize="8.5sp"/>
+<Button android:id="@+id/logoutButton" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginStart="4dp" android:background="@drawable/bg_card" android:text="خروج" android:textAllCaps="false" android:textColor="#FF9BAE" android:textSize="8.5sp"/>
+</LinearLayout></LinearLayout></ScrollView>

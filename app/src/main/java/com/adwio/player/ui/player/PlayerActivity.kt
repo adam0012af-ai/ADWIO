@@ -12,6 +12,7 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.widget.SeekBar
+import androidx.appcompat.app.AlertDialog
 import androidx.activity.OnBackPressedCallback
 import androidx.core.view.isVisible
 import androidx.media3.common.C
@@ -163,8 +164,9 @@ class PlayerActivity : BaseFullscreenActivity() {
             if (p.isPlaying) p.pause() else p.play()
             showControls()
         }
-        b.audioButton.setOnClickListener { cycleTrack(C.TRACK_TYPE_AUDIO) }
-        b.subtitleButton.setOnClickListener { cycleTrack(C.TRACK_TYPE_TEXT) }
+        b.qualityText.setOnClickListener { showVideoQualityMenu() }
+        b.audioButton.setOnClickListener { showTrackMenu(C.TRACK_TYPE_AUDIO) }
+        b.subtitleButton.setOnClickListener { showTrackMenu(C.TRACK_TYPE_TEXT) }
         b.zoomButton.setOnClickListener {
             resizeMode = when (resizeMode) {
                 AspectRatioFrameLayout.RESIZE_MODE_ZOOM -> AspectRatioFrameLayout.RESIZE_MODE_FIT
@@ -318,31 +320,75 @@ class PlayerActivity : BaseFullscreenActivity() {
         b.qualityText.text = label
     }
 
-    private fun cycleTrack(trackType: Int) {
-        val player = PlaybackEngine.player ?: return
-        val candidates = buildList {
-            player.currentTracks.groups.forEach { group ->
-                if (group.type == trackType && group.isSupported) {
-                    for (i in 0 until group.length) if (group.isTrackSupported(i)) add(group to i)
+    private data class TrackChoice(val group: androidx.media3.common.Tracks.Group, val index: Int, val label: String)
+
+    private fun collectTrackChoices(trackType: Int): List<TrackChoice> {
+        val player = PlaybackEngine.player ?: return emptyList()
+        val out = mutableListOf<TrackChoice>()
+        player.currentTracks.groups.forEach { group ->
+            if (group.type == trackType && group.isSupported) {
+                for (i in 0 until group.length) {
+                    if (!group.isTrackSupported(i)) continue
+                    val f = group.getTrackFormat(i)
+                    val label = when (trackType) {
+                        C.TRACK_TYPE_VIDEO -> {
+                            val quality = if (f.height > 0) "${f.height}p" else "Video"
+                            val fps = if (f.frameRate > 0) " • ${f.frameRate.toInt()}fps" else ""
+                            val bitrate = if (f.bitrate > 0) " • ${f.bitrate / 1000}kbps" else ""
+                            quality + fps + bitrate
+                        }
+                        C.TRACK_TYPE_AUDIO -> listOfNotNull(f.label, f.language, if (f.channelCount > 0) "${f.channelCount}ch" else null).distinct().joinToString(" • ").ifBlank { "Audio ${out.size + 1}" }
+                        else -> listOfNotNull(f.label, f.language).distinct().joinToString(" • ").ifBlank { "Subtitle ${out.size + 1}" }
+                    }
+                    out += TrackChoice(group, i, label)
                 }
             }
         }
-        if (candidates.isEmpty()) {
+        return out.distinctBy { it.label }
+    }
+
+    private fun showTrackMenu(trackType: Int) {
+        val player = PlaybackEngine.player ?: return
+        val choices = collectTrackChoices(trackType)
+        if (choices.isEmpty()) {
             showStatus(if (trackType == C.TRACK_TYPE_AUDIO) "No audio tracks" else "No subtitles")
             return
         }
-        val current = candidates.indexOfFirst { (group, index) -> group.isTrackSelected(index) }
-        val next = candidates[(current + 1) % candidates.size]
-        val override = TrackSelectionOverride(next.first.mediaTrackGroup, listOf(next.second))
-        player.trackSelectionParameters = player.trackSelectionParameters
-            .buildUpon()
-            .clearOverridesOfType(trackType)
-            .setOverrideForType(override)
-            .build()
-        val format = next.first.getTrackFormat(next.second)
-        val label = format.label ?: format.language ?: if (trackType == C.TRACK_TYPE_AUDIO) "Audio" else "Subtitle"
-        showStatus(label)
-        showControls()
+        val isText = trackType == C.TRACK_TYPE_TEXT
+        val labels = buildList {
+            if (isText) add("Off")
+            addAll(choices.map { it.label })
+        }.toTypedArray()
+        AlertDialog.Builder(this)
+            .setTitle(if (isText) "Subtitles" else "Audio")
+            .setItems(labels) { _, which ->
+                val builder = player.trackSelectionParameters.buildUpon().clearOverridesOfType(trackType)
+                if (isText && which == 0) {
+                    builder.setTrackTypeDisabled(trackType, true)
+                } else {
+                    builder.setTrackTypeDisabled(trackType, false)
+                    val choice = choices[which - if (isText) 1 else 0]
+                    builder.setOverrideForType(TrackSelectionOverride(choice.group.mediaTrackGroup, listOf(choice.index)))
+                }
+                player.trackSelectionParameters = builder.build()
+                updateQuality(); showControls()
+            }.show()
+    }
+
+    private fun showVideoQualityMenu() {
+        val player = PlaybackEngine.player ?: return
+        val choices = collectTrackChoices(C.TRACK_TYPE_VIDEO)
+        if (choices.isEmpty()) { showStatus("Quality unavailable"); return }
+        val labels = (listOf("Auto") + choices.map { it.label }).toTypedArray()
+        AlertDialog.Builder(this).setTitle("Quality").setItems(labels) { _, which ->
+            val builder = player.trackSelectionParameters.buildUpon().clearOverridesOfType(C.TRACK_TYPE_VIDEO)
+            if (which > 0) {
+                val choice = choices[which - 1]
+                builder.setOverrideForType(TrackSelectionOverride(choice.group.mediaTrackGroup, listOf(choice.index)))
+            }
+            player.trackSelectionParameters = builder.build()
+            updateQuality(); showControls()
+        }.show()
     }
 
     private fun showLiveOverlay() {
@@ -395,7 +441,7 @@ class PlayerActivity : BaseFullscreenActivity() {
 
     private fun updatePlayPauseIcon() {
         if (type == MediaType.LIVE) return
-        val res = if (PlaybackEngine.player?.isPlaying == true) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play
+        val res = if (PlaybackEngine.player?.isPlaying == true) com.adwio.player.R.drawable.ic_pause else com.adwio.player.R.drawable.ic_play
         b.playPauseButton.setImageResource(res)
     }
 

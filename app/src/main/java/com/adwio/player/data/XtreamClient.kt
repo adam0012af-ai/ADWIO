@@ -90,6 +90,36 @@ class XtreamClient {
         }
     }
 
+    fun loadMovieInfo(session: Session, movieId: String): ContentInfoModel {
+        val raw = get("${apiBase(session)}&action=get_vod_info&vod_id=${enc(movieId)}") ?: return ContentInfoModel()
+        val root = parseObject(raw)
+        val info = (root["info"] as? Map<*, *>) ?: root
+        return parseContentInfo(info)
+    }
+
+    fun loadSeriesInfo(session: Session, seriesId: String): ContentInfoModel {
+        val raw = get("${apiBase(session)}&action=get_series_info&series_id=${enc(seriesId)}") ?: return ContentInfoModel()
+        val root = parseObject(raw)
+        val info = (root["info"] as? Map<*, *>) ?: root
+        return parseContentInfo(info)
+    }
+
+    private fun parseContentInfo(info: Map<*, *>): ContentInfoModel {
+        fun v(vararg keys: String): String = keys.firstNotNullOfOrNull { k -> info[k]?.toString()?.takeIf { it.isNotBlank() && it != "null" } }.orEmpty()
+        val backdrop = (info["backdrop_path"] as? List<*>)?.firstOrNull()?.toString()
+            ?: v("backdrop", "movie_image").takeIf { it.isNotBlank() }
+        return ContentInfoModel(
+            plot = v("plot", "description"),
+            genre = v("genre"),
+            releaseDate = v("releaseDate", "releasedate", "release_date"),
+            duration = v("duration", "duration_secs"),
+            rating = v("rating", "rating_5based"),
+            director = v("director"),
+            cast = v("cast", "actors"),
+            backdropUrl = backdrop
+        )
+    }
+
     fun loadSeriesEpisodes(session: Session, seriesId: String): List<EpisodeModel> {
         val raw = get("${apiBase(session)}&action=get_series_info&series_id=${enc(seriesId)}") ?: return emptyList()
         val root = parseObject(raw)

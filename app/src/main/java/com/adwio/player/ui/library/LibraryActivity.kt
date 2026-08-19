@@ -16,7 +16,6 @@ import com.adwio.player.data.AppSettings
 import com.adwio.player.data.SessionStore
 import com.adwio.player.data.RecentChannelsStore
 import com.adwio.player.data.XtreamClient
-import com.adwio.player.data.EpgCache
 import com.adwio.player.data.model.CategoryModel
 import com.adwio.player.data.model.MediaItemModel
 import com.adwio.player.data.model.MediaType
@@ -46,7 +45,6 @@ class LibraryActivity : BaseFullscreenActivity() {
     private lateinit var store: SessionStore
     private lateinit var favorites: FavoritesStore
     private lateinit var recentChannels: RecentChannelsStore
-    private lateinit var epgCache: EpgCache
     private lateinit var categoryAdapter: CategoryAdapter
     private lateinit var liveAdapter: MediaAdapter
     private lateinit var posterAdapter: PosterAdapter
@@ -55,6 +53,7 @@ class LibraryActivity : BaseFullscreenActivity() {
     private var previewPlayer: ExoPlayer? = null
     private var previewJob: Job? = null
     private val type: MediaType by lazy { runCatching { MediaType.valueOf(intent.getStringExtra(EXTRA_TYPE) ?: "LIVE") }.getOrDefault(MediaType.LIVE) }
+    private val categoryPrefs by lazy { getSharedPreferences("adwio_library_state", MODE_PRIVATE) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -63,7 +62,6 @@ class LibraryActivity : BaseFullscreenActivity() {
         store = SessionStore(this)
         favorites = FavoritesStore(this)
         recentChannels = RecentChannelsStore(this)
-        epgCache = EpgCache(this)
         liveAdapter = MediaAdapter(favorites, ::openItem, ::previewLive)
         posterAdapter = PosterAdapter(favorites, ::openItem)
         categoryAdapter = CategoryAdapter { applyCategory(it) }
@@ -85,7 +83,16 @@ class LibraryActivity : BaseFullscreenActivity() {
             b.contentRecycler.adapter = liveAdapter
         } else {
             val widthDp = resources.displayMetrics.widthPixels / resources.displayMetrics.density
-            val spans = when (AppSettings(this).gridDensity) { "6" -> 6; "8" -> 8; else -> if (widthDp >= 1000f) 8 else 6 }
+            val spans = when (AppSettings(this).gridDensity) {
+                "6" -> 6
+                "8" -> 8
+                else -> when {
+                    widthDp >= 1200f -> 10
+                    widthDp >= 900f -> 8
+                    widthDp >= 650f -> 7
+                    else -> 5
+                }
+            }
             b.contentRecycler.layoutManager = GridLayoutManager(this, spans)
             b.contentRecycler.adapter = posterAdapter
         }
@@ -103,20 +110,29 @@ class LibraryActivity : BaseFullscreenActivity() {
             }}
             result.onSuccess { (cats, items) ->
                 allItems = items
-                val displayCategories = if (type == MediaType.LIVE) {
-                    cats
-                } else {
-                    listOf(CategoryModel(RECENTLY_ADDED_ID, "أضيف حديثًا")) + cats
-                }
-                if (type == MediaType.LIVE) LiveCatalog.setData(cats, items, selectedCategory)
-                categoryAdapter.submit(displayCategories)
+                val allNamed = cats.map { if (it.id.isBlank()) it.copy(name = "ALL • ${items.size}") else it }
+                val displayCategories = if (type == MediaType.LIVE) allNamed else listOf(CategoryModel(RECENTLY_ADDED_ID, "أضيف حديثًا • 30")) + allNamed
+
                 if (type == MediaType.LIVE) {
-                    submit(items)
+                    val rememberedId = categoryPrefs.getString("last_category_${type.name}", null)
+                    val preferred = allNamed.firstOrNull { it.id.isNotBlank() && it.id == rememberedId }
+                        ?: allNamed.firstOrNull { it.id.isNotBlank() && (it.name.contains("قرآن") || it.name.contains("Quran", true) || it.name.contains("Qur", true)) }
+                        ?: allNamed.firstOrNull { it.id.isNotBlank() }
+                        ?: allNamed.first()
+
+                    selectedCategory = preferred.id
+                    LiveCatalog.setData(allNamed, items, selectedCategory)
+                    categoryAdapter.submit(displayCategories)
+                    val initial = if (preferred.id.isBlank()) items else items.filter { it.categoryId == preferred.id }
+                    submit(initial)
+                    b.subtitleText.text = preferred.name
                 } else {
+                    categoryAdapter.submit(displayCategories)
                     selectedCategory = RECENTLY_ADDED_ID
-                    submit(recentlyAdded(items))
+                    val recent = recentlyAdded(items)
+                    submit(recent)
+                    b.subtitleText.text = "أضيف حديثًا"
                 }
-                b.subtitleText.text = if (type == MediaType.LIVE) "${items.size} items" else "أضيف حديثًا • ${recentlyAdded(items).size}"
                 if (intent.getBooleanExtra(EXTRA_FAVORITES, false)) showFavorites()
                 else if (intent.getBooleanExtra(EXTRA_SEARCH, false)) showSearch()
             }.onFailure { b.subtitleText.text = getString(com.adwio.player.R.string.load_failed) }
@@ -129,14 +145,17 @@ class LibraryActivity : BaseFullscreenActivity() {
 
     private fun applyCategory(c: CategoryModel) {
         selectedCategory = c.id
-        if (type == MediaType.LIVE) LiveCatalog.selectCategory(c.id)
+        if (type == MediaType.LIVE) {
+            LiveCatalog.selectCategory(c.id)
+            if (c.id.isNotBlank()) categoryPrefs.edit().putString("last_category_${type.name}", c.id).apply()
+        }
         val list = when {
             c.id == RECENTLY_ADDED_ID -> recentlyAdded(allItems)
             c.id.isBlank() -> allItems
             else -> allItems.filter { it.categoryId == c.id }
         }
         submit(list)
-        b.subtitleText.text = "${c.name} • ${list.size}"
+        b.subtitleText.text = c.name
     }
 
     private fun recentlyAdded(items: List<MediaItemModel>): List<MediaItemModel> {
@@ -178,21 +197,8 @@ class LibraryActivity : BaseFullscreenActivity() {
         if (type != MediaType.LIVE) return
         previewJob?.cancel()
         b.previewChannelName.text = item.name
-        b.previewNow.text = getString(com.adwio.player.R.string.epg_loading)
-        b.previewNext.text = ""
         previewJob = lifecycleScope.launch {
             delay(650)
-            val session = store.load() ?: return@launch
-            val epg = epgCache.get(item.id) ?: withContext(Dispatchers.IO) {
-                runCatching { api.loadShortEpg(session, item.id, 2) }.getOrDefault(emptyList())
-            }.also { if (it.isNotEmpty()) epgCache.put(item.id, it) }
-            if (epg.isEmpty()) {
-                b.previewNow.text = getString(com.adwio.player.R.string.epg_unavailable)
-                b.previewNext.text = ""
-            } else {
-                b.previewNow.text = "Now • ${epg[0].title}"
-                b.previewNext.text = epg.getOrNull(1)?.let { "Next • ${it.title}" }.orEmpty()
-            }
             val player = previewPlayer ?: ExoPlayer.Builder(this@LibraryActivity).build().also {
                 previewPlayer = it
                 b.previewPlayer.player = it

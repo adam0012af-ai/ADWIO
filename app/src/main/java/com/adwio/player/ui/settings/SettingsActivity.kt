@@ -20,6 +20,7 @@ class SettingsActivity : BaseFullscreenActivity() {
         b = ActivitySettingsBinding.inflate(layoutInflater)
         setContentView(b.root)
         settings = AppSettings(this)
+        b.backButton.setOnClickListener { finish() }
 
         b.autoplaySwitch.isChecked = settings.autoplayLastChannel
         b.rememberSwitch.isChecked = settings.rememberPosition
@@ -109,10 +110,10 @@ class SettingsActivity : BaseFullscreenActivity() {
     }
 
     private fun updateButtons() {
-        b.bufferButton.text = "BUFFER: ${settings.bufferMode.uppercase()}"
-        b.aspectButton.text = "ASPECT: ${settings.aspectMode.uppercase()}"
-        b.languageButton.text = "LANGUAGE: ${settings.language.uppercase()}"
-        b.gridButton.text = "GRID: ${settings.gridDensity.uppercase()}"
-        b.startupButton.text = "STARTUP: ${settings.startupScreen.uppercase()}"
+        b.bufferButton.text = "المخزن المؤقت • ${settings.bufferMode}"
+        b.aspectButton.text = "مقاس الصورة • ${settings.aspectMode}"
+        b.languageButton.text = "اللغة • ${settings.language}"
+        b.gridButton.text = "كثافة العرض • ${settings.gridDensity}"
+        b.startupButton.text = "شاشة البداية • ${settings.startupScreen}"
     }
 }

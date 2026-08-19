@@ -32,6 +32,17 @@ data class MediaItemModel(
     val addedAt: Long = 0L
 )
 
+data class ContentInfoModel(
+    val plot: String = "",
+    val genre: String = "",
+    val releaseDate: String = "",
+    val duration: String = "",
+    val rating: String = "",
+    val director: String = "",
+    val cast: String = "",
+    val backdropUrl: String? = null
+)
+
 data class EpgItemModel(
     val title: String,
     val start: String? = null,

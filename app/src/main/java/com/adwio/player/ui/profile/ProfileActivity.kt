@@ -20,7 +20,7 @@ class ProfileActivity : BaseFullscreenActivity() {
         b.serverNameText.text = session?.server?.name ?: "ADWIO"
         b.usernameText.text = session?.username ?: "—"
         b.statusText.text = session?.status?.takeIf { it.isNotBlank() } ?: "Active"
-        b.expiryText.text = session?.expiresAt?.takeIf { it.isNotBlank() } ?: "—"
+        b.expiryText.text = formatExpiry(session?.expiresAt)
 
         b.backButton.setOnClickListener { finish() }
         b.managePlaylistsButton.setOnClickListener {
@@ -33,5 +33,14 @@ class ProfileActivity : BaseFullscreenActivity() {
             ))
             finish()
         }
+    }
+
+    private fun formatExpiry(raw: String?): String {
+        if (raw.isNullOrBlank()) return "—"
+        val seconds = raw.toLongOrNull() ?: return raw
+        return runCatching {
+            java.text.SimpleDateFormat("dd MMM yyyy", java.util.Locale.getDefault())
+                .format(java.util.Date(seconds * 1000L))
+        }.getOrDefault(raw)
     }
 }

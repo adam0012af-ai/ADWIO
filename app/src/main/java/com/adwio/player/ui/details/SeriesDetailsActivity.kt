@@ -32,8 +32,14 @@ class SeriesDetailsActivity : BaseFullscreenActivity() {
         b = ActivitySeriesDetailsBinding.inflate(layoutInflater)
         setContentView(b.root)
         seriesId = intent.getStringExtra(EXTRA_ID).orEmpty(); title = intent.getStringExtra(EXTRA_TITLE).orEmpty()
-        b.titleText.text = title; b.metaText.text = intent.getStringExtra(EXTRA_META).orEmpty(); b.backButton.setOnClickListener { finish() }
+        b.titleText.text = title; b.metaText.text = intent.getStringExtra(EXTRA_META).orEmpty(); b.infoText.text = "جاري تحميل المعلومات…"; b.backButton.setOnClickListener { finish() }
         intent.getStringExtra(EXTRA_IMAGE)?.takeIf { it.isNotBlank() }?.let { Picasso.get().load(it).placeholder(R.drawable.ic_adwio).error(R.drawable.ic_adwio).fit().centerInside().into(b.posterImage) }
+        val session = SessionStore(this).load()
+        if (session != null) lifecycleScope.launch {
+            val info = withContext(Dispatchers.IO) { api.loadSeriesInfo(session, seriesId) }
+            b.metaText.text = listOf(info.rating.takeIf { it.isNotBlank() }?.let { "★ $it" }, info.genre.takeIf { it.isNotBlank() }, info.releaseDate.takeIf { it.isNotBlank() }).filterNotNull().joinToString("  •  ")
+            b.infoText.text = info.plot.ifBlank { "لا توجد معلومات إضافية" }
+        }
         loadEpisodes()
     }
 
@@ -60,10 +66,11 @@ class SeriesDetailsActivity : BaseFullscreenActivity() {
         list.forEach { ep ->
             val btn = Button(this).apply {
                 text = "E${ep.episodeNumber.toString().padStart(2,'0')}  ${ep.title}"
+                textSize = 10f
                 isAllCaps = false
                 setTextColor(getColor(R.color.adwio_text))
                 setBackgroundResource(R.drawable.bg_focus)
-                setPadding(18,0,18,0)
+                setPadding(10,0,10,0)
                 setOnClickListener {
                     val currentIndex = episodes.indexOfFirst { it.id == ep.id }
                     val next = episodes.getOrNull(currentIndex + 1)
@@ -80,7 +87,7 @@ class SeriesDetailsActivity : BaseFullscreenActivity() {
                     })
                 }
             }
-            b.episodesContainer.addView(btn, android.widget.LinearLayout.LayoutParams(android.widget.LinearLayout.LayoutParams.MATCH_PARENT, 58.dp()).apply { bottomMargin = 8.dp() })
+            b.episodesContainer.addView(btn, android.widget.LinearLayout.LayoutParams(android.widget.LinearLayout.LayoutParams.MATCH_PARENT, 42.dp()).apply { bottomMargin = 4.dp() })
         }
         list.firstOrNull()?.let { if (b.episodesContainer.childCount > 0) b.episodesContainer.getChildAt(0).requestFocus() }
     }

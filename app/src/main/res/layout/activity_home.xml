@@ -1,171 +1,24 @@
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@drawable/bg_gradient">
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:paddingStart="18dp"
-        android:paddingTop="16dp"
-        android:paddingEnd="18dp"
-        android:paddingBottom="18dp">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="44dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <ImageView
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:contentDescription="ADWIO"
-                android:src="@drawable/ic_adwio" />
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="10dp"
-                android:layout_weight="1"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="ADWIO"
-                    android:textColor="@color/adwio_text"
-                    android:textSize="19sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/profileText"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:maxLines="1"
-                    android:text="Professional Player"
-                    android:textColor="@color/adwio_muted"
-                    android:textSize="10sp" />
-            </LinearLayout>
-
-            <ImageButton
-                android:id="@+id/searchButton"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:background="@drawable/bg_card"
-                android:contentDescription="@string/search"
-                android:padding="9dp"
-                android:src="@android:drawable/ic_menu_search"
-                android:tint="@color/adwio_text" />
-
-            <ImageButton
-                android:id="@+id/settingsButton"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_marginStart="7dp"
-                android:background="@drawable/bg_card"
-                android:contentDescription="@string/settings"
-                android:padding="9dp"
-                android:src="@android:drawable/ic_menu_preferences"
-                android:tint="@color/adwio_text" />
-
-            <ImageButton
-                android:id="@+id/profileButton"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_marginStart="7dp"
-                android:background="@drawable/bg_card"
-                android:contentDescription="Profile"
-                android:padding="9dp"
-                android:src="@android:drawable/ic_menu_myplaces"
-                android:tint="@color/adwio_text" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="ADWIO Player"
-                android:textColor="@color/adwio_text"
-                android:textSize="24sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="@string/choose_entertainment"
-                android:textColor="@color/adwio_muted"
-                android:textSize="13sp" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="150dp"
-                android:layout_marginTop="24dp"
-                android:gravity="center"
-                android:orientation="horizontal"
-                android:weightSum="3">
-
-                <Button
-                    android:id="@+id/liveCard"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_marginEnd="8dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_focus"
-                    android:text="LIVE TV
-
-القنوات المباشرة"
-                    android:textAllCaps="false"
-                    android:textColor="@color/adwio_text"
-                    android:textSize="15sp"
-                    android:textStyle="bold" />
-
-                <Button
-                    android:id="@+id/moviesCard"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_marginHorizontal="4dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_card"
-                    android:text="MOVIES
-
-الأفلام"
-                    android:textAllCaps="false"
-                    android:textColor="@color/adwio_text"
-                    android:textSize="15sp"
-                    android:textStyle="bold" />
-
-                <Button
-                    android:id="@+id/seriesCard"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_marginStart="8dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_card"
-                    android:text="SERIES
-
-المسلسلات"
-                    android:textAllCaps="false"
-                    android:textColor="@color/adwio_text"
-                    android:textSize="15sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-        </LinearLayout>
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:text="ADWIO Player"
-            android:textColor="@color/adwio_muted"
-            android:textSize="9sp" />
-    </LinearLayout>
-</FrameLayout>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/bg_gradient">
+<LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:padding="12dp">
+<LinearLayout android:layout_width="match_parent" android:layout_height="34dp" android:gravity="center_vertical" android:orientation="horizontal">
+<ImageView android:layout_width="28dp" android:layout_height="28dp" android:src="@drawable/ic_adwio"/>
+<LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="7dp" android:layout_weight="1" android:orientation="vertical">
+<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="ADWIO" android:textColor="@color/adwio_text" android:textSize="15sp" android:textStyle="bold"/>
+<TextView android:id="@+id/profileText" android:layout_width="wrap_content" android:layout_height="wrap_content" android:maxLines="1" android:textColor="@color/adwio_muted" android:textSize="8sp"/>
+</LinearLayout>
+<ImageButton android:id="@+id/searchButton" android:layout_width="30dp" android:layout_height="30dp" android:background="@android:color/transparent" android:contentDescription="Search" android:padding="7dp" android:src="@android:drawable/ic_menu_search" android:tint="@color/adwio_muted"/>
+<ImageButton android:id="@+id/settingsButton" android:layout_width="30dp" android:layout_height="30dp" android:background="@android:color/transparent" android:contentDescription="Settings" android:padding="7dp" android:src="@android:drawable/ic_menu_preferences" android:tint="@color/adwio_muted"/>
+<ImageButton android:id="@+id/profileButton" android:layout_width="30dp" android:layout_height="30dp" android:background="@android:color/transparent" android:contentDescription="Profile" android:padding="7dp" android:src="@android:drawable/ic_menu_myplaces" android:tint="@color/adwio_muted"/>
+</LinearLayout>
+<LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:gravity="center" android:orientation="vertical">
+<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="اختر ما تريد مشاهدته" android:textColor="@color/adwio_muted" android:textSize="11sp"/>
+<LinearLayout android:layout_width="760dp" android:layout_height="92dp" android:layout_marginTop="10dp" android:orientation="horizontal" android:weightSum="3">
+<LinearLayout android:id="@+id/liveCard" android:layout_width="0dp" android:layout_height="match_parent" android:layout_marginEnd="5dp" android:layout_weight="1" android:background="@drawable/bg_home_card" android:clickable="true" android:focusable="true" android:gravity="center" android:orientation="vertical">
+<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="LIVE TV" android:textColor="@color/adwio_text" android:textSize="15sp" android:textStyle="bold"/><TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="القنوات المباشرة" android:textColor="@color/adwio_muted" android:textSize="9sp"/></LinearLayout>
+<LinearLayout android:id="@+id/moviesCard" android:layout_width="0dp" android:layout_height="match_parent" android:layout_marginHorizontal="3dp" android:layout_weight="1" android:background="@drawable/bg_home_card" android:clickable="true" android:focusable="true" android:gravity="center" android:orientation="vertical">
+<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="MOVIES" android:textColor="@color/adwio_text" android:textSize="15sp" android:textStyle="bold"/><TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="الأفلام" android:textColor="@color/adwio_muted" android:textSize="9sp"/></LinearLayout>
+<LinearLayout android:id="@+id/seriesCard" android:layout_width="0dp" android:layout_height="match_parent" android:layout_marginStart="5dp" android:layout_weight="1" android:background="@drawable/bg_home_card" android:clickable="true" android:focusable="true" android:gravity="center" android:orientation="vertical">
+<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="SERIES" android:textColor="@color/adwio_text" android:textSize="15sp" android:textStyle="bold"/><TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="المسلسلات" android:textColor="@color/adwio_muted" android:textSize="9sp"/></LinearLayout>
+</LinearLayout></LinearLayout>
+<TextView android:layout_width="match_parent" android:layout_height="18dp" android:gravity="center" android:text="ADWIO Player" android:textColor="#665F6875" android:textSize="8sp"/>
+</LinearLayout></FrameLayout>
