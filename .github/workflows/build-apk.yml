@@ -3,16 +3,12 @@ name: Build ADWIO Professional APK
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
+    branches: [main]
     paths:
       - "app/**"
       - "build.gradle.kts"
       - "settings.gradle.kts"
       - "gradle.properties"
-      - "gradle/**"
-      - "gradlew"
-      - "gradlew.bat"
 
 permissions:
   contents: read
@@ -23,7 +19,7 @@ jobs:
     timeout-minutes: 30
 
     steps:
-      - name: Checkout source
+      - name: Checkout FINAL source
         uses: actions/checkout@v4
 
       - name: Set up Java 17
@@ -41,23 +37,18 @@ jobs:
         run: |
           echo "Commit: $GITHUB_SHA"
           git log -1 --oneline
-          grep -E 'versionCode|versionName' app/build.gradle.kts || true
 
       - name: Build debug APK
         run: gradle --no-daemon :app:assembleDebug
 
       - name: Verify APK
-        shell: bash
         run: |
           APK="app/build/outputs/apk/debug/app-debug.apk"
-          test -f "$APK" || {
-            echo "::error::APK was not generated"
-            exit 1
-          }
+          test -f "$APK"
           ls -lh "$APK"
           sha256sum "$APK"
 
-      - name: Upload ADWIO APK
+      - name: Upload ADWIO Professional APK
         uses: actions/upload-artifact@v4
         with:
           name: ADWIO-Professional-debug-${{ github.run_number }}
