@@ -51,5 +51,18 @@ class AppSettings(context: Context) {
         get() = prefs.getString("parental_pin", null)
         set(v) = prefs.edit().putString("parental_pin", v).apply()
 
+    var timeFormat: String
+        get() = prefs.getString("time_format", "system") ?: "system"
+        set(v) = prefs.edit().putString("time_format", v).apply()
+    var playerEngine: String
+        get() = prefs.getString("player_engine", "internal") ?: "internal"
+        set(v) = prefs.edit().putString("player_engine", v).apply()
+    var externalPlayerEnabled: Boolean
+        get() = prefs.getBoolean("external_player", false)
+        set(v) = prefs.edit().putBoolean("external_player", v).apply()
+    var multiScreenEnabled: Boolean
+        get() = prefs.getBoolean("multi_screen", false)
+        set(v) = prefs.edit().putBoolean("multi_screen", v).apply()
+
     fun reset() = prefs.edit().clear().apply()
 }

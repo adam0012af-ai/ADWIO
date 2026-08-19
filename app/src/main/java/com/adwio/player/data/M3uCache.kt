@@ -17,9 +17,12 @@ class M3uCache(private val context: Context) {
             return runCatching { client.parseFile(cache) }.getOrDefault(emptyList())
         }
         val downloaded = runCatching { client.downloadTo(url, cache) }.getOrDefault(false)
-        return if (downloaded && cache.exists()) client.parseFile(cache)
-        else if (cache.exists()) runCatching { client.parseFile(cache) }.getOrDefault(emptyList())
-        else emptyList()
+        val parsed = when {
+            downloaded && cache.exists() -> runCatching { client.parseFile(cache) }.getOrDefault(emptyList())
+            cache.exists() -> runCatching { client.parseFile(cache) }.getOrDefault(emptyList())
+            else -> emptyList()
+        }
+        return if (parsed.isNotEmpty()) parsed else runCatching { client.load(url) }.getOrDefault(emptyList())
     }
 
     fun clear() {

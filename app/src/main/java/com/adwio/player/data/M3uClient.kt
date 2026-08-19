@@ -84,8 +84,8 @@ class M3uClient {
             val logo = attr(meta, "tvg-logo").ifBlank { null }
             val lower = "$group $name $line".lowercase()
             val type = when {
-                "/series/" in lower || "series" in lower || "مسلسل" in lower || "episode" in lower -> MediaType.SERIES
-                "/movie/" in lower || "movie" in lower || "film" in lower || "vod" in lower || "افلام" in lower || "أفلام" in lower || Regex("\\.(mp4|mkv|avi|mov)(\\?|$)").containsMatchIn(lower) -> MediaType.MOVIE
+                "/series/" in lower || "series" in lower || "مسلسل" in lower || "مسلسلات" in lower || "episode" in lower || "s01e" in lower -> MediaType.SERIES
+                "/movie/" in lower || "movie" in lower || "movies" in lower || "film" in lower || "vod" in lower || "افلام" in lower || "أفلام" in lower || Regex("\\.(mp4|mkv|avi|mov|m4v)(\\?|$)").containsMatchIn(lower) -> MediaType.MOVIE
                 else -> MediaType.LIVE
             }
             out += MediaItemModel(sha1("$line|$name").take(16), name, line, logo, group, type, group)

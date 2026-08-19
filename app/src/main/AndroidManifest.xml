@@ -13,7 +13,7 @@
         android:usesCleartextTraffic="true"
         android:theme="@style/Theme.ADWIO"
         android:label="@string/app_name"
-        android:icon="@drawable/ic_adwio"
+        android:icon="@mipmap/ic_launcher"
         android:roundIcon="@drawable/ic_adwio"
         android:banner="@drawable/tv_banner">
 
