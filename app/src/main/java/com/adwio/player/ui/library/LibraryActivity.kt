@@ -26,6 +26,7 @@ import com.adwio.player.ui.home.MediaAdapter
 import com.adwio.player.ui.home.PosterAdapter
 import com.adwio.player.ui.player.PlayerActivity
 import com.adwio.player.ui.player.ChannelNavigator
+import com.adwio.player.ui.player.LiveCatalog
 import com.adwio.player.ui.details.MovieDetailsActivity
 import com.adwio.player.ui.details.SeriesDetailsActivity
 import kotlinx.coroutines.Dispatchers
@@ -98,6 +99,7 @@ class LibraryActivity : BaseFullscreenActivity() {
             }}
             result.onSuccess { (cats, items) ->
                 allItems = items
+                if (type == MediaType.LIVE) LiveCatalog.setData(cats, items, selectedCategory)
                 categoryAdapter.submit(cats)
                 submit(items)
                 b.subtitleText.text = "${items.size} items"
@@ -113,6 +115,7 @@ class LibraryActivity : BaseFullscreenActivity() {
 
     private fun applyCategory(c: CategoryModel) {
         selectedCategory = c.id
+        if (type == MediaType.LIVE) LiveCatalog.selectCategory(c.id)
         val list = if (c.id.isBlank()) allItems else allItems.filter { it.categoryId == c.id }
         submit(list)
         b.subtitleText.text = "${c.name} • ${list.size}"
@@ -190,6 +193,7 @@ class LibraryActivity : BaseFullscreenActivity() {
             })
             MediaType.LIVE -> {
                 recentChannels.add(item)
+                LiveCatalog.setData(LiveCatalog.categories().ifEmpty { listOf(CategoryModel("", "All")) }, allItems, selectedCategory)
                 val visible = if (selectedCategory.isBlank()) allItems else allItems.filter { it.categoryId == selectedCategory }
                 ChannelNavigator.setQueue(visible, item.id)
                 startActivity(Intent(this, PlayerActivity::class.java).apply {

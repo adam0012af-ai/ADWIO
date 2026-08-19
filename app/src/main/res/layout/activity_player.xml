@@ -1,55 +1,172 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/playerRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#000000">
+    android:background="#000000"
+    android:clickable="true"
+    android:focusable="true">
 
     <androidx.media3.ui.PlayerView
         android:id="@+id/playerView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:keepScreenOn="true" />
-
-    <TextView
-        android:id="@+id/channelTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="top|start"
-        android:layout_margin="24dp"
-        android:background="#99000000"
-        android:paddingHorizontal="16dp"
-        android:paddingVertical="10dp"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        android:textStyle="bold" />
+        android:background="#000000"
+        android:keepScreenOn="true"
+        app:use_controller="false" />
 
     <LinearLayout
-        android:id="@+id/liveZappingControls"
-        android:layout_width="wrap_content"
+        android:id="@+id/playerControls"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom|center_horizontal"
-        android:layout_marginBottom="34dp"
+        android:layout_gravity="bottom"
+        android:background="#B0000000"
+        android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:gravity="center"
-        android:background="#B30D0B18"
-        android:padding="8dp"
+        android:paddingStart="12dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="8dp">
+
+        <ImageButton
+            android:id="@+id/backControlButton"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:background="@android:color/transparent"
+            android:contentDescription="Back"
+            android:padding="8dp"
+            android:src="@android:drawable/ic_menu_revert"
+            android:tint="#FFFFFF" />
+
+        <ImageButton
+            android:id="@+id/playPauseButton"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:layout_marginStart="4dp"
+            android:background="@android:color/transparent"
+            android:contentDescription="Play pause"
+            android:padding="8dp"
+            android:src="@android:drawable/ic_media_pause"
+            android:tint="#FFFFFF" />
+
+        <SeekBar
+            android:id="@+id/progressBar"
+            android:layout_width="0dp"
+            android:layout_height="32dp"
+            android:layout_marginHorizontal="8dp"
+            android:layout_weight="1"
+            android:max="1000"
+            android:progress="0" />
+
+        <TextView
+            android:id="@+id/qualityText"
+            android:layout_width="wrap_content"
+            android:layout_height="38dp"
+            android:gravity="center"
+            android:minWidth="54dp"
+            android:paddingHorizontal="6dp"
+            android:text="—"
+            android:textColor="#FFFFFF"
+            android:textSize="11sp" />
+
+        <ImageButton
+            android:id="@+id/audioButton"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:background="@android:color/transparent"
+            android:contentDescription="Audio"
+            android:padding="8dp"
+            android:src="@android:drawable/ic_lock_silent_mode_off"
+            android:tint="#FFFFFF" />
+
+        <ImageButton
+            android:id="@+id/subtitleButton"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:background="@android:color/transparent"
+            android:contentDescription="Subtitles"
+            android:padding="8dp"
+            android:src="@android:drawable/ic_menu_info_details"
+            android:tint="#FFFFFF" />
+
+        <ImageButton
+            android:id="@+id/browseButton"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:background="@android:color/transparent"
+            android:contentDescription="Channels"
+            android:padding="8dp"
+            android:src="@android:drawable/ic_menu_sort_by_size"
+            android:tint="#FFFFFF" />
+
+        <ImageButton
+            android:id="@+id/zoomButton"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:background="@android:color/transparent"
+            android:contentDescription="Zoom"
+            android:padding="8dp"
+            android:src="@android:drawable/ic_menu_view"
+            android:tint="#FFFFFF" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/liveBrowseOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#E6100D18"
+        android:orientation="horizontal"
+        android:padding="16dp"
         android:visibility="gone">
 
-        <Button
-            android:id="@+id/previousChannelButton"
-            android:layout_width="72dp"
-            android:layout_height="48dp"
-            android:text="CH −"
-            android:textColor="#FFFFFF"
-            android:background="@drawable/bg_focus" />
+        <LinearLayout
+            android:layout_width="220dp"
+            android:layout_height="match_parent"
+            android:background="@drawable/bg_card"
+            android:orientation="vertical"
+            android:padding="10dp">
 
-        <Button
-            android:id="@+id/nextChannelButton"
-            android:layout_width="72dp"
-            android:layout_height="48dp"
-            android:layout_marginStart="10dp"
-            android:text="CH +"
-            android:textColor="#FFFFFF"
-            android:background="@drawable/bg_focus" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingBottom="8dp"
+                android:text="الباقات"
+                android:textColor="@color/adwio_text"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/overlayCategoryRecycler"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginStart="12dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_card"
+            android:orientation="vertical"
+            android:padding="10dp">
+
+            <TextView
+                android:id="@+id/overlayChannelHeader"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingBottom="8dp"
+                android:text="القنوات"
+                android:textColor="@color/adwio_text"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/overlayChannelRecycler"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+        </LinearLayout>
     </LinearLayout>
 
     <TextView
@@ -60,9 +177,9 @@
         android:background="#CC120E20"
         android:clickable="true"
         android:focusable="true"
-        android:paddingHorizontal="22dp"
-        android:paddingVertical="14dp"
+        android:paddingHorizontal="20dp"
+        android:paddingVertical="12dp"
         android:textColor="#FFFFFF"
-        android:textSize="15sp"
+        android:textSize="14sp"
         android:visibility="gone" />
 </FrameLayout>

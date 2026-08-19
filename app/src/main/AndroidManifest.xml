@@ -24,6 +24,7 @@
         <activity android:name=".ui.crash.CrashActivity" android:screenOrientation="landscape" android:exported="false" />
         <activity android:name=".ui.favorites.FavoritesActivity" android:screenOrientation="landscape" android:exported="false" />
         <activity android:name=".ui.continuewatching.ContinueWatchingActivity" android:screenOrientation="landscape" android:exported="false" />
+        <activity android:name=".ui.profile.ProfileActivity" android:screenOrientation="landscape" android:exported="false" />
         <activity android:name=".ui.settings.SettingsActivity" android:screenOrientation="landscape" android:exported="false" />
         <activity android:name=".ui.player.PlayerActivity" android:screenOrientation="landscape" android:supportsPictureInPicture="true" android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation" android:exported="false" />
         <activity android:name=".ui.details.MovieDetailsActivity" android:screenOrientation="landscape" android:exported="false" />
