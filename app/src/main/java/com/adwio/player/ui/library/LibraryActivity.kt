@@ -38,6 +38,7 @@ import kotlinx.coroutines.withContext
 class LibraryActivity : BaseFullscreenActivity() {
     companion object {
         private const val RECENTLY_ADDED_ID = "__recent_30__"
+        private const val RECENT_LIVE_ID = "__recent_live__"
         private const val SEARCH_ID = "__search__"
         private const val FAVORITES_ID = "__favorites__"
         const val EXTRA_TYPE = "type"
@@ -125,23 +126,25 @@ class LibraryActivity : BaseFullscreenActivity() {
                 allItems = items
                 val allNamed = cats.map { if (it.id.isBlank()) it.copy(name = "ALL • ${items.size}") else it }
                 val tools = mutableListOf(CategoryModel(SEARCH_ID, getString(com.adwio.player.R.string.search)))
-                if (type != MediaType.LIVE) tools += CategoryModel(RECENTLY_ADDED_ID, getString(com.adwio.player.R.string.recently_added_30))
+                if (type == MediaType.LIVE) {
+                    tools += CategoryModel(RECENT_LIVE_ID, "أضيف حديثًا")
+                } else {
+                    tools += CategoryModel(RECENTLY_ADDED_ID, getString(com.adwio.player.R.string.recently_added_30))
+                }
                 tools += CategoryModel(FAVORITES_ID, getString(com.adwio.player.R.string.favorites))
                 val displayCategories = tools + allNamed
 
                 if (type == MediaType.LIVE) {
-                    val rememberedId = categoryPrefs.getString("last_category_${type.name}", null)
-                    val preferred = allNamed.firstOrNull { it.id.isNotBlank() && it.id == rememberedId }
-                        ?: allNamed.firstOrNull { it.id.isNotBlank() && (it.name.contains("قرآن") || it.name.contains("Quran", true) || it.name.contains("Qur", true)) }
-                        ?: allNamed.firstOrNull { it.id.isNotBlank() }
-                        ?: allNamed.first()
-
-                    selectedCategory = preferred.id
-                    LiveCatalog.setData(allNamed, items, selectedCategory)
+                    selectedCategory = RECENT_LIVE_ID
+                    LiveCatalog.setData(allNamed, items, "")
                     categoryAdapter.submit(displayCategories)
-                    val initial = if (preferred.id.isBlank()) items else items.filter { it.categoryId == preferred.id }
+                    val latest = recentlyAdded(items).take(40)
+                    val initial = if (latest.isNotEmpty()) latest else {
+                        val firstReal = allNamed.firstOrNull { it.id.isNotBlank() }
+                        if (firstReal == null) items.take(40) else items.filter { it.categoryId == firstReal.id }.take(40)
+                    }
                     submit(initial)
-                    b.subtitleText.text = preferred.name
+                    b.subtitleText.text = "أضيف حديثًا"
                 } else {
                     categoryAdapter.submit(displayCategories)
                     selectedCategory = RECENTLY_ADDED_ID
@@ -169,6 +172,7 @@ class LibraryActivity : BaseFullscreenActivity() {
         if (c.id == FAVORITES_ID) { showFavorites(); return }
         val list = when {
             c.id == RECENTLY_ADDED_ID -> recentlyAdded(allItems)
+            c.id == RECENT_LIVE_ID -> recentlyAdded(allItems).take(40)
             c.id.isBlank() -> allItems
             else -> allItems.filter { it.categoryId == c.id }
         }

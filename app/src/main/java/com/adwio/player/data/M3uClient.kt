@@ -14,14 +14,14 @@ import java.util.concurrent.TimeUnit
 class M3uClient {
     private val client = OkHttpClient.Builder()
         .connectTimeout(7, TimeUnit.SECONDS)
-        .readTimeout(25, TimeUnit.SECONDS)
-        .callTimeout(35, TimeUnit.SECONDS)
+        .readTimeout(90, TimeUnit.SECONDS)
+        .callTimeout(120, TimeUnit.SECONDS)
         .followRedirects(true)
         .followSslRedirects(true)
         .build()
 
     fun probe(url: String): Boolean {
-        val request = Request.Builder().url(url).header("User-Agent", "ADWIO-Player/3.7").build()
+        val request = Request.Builder().url(url).header("User-Agent", "ADWIO-Player/3.9").build()
         return runCatching {
             client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) return@use false
@@ -38,7 +38,7 @@ class M3uClient {
     }
 
     fun downloadTo(url: String, destination: File): Boolean {
-        val request = Request.Builder().url(url).header("User-Agent", "ADWIO-Player/3.7").build()
+        val request = Request.Builder().url(url).header("User-Agent", "ADWIO-Player/3.9").build()
         val temp = File(destination.parentFile, destination.name + ".tmp")
         return runCatching {
             client.newCall(request).execute().use { response ->
@@ -53,7 +53,7 @@ class M3uClient {
     }
 
     fun load(url: String): List<MediaItemModel> {
-        val request = Request.Builder().url(url).header("User-Agent", "ADWIO-Player/3.7").build()
+        val request = Request.Builder().url(url).header("User-Agent", "ADWIO-Player/3.9").build()
         return client.newCall(request).execute().use { response ->
             if (!response.isSuccessful) return emptyList()
             val source = response.body?.source() ?: return emptyList()
@@ -84,8 +84,8 @@ class M3uClient {
             val logo = attr(meta, "tvg-logo").ifBlank { null }
             val lower = "$group $name $line".lowercase()
             val type = when {
-                "/series/" in lower || "series" in lower || "مسلسل" in lower || "مسلسلات" in lower || "episode" in lower || "s01e" in lower -> MediaType.SERIES
-                "/movie/" in lower || "movie" in lower || "movies" in lower || "film" in lower || "vod" in lower || "افلام" in lower || "أفلام" in lower || Regex("\\.(mp4|mkv|avi|mov|m4v)(\\?|$)").containsMatchIn(lower) -> MediaType.MOVIE
+                "/series/" in lower || "series" in lower || "مسلسل" in lower || "مسلسلات" in lower || "episode" in lower || Regex("s\\d{1,2}e\\d{1,3}").containsMatchIn(lower) -> MediaType.SERIES
+                "/movie/" in lower || "movie" in lower || "movies" in lower || "film" in lower || "vod" in lower || "افلام" in lower || "أفلام" in lower || "فيلم" in lower || Regex("\\.(mp4|mkv|avi|mov|m4v)(\\?|$)").containsMatchIn(lower) -> MediaType.MOVIE
                 else -> MediaType.LIVE
             }
             out += MediaItemModel(sha1("$line|$name").take(16), name, line, logo, group, type, group)

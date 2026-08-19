@@ -11,8 +11,42 @@
         <item name="android:background">@drawable/bg_focus</item>
     </style>
 
-<style name="AdwioSettingCard" parent="Widget.MaterialComponents.CardView"><item name="android:layout_width">0dp</item><item name="android:layout_height">0dp</item><item name="android:layout_columnWeight">1</item><item name="android:layout_rowWeight">1</item><item name="android:layout_margin">7dp</item><item name="cardBackgroundColor">#D9141928</item><item name="cardCornerRadius">16dp</item><item name="strokeColor">#3A7187B7</item><item name="strokeWidth">1dp</item><item name="android:clickable">true</item><item name="android:focusable">true</item><item name="android:foreground">?attr/selectableItemBackground</item></style>
-<style name="AdwioSettingCardContent"><item name="android:layout_width">match_parent</item><item name="android:layout_height">match_parent</item><item name="android:gravity">center</item><item name="android:orientation">vertical</item><item name="android:padding">10dp</item></style>
-<style name="AdwioSettingIcon"><item name="android:layout_width">wrap_content</item><item name="android:layout_height">wrap_content</item><item name="android:textColor">@color/adwio_cyan</item><item name="android:textSize">29sp</item><item name="android:textStyle">bold</item></style>
-<style name="AdwioSettingTitle"><item name="android:layout_width">wrap_content</item><item name="android:layout_height">wrap_content</item><item name="android:layout_marginTop">8dp</item><item name="android:textColor">@color/adwio_text</item><item name="android:textSize">11sp</item><item name="android:textStyle">bold</item><item name="android:gravity">center</item></style>
+<style name="AdwioSettingCard" parent="Widget.MaterialComponents.CardView">
+    <item name="android:layout_width">0dp</item>
+    <item name="android:layout_height">0dp</item>
+    <item name="android:layout_columnWeight">1</item>
+    <item name="android:layout_rowWeight">1</item>
+    <item name="android:layout_margin">4dp</item>
+    <item name="cardBackgroundColor">#D9141928</item>
+    <item name="cardCornerRadius">14dp</item>
+    <item name="strokeColor">#3A7187B7</item>
+    <item name="strokeWidth">1dp</item>
+    <item name="android:clickable">true</item>
+    <item name="android:focusable">true</item>
+    <item name="android:foreground">?attr/selectableItemBackground</item>
+</style>
+<style name="AdwioSettingCardContent">
+    <item name="android:layout_width">match_parent</item>
+    <item name="android:layout_height">match_parent</item>
+    <item name="android:gravity">center</item>
+    <item name="android:orientation">vertical</item>
+    <item name="android:padding">5dp</item>
+</style>
+<style name="AdwioSettingIcon">
+    <item name="android:layout_width">wrap_content</item>
+    <item name="android:layout_height">wrap_content</item>
+    <item name="android:textColor">@color/adwio_cyan</item>
+    <item name="android:textSize">23sp</item>
+    <item name="android:textStyle">bold</item>
+</style>
+<style name="AdwioSettingTitle">
+    <item name="android:layout_width">wrap_content</item>
+    <item name="android:layout_height">wrap_content</item>
+    <item name="android:layout_marginTop">4dp</item>
+    <item name="android:textColor">@color/adwio_text</item>
+    <item name="android:textSize">9.5sp</item>
+    <item name="android:textStyle">bold</item>
+    <item name="android:gravity">center</item>
+    <item name="android:maxLines">2</item>
+</style>
 </resources>

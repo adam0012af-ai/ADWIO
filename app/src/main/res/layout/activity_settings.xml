@@ -1,17 +1,65 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/bg_gradient" android:orientation="vertical" android:padding="12dp">
- <LinearLayout android:layout_width="match_parent" android:layout_height="44dp" android:gravity="center_vertical" android:orientation="horizontal"><ImageButton android:id="@+id/backButton" android:layout_width="36dp" android:layout_height="36dp" android:background="@drawable/bg_top_icon" android:padding="9dp" android:src="@drawable/ic_back" android:contentDescription="Back"/><TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="SETTINGS" android:textColor="@color/adwio_text" android:textSize="20sp" android:textStyle="bold"/><TextView android:layout_width="36dp" android:layout_height="1dp"/></LinearLayout>
- <GridLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="12dp" android:columnCount="4" android:rowCount="3" android:alignmentMode="alignMargins" android:useDefaultMargins="true">
-  <com.google.android.material.card.MaterialCardView android:id="@+id/generalCard" style="@style/AdwioSettingCard"><LinearLayout style="@style/AdwioSettingCardContent"><TextView style="@style/AdwioSettingIcon" android:text="⚙"/><TextView style="@style/AdwioSettingTitle" android:text="General Settings"/></LinearLayout></com.google.android.material.card.MaterialCardView>
-  <com.google.android.material.card.MaterialCardView android:id="@+id/streamFormatCard" style="@style/AdwioSettingCard"><LinearLayout style="@style/AdwioSettingCardContent"><TextView style="@style/AdwioSettingIcon" android:text="▣"/><TextView style="@style/AdwioSettingTitle" android:text="Stream Format"/></LinearLayout></com.google.android.material.card.MaterialCardView>
-  <com.google.android.material.card.MaterialCardView android:id="@+id/timeFormatCard" style="@style/AdwioSettingCard"><LinearLayout style="@style/AdwioSettingCardContent"><TextView style="@style/AdwioSettingIcon" android:text="◷"/><TextView style="@style/AdwioSettingTitle" android:text="Time Format"/></LinearLayout></com.google.android.material.card.MaterialCardView>
-  <com.google.android.material.card.MaterialCardView android:id="@+id/parentalCard" style="@style/AdwioSettingCard"><LinearLayout style="@style/AdwioSettingCardContent"><TextView style="@style/AdwioSettingIcon" android:text="◈"/><TextView style="@style/AdwioSettingTitle" android:text="Parental Control"/></LinearLayout></com.google.android.material.card.MaterialCardView>
-  <com.google.android.material.card.MaterialCardView android:id="@+id/playerSelectionCard" style="@style/AdwioSettingCard"><LinearLayout style="@style/AdwioSettingCardContent"><TextView style="@style/AdwioSettingIcon" android:text="▷"/><TextView style="@style/AdwioSettingTitle" android:text="Player Selection"/></LinearLayout></com.google.android.material.card.MaterialCardView>
-  <com.google.android.material.card.MaterialCardView android:id="@+id/playerSettingsCard" style="@style/AdwioSettingCard"><LinearLayout style="@style/AdwioSettingCardContent"><TextView style="@style/AdwioSettingIcon" android:text="◉"/><TextView style="@style/AdwioSettingTitle" android:text="Player Settings"/></LinearLayout></com.google.android.material.card.MaterialCardView>
-  <com.google.android.material.card.MaterialCardView android:id="@+id/externalPlayerCard" style="@style/AdwioSettingCard"><LinearLayout style="@style/AdwioSettingCardContent"><TextView style="@style/AdwioSettingIcon" android:text="↗"/><TextView style="@style/AdwioSettingTitle" android:text="External Player"/></LinearLayout></com.google.android.material.card.MaterialCardView>
-  <com.google.android.material.card.MaterialCardView android:id="@+id/multiscreenCard" style="@style/AdwioSettingCard"><LinearLayout style="@style/AdwioSettingCardContent"><TextView style="@style/AdwioSettingIcon" android:text="▦"/><TextView style="@style/AdwioSettingTitle" android:text="Multi-Screen"/></LinearLayout></com.google.android.material.card.MaterialCardView>
-  <com.google.android.material.card.MaterialCardView android:id="@+id/speedTestCard" style="@style/AdwioSettingCard"><LinearLayout style="@style/AdwioSettingCardContent"><TextView style="@style/AdwioSettingIcon" android:text="◔"/><TextView style="@style/AdwioSettingTitle" android:text="Speed Test"/></LinearLayout></com.google.android.material.card.MaterialCardView>
-  <com.google.android.material.card.MaterialCardView android:id="@+id/storageCard" style="@style/AdwioSettingCard"><LinearLayout style="@style/AdwioSettingCardContent"><TextView style="@style/AdwioSettingIcon" android:text="⌫"/><TextView style="@style/AdwioSettingTitle" android:text="Storage &amp; Cache"/></LinearLayout></com.google.android.material.card.MaterialCardView>
-  <com.google.android.material.card.MaterialCardView android:id="@+id/aboutCard" style="@style/AdwioSettingCard"><LinearLayout style="@style/AdwioSettingCardContent"><TextView style="@style/AdwioSettingIcon" android:text="ⓘ"/><TextView style="@style/AdwioSettingTitle" android:text="About"/></LinearLayout></com.google.android.material.card.MaterialCardView>
-  <com.google.android.material.card.MaterialCardView android:id="@+id/resetCard" style="@style/AdwioSettingCard"><LinearLayout style="@style/AdwioSettingCardContent"><TextView style="@style/AdwioSettingIcon" android:text="↻"/><TextView style="@style/AdwioSettingTitle" android:text="Reset Settings"/></LinearLayout></com.google.android.material.card.MaterialCardView>
- </GridLayout>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_gradient"
+    android:orientation="vertical"
+    android:paddingStart="14dp"
+    android:paddingTop="8dp"
+    android:paddingEnd="14dp"
+    android:paddingBottom="8dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageButton
+            android:id="@+id/backButton"
+            android:layout_width="34dp"
+            android:layout_height="34dp"
+            android:background="@drawable/bg_top_icon"
+            android:contentDescription="Back"
+            android:padding="8dp"
+            android:src="@drawable/ic_back"/>
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="SETTINGS"
+            android:textColor="@color/adwio_text"
+            android:textSize="18sp"
+            android:textStyle="bold"/>
+
+        <TextView android:layout_width="34dp" android:layout_height="1dp"/>
+    </LinearLayout>
+
+    <GridLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="6dp"
+        android:columnCount="4"
+        android:rowCount="3"
+        android:alignmentMode="alignMargins"
+        android:useDefaultMargins="false">
+
+        <com.google.android.material.card.MaterialCardView android:id="@+id/generalCard" style="@style/AdwioSettingCard"><LinearLayout style="@style/AdwioSettingCardContent"><TextView style="@style/AdwioSettingIcon" android:text="⚙"/><TextView style="@style/AdwioSettingTitle" android:text="General Settings"/></LinearLayout></com.google.android.material.card.MaterialCardView>
+        <com.google.android.material.card.MaterialCardView android:id="@+id/streamFormatCard" style="@style/AdwioSettingCard"><LinearLayout style="@style/AdwioSettingCardContent"><TextView style="@style/AdwioSettingIcon" android:text="▣"/><TextView style="@style/AdwioSettingTitle" android:text="Stream Format"/></LinearLayout></com.google.android.material.card.MaterialCardView>
+        <com.google.android.material.card.MaterialCardView android:id="@+id/timeFormatCard" style="@style/AdwioSettingCard"><LinearLayout style="@style/AdwioSettingCardContent"><TextView style="@style/AdwioSettingIcon" android:text="◷"/><TextView style="@style/AdwioSettingTitle" android:text="Time Format"/></LinearLayout></com.google.android.material.card.MaterialCardView>
+        <com.google.android.material.card.MaterialCardView android:id="@+id/parentalCard" style="@style/AdwioSettingCard"><LinearLayout style="@style/AdwioSettingCardContent"><TextView style="@style/AdwioSettingIcon" android:text="◈"/><TextView style="@style/AdwioSettingTitle" android:text="Parental Control"/></LinearLayout></com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView android:id="@+id/playerSelectionCard" style="@style/AdwioSettingCard"><LinearLayout style="@style/AdwioSettingCardContent"><TextView style="@style/AdwioSettingIcon" android:text="▷"/><TextView style="@style/AdwioSettingTitle" android:text="Player Selection"/></LinearLayout></com.google.android.material.card.MaterialCardView>
+        <com.google.android.material.card.MaterialCardView android:id="@+id/playerSettingsCard" style="@style/AdwioSettingCard"><LinearLayout style="@style/AdwioSettingCardContent"><TextView style="@style/AdwioSettingIcon" android:text="◉"/><TextView style="@style/AdwioSettingTitle" android:text="Player Settings"/></LinearLayout></com.google.android.material.card.MaterialCardView>
+        <com.google.android.material.card.MaterialCardView android:id="@+id/externalPlayerCard" style="@style/AdwioSettingCard"><LinearLayout style="@style/AdwioSettingCardContent"><TextView style="@style/AdwioSettingIcon" android:text="↗"/><TextView style="@style/AdwioSettingTitle" android:text="External Player"/></LinearLayout></com.google.android.material.card.MaterialCardView>
+        <com.google.android.material.card.MaterialCardView android:id="@+id/multiscreenCard" style="@style/AdwioSettingCard"><LinearLayout style="@style/AdwioSettingCardContent"><TextView style="@style/AdwioSettingIcon" android:text="▦"/><TextView style="@style/AdwioSettingTitle" android:text="Multi-Screen"/></LinearLayout></com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView android:id="@+id/speedTestCard" style="@style/AdwioSettingCard"><LinearLayout style="@style/AdwioSettingCardContent"><TextView style="@style/AdwioSettingIcon" android:text="◔"/><TextView style="@style/AdwioSettingTitle" android:text="Speed Test"/></LinearLayout></com.google.android.material.card.MaterialCardView>
+        <com.google.android.material.card.MaterialCardView android:id="@+id/storageCard" style="@style/AdwioSettingCard"><LinearLayout style="@style/AdwioSettingCardContent"><TextView style="@style/AdwioSettingIcon" android:text="⌫"/><TextView style="@style/AdwioSettingTitle" android:text="Storage &amp; Cache"/></LinearLayout></com.google.android.material.card.MaterialCardView>
+        <com.google.android.material.card.MaterialCardView android:id="@+id/aboutCard" style="@style/AdwioSettingCard"><LinearLayout style="@style/AdwioSettingCardContent"><TextView style="@style/AdwioSettingIcon" android:text="ⓘ"/><TextView style="@style/AdwioSettingTitle" android:text="About"/></LinearLayout></com.google.android.material.card.MaterialCardView>
+        <com.google.android.material.card.MaterialCardView android:id="@+id/resetCard" style="@style/AdwioSettingCard"><LinearLayout style="@style/AdwioSettingCardContent"><TextView style="@style/AdwioSettingIcon" android:text="↻"/><TextView style="@style/AdwioSettingTitle" android:text="Reset Settings"/></LinearLayout></com.google.android.material.card.MaterialCardView>
+    </GridLayout>
 </LinearLayout>
