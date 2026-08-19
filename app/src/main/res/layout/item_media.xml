@@ -1,17 +1,17 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="72dp"
-    android:layout_marginBottom="7dp"
+    android:layout_height="54dp"
+    android:layout_marginBottom="4dp"
     android:orientation="horizontal"
     android:gravity="center_vertical"
-    android:padding="9dp"
+    android:padding="6dp"
     android:background="@drawable/bg_focus"
     android:focusable="true">
 
     <ImageView
         android:id="@+id/logoImage"
-        android:layout_width="52dp"
-        android:layout_height="52dp"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
         android:scaleType="centerInside"
         android:src="@drawable/ic_adwio"/>
 
@@ -27,7 +27,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textColor="@color/adwio_text"
-            android:textSize="15sp"
+            android:textSize="13sp"
             android:textStyle="bold"
             android:maxLines="1"/>
 
@@ -47,6 +47,6 @@
         android:layout_height="38dp"
         android:gravity="center"
         android:text="☆"
-        android:textSize="23sp"
+        android:textSize="18sp"
         android:textColor="@color/adwio_cyan"/>
 </LinearLayout>

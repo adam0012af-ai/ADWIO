@@ -10,8 +10,8 @@ android {
         applicationId = "com.adwio.player"
         minSdk = 23
         targetSdk = 36
-        versionCode = 7
-        versionName = "3.1.0"
+        versionCode = 8
+        versionName = "3.2.0"
         buildConfigField("String", "APP_NAME", "\"ADWIO Player\"")
     }
 

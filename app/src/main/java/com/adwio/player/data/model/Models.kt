@@ -28,7 +28,8 @@ data class MediaItemModel(
     val logoUrl: String? = null,
     val categoryId: String? = null,
     val type: MediaType,
-    val meta: String? = null
+    val meta: String? = null,
+    val addedAt: Long = 0L
 )
 
 data class EpgItemModel(

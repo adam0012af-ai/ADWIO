@@ -82,7 +82,10 @@ class XtreamClient {
                 logoUrl = row["cover"]?.toString()?.takeIf { it.isNotBlank() },
                 categoryId = numberString(row["category_id"]),
                 type = MediaType.SERIES,
-                meta = row["rating"]?.toString()
+                meta = row["rating"]?.toString(),
+                addedAt = numberString(row["last_modified"])?.toLongOrNull()
+                    ?: numberString(row["added"])?.toLongOrNull()
+                    ?: 0L
             )
         }
     }
@@ -129,7 +132,10 @@ class XtreamClient {
                 logoUrl = row["stream_icon"]?.toString()?.takeIf { it.isNotBlank() },
                 categoryId = numberString(row["category_id"]),
                 type = type,
-                meta = row["rating"]?.toString()
+                meta = row["rating"]?.toString(),
+                addedAt = numberString(row["added"])?.toLongOrNull()
+                    ?: numberString(row["last_modified"])?.toLongOrNull()
+                    ?: 0L
             )
         }
     }
