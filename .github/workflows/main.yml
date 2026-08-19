@@ -29,13 +29,13 @@ jobs:
           mkdir -p "$TMP_DIR"
 
           unzip -q ADWIO_Professional_3.8_FULL.zip -d "$TMP_DIR"
-
           test -d "$TMP_DIR/ADWIO-main/app"
 
-          rsync -a --delete \
+          # Apply project files but NEVER modify GitHub workflow files.
+          rsync -a \
             --exclude='.git/' \
+            --exclude='.github/workflows/' \
             --exclude='ADWIO_Professional_3.8_FULL.zip' \
-            --exclude='.github/workflows/apply-adwio-3.8.yml' \
             "$TMP_DIR/ADWIO-main/" ./
 
       - name: Verify applied version
@@ -45,7 +45,7 @@ jobs:
           grep -q 'versionCode = 15' app/build.gradle.kts
           grep -q 'versionName = "3.8.0"' app/build.gradle.kts
 
-      - name: Commit and push
+      - name: Commit and push project files only
         shell: bash
         run: |
           set -euo pipefail
@@ -53,10 +53,11 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add -A
+          # Explicitly stage only project content, never .github/workflows.
+          git add app control-panel docs README.md RELEASE_NOTES_3.8.md build.gradle.kts gradle.properties settings.gradle.kts 2>/dev/null || true
 
           if git diff --cached --quiet; then
-            echo "No changes to commit."
+            echo "No project changes to commit."
             exit 0
           fi
 
