@@ -17,8 +17,10 @@ class SettingsActivity : BaseFullscreenActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         b = ActivitySettingsBinding.inflate(layoutInflater)
         setContentView(b.root)
+
         settings = AppSettings(this)
 
         b.autoplaySwitch.isChecked = settings.autoplayLastChannel
@@ -28,23 +30,41 @@ class SettingsActivity : BaseFullscreenActivity() {
         b.pipSwitch.isChecked = settings.pictureInPicture
         b.autoNextSwitch.isChecked = settings.autoNextEpisode
 
-        b.autoplaySwitch.setOnCheckedChangeListener { _, v -> settings.autoplayLastChannel = v }
-        b.rememberSwitch.setOnCheckedChangeListener { _, v -> settings.rememberPosition = v }
-        b.refreshSwitch.setOnCheckedChangeListener { _, v -> settings.autoRefresh = v }
-        b.backgroundSwitch.setOnCheckedChangeListener { _, v -> settings.backgroundPlayback = v }
-        b.pipSwitch.setOnCheckedChangeListener { _, v -> settings.pictureInPicture = v }
-        b.autoNextSwitch.setOnCheckedChangeListener { _, v -> settings.autoNextEpisode = v }
+        b.autoplaySwitch.setOnCheckedChangeListener { _, value ->
+            settings.autoplayLastChannel = value
+        }
+
+        b.rememberSwitch.setOnCheckedChangeListener { _, value ->
+            settings.rememberPosition = value
+        }
+
+        b.refreshSwitch.setOnCheckedChangeListener { _, value ->
+            settings.autoRefresh = value
+        }
+
+        b.backgroundSwitch.setOnCheckedChangeListener { _, value ->
+            settings.backgroundPlayback = value
+        }
+
+        b.pipSwitch.setOnCheckedChangeListener { _, value ->
+            settings.pictureInPicture = value
+        }
+
+        b.autoNextSwitch.setOnCheckedChangeListener { _, value ->
+            settings.autoNextEpisode = value
+        }
 
         updateButtons()
 
         b.bufferButton.setOnClickListener {
-            val values = arrayOf("Small", "Normal", "Large")
-            val keys = arrayOf("small", "normal", "large")
-            val selected = keys.indexOf(settings.bufferMode).coerceAtLeast(1)
+            val labels = arrayOf("Small", "Normal", "Large")
+            val values = arrayOf("small", "normal", "large")
+            val selected = values.indexOf(settings.bufferMode).coerceAtLeast(1)
+
             AlertDialog.Builder(this)
                 .setTitle("Buffer mode")
-                .setSingleChoiceItems(values, selected) { dialog, which ->
-                    settings.bufferMode = keys[which]
+                .setSingleChoiceItems(labels, selected) { dialog, which ->
+                    settings.bufferMode = values[which]
                     updateButtons()
                     dialog.dismiss()
                 }
@@ -52,49 +72,94 @@ class SettingsActivity : BaseFullscreenActivity() {
         }
 
         b.aspectButton.setOnClickListener {
-            val values = arrayOf("Fit", "Fill", "Zoom")
-            val keys = arrayOf("fit", "fill", "zoom")
-            val selected = keys.indexOf(settings.aspectMode).coerceAtLeast(0)
+            val labels = arrayOf("Fit", "Fill", "Zoom")
+            val values = arrayOf("fit", "fill", "zoom")
+            val selected = values.indexOf(settings.aspectMode).coerceAtLeast(0)
+
             AlertDialog.Builder(this)
                 .setTitle("Aspect ratio")
-                .setSingleChoiceItems(values, selected) { dialog, which ->
-                    settings.aspectMode = keys[which]
+                .setSingleChoiceItems(labels, selected) { dialog, which ->
+                    settings.aspectMode = values[which]
                     updateButtons()
                     dialog.dismiss()
                 }
                 .show()
         }
 
-
         b.languageButton.setOnClickListener {
-            val values = arrayOf("System", "English", "العربية")
-            val keys = arrayOf("system", "en", "ar")
-            AlertDialog.Builder(this).setTitle("Language").setItems(values) { _, which ->
-                settings.language = keys[which]
-                val locales = if (keys[which] == "system") LocaleListCompat.getEmptyLocaleList() else LocaleListCompat.forLanguageTags(keys[which])
-                AppCompatDelegate.setApplicationLocales(locales)
-                updateButtons()
-            }.show()
+            val labels = arrayOf("System", "English", "العربية")
+            val values = arrayOf("system", "en", "ar")
+            val selected = values.indexOf(settings.language).coerceAtLeast(0)
+
+            AlertDialog.Builder(this)
+                .setTitle("Language")
+                .setSingleChoiceItems(labels, selected) { dialog, which ->
+                    val selectedLanguage = values[which]
+                    settings.language = selectedLanguage
+
+                    val locales = if (selectedLanguage == "system") {
+                        LocaleListCompat.getEmptyLocaleList()
+                    } else {
+                        LocaleListCompat.forLanguageTags(selectedLanguage)
+                    }
+
+                    AppCompatDelegate.setApplicationLocales(locales)
+                    updateButtons()
+                    dialog.dismiss()
+                }
+                .show()
         }
+
         b.gridButton.setOnClickListener {
-            val values = arrayOf("Auto", "6 posters", "8 posters")
-            val keys = arrayOf("auto", "6", "8")
-            AlertDialog.Builder(this).setTitle("Grid density").setItems(values) { _, which -> settings.gridDensity = keys[which]; updateButtons() }.show()
+            val labels = arrayOf("Auto", "6 posters", "8 posters")
+            val values = arrayOf("auto", "6", "8")
+            val selected = values.indexOf(settings.gridDensity).coerceAtLeast(0)
+
+            AlertDialog.Builder(this)
+                .setTitle("Grid density")
+                .setSingleChoiceItems(labels, selected) { dialog, which ->
+                    settings.gridDensity = values[which]
+                    updateButtons()
+                    dialog.dismiss()
+                }
+                .show()
         }
+
         b.startupButton.setOnClickListener {
-            val values = arrayOf("Home", "Live TV", "Movies", "Series")
-            val keys = arrayOf("home", "live", "movies", "series")
-            AlertDialog.Builder(this).setTitle("Startup screen").setItems(values) { _, which -> settings.startupScreen = keys[which]; updateButtons() }.show()
+            val labels = arrayOf("Home", "Live TV", "Movies", "Series")
+            val values = arrayOf("home", "live", "movies", "series")
+            val selected = values.indexOf(settings.startupScreen).coerceAtLeast(0)
+
+            AlertDialog.Builder(this)
+                .setTitle("Startup screen")
+                .setSingleChoiceItems(labels, selected) { dialog, which ->
+                    settings.startupScreen = values[which]
+                    updateButtons()
+                    dialog.dismiss()
+                }
+                .show()
         }
 
         b.clearCacheButton.setOnClickListener {
-            cacheDir.deleteRecursively()
-            Toast.makeText(this, "Cache cleared", Toast.LENGTH_SHORT).show()
+            runCatching {
+                cacheDir.deleteRecursively()
+            }
+
+            Toast.makeText(
+                this,
+                "Cache cleared",
+                Toast.LENGTH_SHORT
+            ).show()
         }
 
         b.clearHistoryButton.setOnClickListener {
-            PlaybackHistory(this).clear()
-            Toast.makeText(this, "Watch history cleared", Toast.LENGTH_SHORT).show()
+            PlaybackHistory(this).clearCurrentPlaylist()
+
+            Toast.makeText(
+                this,
+                "Watch history cleared",
+                Toast.LENGTH_SHORT
+            ).show()
         }
 
         b.resetSettingsButton.setOnClickListener {
