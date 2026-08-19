@@ -13,117 +13,81 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Verify final package exists
+      - name: Verify final ZIP
         run: |
           test -f ADWIO_Professional_FINAL.zip || {
-            echo "ADWIO_Professional_FINAL.zip not found in repository root"
+            echo "::error::ADWIO_Professional_FINAL.zip not found in repository root"
             exit 1
           }
 
-      - name: Prepare extraction
+      - name: Extract final ZIP
         run: |
-          rm -rf _adwio_final_unpack
-          mkdir -p _adwio_final_unpack
-          unzip -q -o ADWIO_Professional_FINAL.zip -d _adwio_final_unpack
+          rm -rf /tmp/adwio_final
+          mkdir -p /tmp/adwio_final
+          unzip -q -o ADWIO_Professional_FINAL.zip -d /tmp/adwio_final
 
-      - name: Detect package root
-        id: pkg
+      - name: Detect and validate project root
+        id: project
         shell: bash
         run: |
-          ROOT="_adwio_final_unpack"
+          ROOT="/tmp/adwio_final"
 
-          # If ZIP contains exactly one top-level folder and project files are inside it,
-          # use that folder as the package root.
-          ENTRY_COUNT=$(find "$ROOT" -mindepth 1 -maxdepth 1 | wc -l | tr -d ' ')
-          if [ "$ENTRY_COUNT" = "1" ]; then
-            ONLY_ENTRY=$(find "$ROOT" -mindepth 1 -maxdepth 1 | head -n 1)
-            if [ -d "$ONLY_ENTRY" ] && \
-               { [ -d "$ONLY_ENTRY/app" ] || [ -f "$ONLY_ENTRY/settings.gradle.kts" ]; }; then
-              ROOT="$ONLY_ENTRY"
+          if [ ! -d "$ROOT/app" ]; then
+            CANDIDATE="$(find "$ROOT" -mindepth 1 -maxdepth 2 -type f -name settings.gradle.kts -printf '%h\n' | head -n 1)"
+            if [ -n "$CANDIDATE" ]; then
+              ROOT="$CANDIDATE"
             fi
           fi
 
+          test -d "$ROOT/app" || { echo "::error::app/ missing from ZIP"; exit 1; }
+          test -f "$ROOT/settings.gradle.kts" || { echo "::error::settings.gradle.kts missing"; exit 1; }
+          test -f "$ROOT/build.gradle.kts" || { echo "::error::build.gradle.kts missing"; exit 1; }
+
           echo "root=$ROOT" >> "$GITHUB_OUTPUT"
-          echo "Detected package root: $ROOT"
+          echo "Using project root: $ROOT"
 
-      - name: Validate extracted project
+      - name: Apply FINAL project files
         shell: bash
         run: |
-          ROOT="${{ steps.pkg.outputs.root }}"
+          ROOT="${{ steps.project.outputs.root }}"
 
-          test -d "$ROOT/app" || {
-            echo "Package is missing app/"
-            exit 1
-          }
-
-          test -f "$ROOT/settings.gradle.kts" || {
-            echo "Package is missing settings.gradle.kts"
-            exit 1
-          }
-
-          test -f "$ROOT/build.gradle.kts" || {
-            echo "Package is missing build.gradle.kts"
-            exit 1
-          }
-
-      - name: Apply Professional project
-        shell: bash
-        run: |
-          ROOT="${{ steps.pkg.outputs.root }}"
-
-          # Remove current project areas that the final package owns.
-          rm -rf app docs
-          rm -f build.gradle.kts settings.gradle.kts gradle.properties README.md .gitignore
-
-          # Keep .git and GitHub workflow directory intact while copying project files.
-          rsync -a \
+          # Workflows are intentionally excluded: GITHUB_TOKEN must not rewrite them.
+          rsync -a --delete \
             --exclude='.git/' \
-            --exclude='.github/workflows/' \
+            --exclude='.github/' \
             --exclude='ADWIO_Professional_FINAL.zip' \
             "$ROOT"/ ./
 
-          # If the final package contains workflows, copy them too.
-          if [ -d "$ROOT/.github/workflows" ]; then
-            mkdir -p .github/workflows
-            find .github/workflows -maxdepth 1 -type f -delete
-            cp -a "$ROOT/.github/workflows/." .github/workflows/
-          fi
+          # Remove obsolete archives if they still exist.
+          rm -f ADWIO_Update_V3.zip ADWIO_Update_V4.zip ADWIO_Update_V5.zip
 
-      - name: Clean old update archives
+          # Keep the uploaded FINAL archive in the repository.
+          git checkout -- ADWIO_Professional_FINAL.zip 2>/dev/null || true
+
+      - name: Verify Professional files were applied
         shell: bash
         run: |
-          rm -f ADWIO_Update_V3.zip
-          rm -f ADWIO_Update_V4.zip
-          rm -f ADWIO_Update_V5.zip
+          echo "Checking applied source..."
+          test -d app/src/main || exit 1
+          find app/src/main -type f | sort | head -n 100
+          echo "Changed files:"
+          git status --short
 
-      - name: Preserve final package temporarily
-        run: |
-          echo "Final package will remain until this workflow commits successfully."
-
-      - name: Show applied tree
-        run: |
-          echo "Top-level project files:"
-          find . -maxdepth 2 \
-            -not -path './.git/*' \
-            -not -path './_adwio_final_unpack/*' \
-            | sort | head -n 250
-
-      - name: Remove extraction folder
-        run: rm -rf _adwio_final_unpack
-
-      - name: Commit applied Professional update
+      - name: Commit and push FINAL source
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add -A
+          git add -A -- . ':(exclude).github/**'
 
           if git diff --cached --quiet; then
-            echo "No project changes to commit."
+            echo "No source changes detected."
             exit 0
           fi
 
-          git commit -m "Apply ADWIO Professional FINAL"
-          git push
+          git commit -m "Apply ADWIO Professional FINAL source"
+          git push origin HEAD:main
