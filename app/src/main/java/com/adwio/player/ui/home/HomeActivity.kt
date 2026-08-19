@@ -55,7 +55,6 @@ class HomeActivity : BaseFullscreenActivity() {
         b.refreshButton.setOnClickListener { refreshContent() }
 
         b.liveCard.requestFocus()
-        loadCounts(forceRefresh = false)
     }
 
     override fun onStart() {
@@ -96,36 +95,18 @@ class HomeActivity : BaseFullscreenActivity() {
             withContext(Dispatchers.IO) {
                 if (session.server.id == "m3u") {
                     M3uCache(this@HomeActivity).clear()
-                    runCatching { M3uCache(this@HomeActivity).load(session.server.baseUrl, forceRefresh = true) }
+                    runCatching { M3uCache(this@HomeActivity).warm(session.server.baseUrl) }
+                } else {
+                    runCatching {
+                        val api = XtreamClient()
+                        api.loadCategories(session, MediaType.LIVE)
+                        api.loadCategories(session, MediaType.MOVIE)
+                        api.loadCategories(session, MediaType.SERIES)
+                    }
                 }
             }
-            loadCounts(forceRefresh = true)
             b.refreshButton.isEnabled = true
             Toast.makeText(this@HomeActivity, "Content updated", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    private fun loadCounts(forceRefresh: Boolean) {
-        val session = SessionStore(this).load() ?: return
-        lifecycleScope.launch {
-            val counts = withContext(Dispatchers.IO) {
-                runCatching {
-                    if (session.server.id == "m3u") {
-                        val all = M3uCache(this@HomeActivity).load(session.server.baseUrl, forceRefresh)
-                        Triple(
-                            all.count { it.type == MediaType.LIVE },
-                            all.count { it.type == MediaType.MOVIE },
-                            all.count { it.type == MediaType.SERIES }
-                        )
-                    } else {
-                        val api = XtreamClient()
-                        Triple(api.loadLive(session).size, api.loadMovies(session).size, api.loadSeries(session).size)
-                    }
-                }.getOrDefault(Triple(0, 0, 0))
-            }
-            b.liveCountText.text = "${counts.first} قناة"
-            b.moviesCountText.text = "${counts.second} فيلم"
-            b.seriesCountText.text = "${counts.third} مسلسل"
         }
     }
 }

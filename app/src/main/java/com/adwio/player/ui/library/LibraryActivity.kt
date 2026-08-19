@@ -115,7 +115,7 @@ class LibraryActivity : BaseFullscreenActivity() {
         lifecycleScope.launch {
             val result = withContext(Dispatchers.IO) { runCatching {
                 if (session.server.id == "m3u") {
-                    val all = m3uCache.load(session.server.baseUrl)
+                    val all = m3uCache.loadFast(session.server.baseUrl, 700)
                     val items = all.filter { it.type == type }
                     m3u.categories(items, type) to items
                 } else {
@@ -150,7 +150,10 @@ class LibraryActivity : BaseFullscreenActivity() {
                 }
 
                 allItems = items
-                val allNamed = cats.map { if (it.id.isBlank()) it.copy(name = "ALL • ${items.size}") else it }
+                val totalLabel = java.text.NumberFormat.getIntegerInstance().format(items.size)
+                val allNamed = cats.map {
+                    if (it.id.isBlank()) it.copy(name = "ALL ($totalLabel)") else it
+                }
                 val tools = mutableListOf(CategoryModel(SEARCH_ID, getString(com.adwio.player.R.string.search)))
                 if (type == MediaType.LIVE) {
                     tools += CategoryModel(RECENT_LIVE_ID, "أضيف حديثًا")
@@ -178,6 +181,12 @@ class LibraryActivity : BaseFullscreenActivity() {
                     submit(recent)
                     b.subtitleText.text = getString(com.adwio.player.R.string.recently_added)
                 }
+                if (session.server.id == "m3u" && !m3uCache.hasCache(session.server.baseUrl)) {
+                    lifecycleScope.launch(Dispatchers.IO) {
+                        runCatching { m3uCache.warm(session.server.baseUrl) }
+                    }
+                }
+
                 if (intent.getBooleanExtra(EXTRA_FAVORITES, false)) showFavorites()
                 else if (intent.getBooleanExtra(EXTRA_SEARCH, false)) showSearch()
             }.onFailure {

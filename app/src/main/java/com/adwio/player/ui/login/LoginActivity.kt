@@ -6,6 +6,7 @@ import android.text.InputType
 import android.view.View
 import androidx.lifecycle.lifecycleScope
 import com.adwio.player.data.M3uClient
+import com.adwio.player.data.M3uCache
 import com.adwio.player.data.PlaylistStore
 import com.adwio.player.data.SessionStore
 import com.adwio.player.data.XtreamClient
@@ -89,10 +90,7 @@ class LoginActivity : BaseFullscreenActivity() {
         setLoading(true)
         lifecycleScope.launch {
             val available = withContext(Dispatchers.IO) {
-                runCatching {
-                    if (!m3u.probe(url)) false
-                    else m3u.load(url).isNotEmpty()
-                }.getOrDefault(false)
+                runCatching { m3u.probe(url) }.getOrDefault(false)
             }
             setLoading(false)
             if (!available) {
@@ -105,6 +103,9 @@ class LoginActivity : BaseFullscreenActivity() {
                 .putString("active_epg", b.epgUrlInput.text?.toString()?.trim().orEmpty())
                 .apply()
             saveAndOpen(name, Session("", "", ServerHost("m3u", host, url), null, "Active"))
+            lifecycleScope.launch(Dispatchers.IO) {
+                runCatching { M3uCache(this@LoginActivity).warm(url) }
+            }
         }
     }
 

@@ -164,7 +164,7 @@
                     android:padding="14dp">
                     <ImageView android:layout_width="60dp" android:layout_height="60dp" android:src="@drawable/ic_live_modern"/>
                     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="11dp" android:text="@string/live_title" android:textColor="@color/adwio_text" android:textSize="19sp" android:textStyle="bold"/>
-                    <TextView android:id="@+id/liveCountText" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:text="…" android:textColor="@color/adwio_cyan" android:textSize="9sp"/>
+                    <TextView android:id="@+id/liveCountText" android:layout_width="1dp" android:layout_height="1dp" android:visibility="gone"/>
                 </LinearLayout>
             </FrameLayout>
 
@@ -194,7 +194,7 @@
                     android:padding="14dp">
                     <ImageView android:layout_width="60dp" android:layout_height="60dp" android:src="@drawable/ic_movie_modern"/>
                     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="11dp" android:text="@string/movies_title" android:textColor="@color/adwio_text" android:textSize="19sp" android:textStyle="bold"/>
-                    <TextView android:id="@+id/moviesCountText" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:text="…" android:textColor="@color/adwio_magenta" android:textSize="9sp"/>
+                    <TextView android:id="@+id/moviesCountText" android:layout_width="1dp" android:layout_height="1dp" android:visibility="gone"/>
                 </LinearLayout>
             </FrameLayout>
 
@@ -224,7 +224,7 @@
                     android:padding="14dp">
                     <ImageView android:layout_width="60dp" android:layout_height="60dp" android:src="@drawable/ic_series_modern"/>
                     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="11dp" android:text="@string/series_title" android:textColor="@color/adwio_text" android:textSize="19sp" android:textStyle="bold"/>
-                    <TextView android:id="@+id/seriesCountText" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:text="…" android:textColor="@color/adwio_green" android:textSize="9sp"/>
+                    <TextView android:id="@+id/seriesCountText" android:layout_width="1dp" android:layout_height="1dp" android:visibility="gone"/>
                 </LinearLayout>
             </FrameLayout>
         </LinearLayout>
