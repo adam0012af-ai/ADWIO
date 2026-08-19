@@ -1,4 +1,4 @@
-name: Apply ADWIO Professional FINAL
+name: Apply ADWIO Package
 
 on:
   workflow_dispatch:
@@ -7,87 +7,61 @@ permissions:
   contents: write
 
 jobs:
-  apply:
+  unpack:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Verify final ZIP
-        run: |
-          test -f ADWIO_Professional_FINAL.zip || {
-            echo "::error::ADWIO_Professional_FINAL.zip not found in repository root"
-            exit 1
-          }
-
-      - name: Extract final ZIP
-        run: |
-          rm -rf /tmp/adwio_final
-          mkdir -p /tmp/adwio_final
-          unzip -q -o ADWIO_Professional_FINAL.zip -d /tmp/adwio_final
-
-      - name: Detect and validate project root
-        id: project
+      - name: Find ADWIO ZIP
+        id: zip
         shell: bash
         run: |
-          ROOT="/tmp/adwio_final"
+          ZIP=$(find . -maxdepth 1 -type f -name "ADWIO*.zip" | head -n 1)
 
-          if [ ! -d "$ROOT/app" ]; then
-            CANDIDATE="$(find "$ROOT" -mindepth 1 -maxdepth 2 -type f -name settings.gradle.kts -printf '%h\n' | head -n 1)"
-            if [ -n "$CANDIDATE" ]; then
-              ROOT="$CANDIDATE"
-            fi
+          if [ -z "$ZIP" ]; then
+            echo "No ADWIO ZIP found in repository root"
+            exit 1
           fi
 
-          test -d "$ROOT/app" || { echo "::error::app/ missing from ZIP"; exit 1; }
-          test -f "$ROOT/settings.gradle.kts" || { echo "::error::settings.gradle.kts missing"; exit 1; }
-          test -f "$ROOT/build.gradle.kts" || { echo "::error::build.gradle.kts missing"; exit 1; }
+          echo "Found: $ZIP"
+          echo "zip=$ZIP" >> "$GITHUB_OUTPUT"
 
-          echo "root=$ROOT" >> "$GITHUB_OUTPUT"
-          echo "Using project root: $ROOT"
-
-      - name: Apply FINAL project files
+      - name: Extract package
         shell: bash
         run: |
-          ROOT="${{ steps.project.outputs.root }}"
+          rm -rf /tmp/adwio_extract
+          mkdir -p /tmp/adwio_extract
 
-          # Workflows are intentionally excluded: GITHUB_TOKEN must not rewrite them.
-          rsync -a --delete \
+          unzip -o "${{ steps.zip.outputs.zip }}" -d /tmp/adwio_extract
+
+          ROOT=$(find /tmp/adwio_extract -type f -name "settings.gradle.kts" -printf '%h\n' | head -n 1)
+
+          if [ -z "$ROOT" ]; then
+            echo "Android project root not found"
+            find /tmp/adwio_extract -maxdepth 4 -type f | head -100
+            exit 1
+          fi
+
+          echo "Project root: $ROOT"
+
+          rsync -a \
             --exclude='.git/' \
-            --exclude='.github/' \
-            --exclude='ADWIO_Professional_FINAL.zip' \
-            "$ROOT"/ ./
+            --exclude='.github/workflows/' \
+            "$ROOT/" ./
 
-          # Remove obsolete archives if they still exist.
-          rm -f ADWIO_Update_V3.zip ADWIO_Update_V4.zip ADWIO_Update_V5.zip
-
-          # Keep the uploaded FINAL archive in the repository.
-          git checkout -- ADWIO_Professional_FINAL.zip 2>/dev/null || true
-
-      - name: Verify Professional files were applied
-        shell: bash
-        run: |
-          echo "Checking applied source..."
-          test -d app/src/main || exit 1
-          find app/src/main -type f | sort | head -n 100
-          echo "Changed files:"
-          git status --short
-
-      - name: Commit and push FINAL source
+      - name: Commit extracted project
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add -A -- . ':(exclude).github/**'
+          git add -A
 
           if git diff --cached --quiet; then
-            echo "No source changes detected."
-            exit 0
+            echo "No changes to commit"
+          else
+            git commit -m "Apply ADWIO Professional 3.1 package"
+            git push
           fi
-
-          git commit -m "Apply ADWIO Professional FINAL source"
-          git push origin HEAD:main
