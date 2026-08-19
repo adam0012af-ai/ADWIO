@@ -1,4 +1,4 @@
-name: Apply ADWIO Package
+name: Apply ADWIO 3.4 REBUILD
 
 on:
   workflow_dispatch:
@@ -7,61 +7,56 @@ permissions:
   contents: write
 
 jobs:
-  unpack:
+  apply:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Find ADWIO ZIP
-        id: zip
+      - name: Verify ADWIO 3.4 package
+        run: |
+          test -f ADWIO_Professional_3.4_REBUILD.zip || {
+            echo "::error::ADWIO_Professional_3.4_REBUILD.zip not found in repository root"
+            exit 1
+          }
+
+      - name: Extract ADWIO 3.4
         shell: bash
         run: |
-          ZIP=$(find . -maxdepth 1 -type f -name "ADWIO*.zip" | head -n 1)
+          rm -rf /tmp/adwio_34
+          mkdir -p /tmp/adwio_34
+          unzip -q -o ADWIO_Professional_3.4_REBUILD.zip -d /tmp/adwio_34
 
-          if [ -z "$ZIP" ]; then
-            echo "No ADWIO ZIP found in repository root"
-            exit 1
-          fi
-
-          echo "Found: $ZIP"
-          echo "zip=$ZIP" >> "$GITHUB_OUTPUT"
-
-      - name: Extract package
-        shell: bash
-        run: |
-          rm -rf /tmp/adwio_extract
-          mkdir -p /tmp/adwio_extract
-
-          unzip -o "${{ steps.zip.outputs.zip }}" -d /tmp/adwio_extract
-
-          ROOT=$(find /tmp/adwio_extract -type f -name "settings.gradle.kts" -printf '%h\n' | head -n 1)
-
-          if [ -z "$ROOT" ]; then
-            echo "Android project root not found"
-            find /tmp/adwio_extract -maxdepth 4 -type f | head -100
-            exit 1
-          fi
+          ROOT=$(find /tmp/adwio_34 -type f -name settings.gradle.kts -printf '%h\n' | head -n 1)
+          test -n "$ROOT" || { echo "::error::Project root not found"; exit 1; }
 
           echo "Project root: $ROOT"
 
-          rsync -a \
-            --exclude='.git/' \
-            --exclude='.github/workflows/' \
-            "$ROOT/" ./
+          rsync -a --delete             --exclude='.git/'             --exclude='.github/'             --exclude='ADWIO_Professional_3.4_REBUILD.zip'             "$ROOT"/ ./
 
-      - name: Commit extracted project
+          git checkout -- ADWIO_Professional_3.4_REBUILD.zip 2>/dev/null || true
+
+      - name: Verify applied version
+        shell: bash
+        run: |
+          grep -q 'versionCode = 10' app/build.gradle.kts
+          grep -q 'versionName = "3.4.0"' app/build.gradle.kts
+          echo "ADWIO 3.4 source verified."
+          git status --short
+
+      - name: Commit and push
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add -A
+          git add -A -- . ':(exclude).github/**'
 
           if git diff --cached --quiet; then
-            echo "No changes to commit"
-          else
-            git commit -m "Apply ADWIO Professional 3.1 package"
-            git push
+            echo "No source changes detected."
+            exit 0
           fi
+
+          git commit -m "Apply ADWIO Professional 3.4 rebuild"
+          git push origin HEAD:main
