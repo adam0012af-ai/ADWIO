@@ -1,4 +1,4 @@
-name: Apply ADWIO 4.0 PROFESSIONAL
+name: Apply ADWIO 4.1 PROFESSIONAL
 
 on:
   workflow_dispatch:
@@ -9,6 +9,7 @@ permissions:
 jobs:
   apply:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -16,35 +17,43 @@ jobs:
           fetch-depth: 0
 
       - name: Verify package
-        run: test -f ADWIO_Professional_4.0_FULL.zip
+        run: test -f ADWIO_Professional_4.1_FULL.zip
 
       - name: Extract safely
         shell: bash
         run: |
           set -euo pipefail
-          TMP_DIR="${RUNNER_TEMP}/adwio40"
+          TMP_DIR="${RUNNER_TEMP}/adwio41"
           rm -rf "$TMP_DIR"
           mkdir -p "$TMP_DIR"
-          unzip -q ADWIO_Professional_4.0_FULL.zip -d "$TMP_DIR"
+
+          unzip -q ADWIO_Professional_4.1_FULL.zip -d "$TMP_DIR"
           test -d "$TMP_DIR/ADWIO-main/app"
 
-          rsync -a             --exclude='.git/'             --exclude='.github/workflows/'             --exclude='ADWIO_Professional_4.0_FULL.zip'             "$TMP_DIR/ADWIO-main/" ./
+          rsync -a \
+            --exclude='.git/' \
+            --exclude='.github/workflows/' \
+            --exclude='ADWIO_Professional_4.1_FULL.zip' \
+            "$TMP_DIR/ADWIO-main/" ./
 
-      - name: Verify version
+      - name: Verify applied version
         run: |
-          grep -q 'versionCode = 17' app/build.gradle.kts
-          grep -q 'versionName = "4.0.0"' app/build.gradle.kts
+          grep -q 'versionCode = 18' app/build.gradle.kts
+          grep -q 'versionName = "4.1.0"' app/build.gradle.kts
 
-      - name: Commit and push project files
+      - name: Commit and push source
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app control-panel docs README.md RELEASE_NOTES_4.0.md build.gradle.kts gradle.properties settings.gradle.kts 2>/dev/null || true
+
+          git add app control-panel docs README.md RELEASE_NOTES_4.1.md build.gradle.kts gradle.properties settings.gradle.kts 2>/dev/null || true
+
           if git diff --cached --quiet; then
             echo "No changes to commit."
             exit 0
           fi
-          git commit -m "Apply ADWIO Professional 4.0"
+
+          git commit -m "Apply ADWIO Professional 4.1"
           git push
