@@ -14,7 +14,7 @@ import com.adwio.player.ui.BaseFullscreenActivity
 import com.adwio.player.ui.library.GlobalSearchActivity
 import com.adwio.player.ui.library.LibraryActivity
 import com.adwio.player.ui.profile.ProfileActivity
-import com.adwio.player.ui.playlist.PlaylistActivity
+import com.adwio.player.ui.playlist.UsersActivity
 import com.adwio.player.ui.settings.SettingsActivity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -51,7 +51,7 @@ class HomeActivity : BaseFullscreenActivity() {
         b.settingsButton.setOnClickListener { startActivity(Intent(this, SettingsActivity::class.java)) }
         b.searchButton.setOnClickListener { startActivity(Intent(this, GlobalSearchActivity::class.java)) }
         b.userInfoButton.setOnClickListener { startActivity(Intent(this, ProfileActivity::class.java)) }
-        b.switchAccountButton.setOnClickListener { startActivity(Intent(this, PlaylistActivity::class.java)) }
+        b.switchAccountButton.setOnClickListener { startActivity(Intent(this, UsersActivity::class.java)) }
         b.refreshButton.setOnClickListener { refreshContent() }
 
         b.liveCard.requestFocus()

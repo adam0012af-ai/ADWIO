@@ -19,6 +19,15 @@ class M3uCache(private val context: Context) {
         return runCatching { client.loadPartial(url, maxItems) }.getOrDefault(emptyList())
     }
 
+    fun loadForType(url: String, type: com.adwio.player.data.model.MediaType, maxItems: Int = 700): List<MediaItemModel> {
+        val cache = cacheFile(url)
+        if (cache.exists()) {
+            val cached = runCatching { client.parseFile(cache) }.getOrDefault(emptyList())
+            if (cached.isNotEmpty()) return cached.filter { it.type == type }
+        }
+        return runCatching { client.loadForType(url, type, maxItems) }.getOrDefault(emptyList())
+    }
+
     fun warm(url: String): List<MediaItemModel> {
         val cache = cacheFile(url)
         val fresh = cache.exists() &&

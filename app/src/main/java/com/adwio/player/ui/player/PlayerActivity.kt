@@ -56,6 +56,7 @@ class PlayerActivity : BaseFullscreenActivity() {
     private var nextId = ""
     private var controlsVisible = true
     private var dragging = false
+    private var returningToMini = false
     private var resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
 
     private val hideControls = Runnable { setControlsVisible(false) }
@@ -265,13 +266,22 @@ class PlayerActivity : BaseFullscreenActivity() {
         savePosition()
         PlaybackEngine.player?.removeListener(playerListener)
         b.playerView.player = null
-        if (!settings.backgroundPlayback && !inPip) PlaybackEngine.stopAndRelease()
+        if (!returningToMini && !settings.backgroundPlayback && !inPip) {
+            PlaybackEngine.stopAndRelease()
+            stopService(Intent(this, PlaybackService::class.java))
+        }
         super.onStop()
     }
 
     override fun onDestroy() {
         handler.removeCallbacksAndMessages(null)
         b.playerView.player = null
+
+        // Closing the system PiP/background window with X must stop playback completely.
+        if (isFinishing && inPip) {
+            PlaybackEngine.stopAndRelease()
+            stopService(Intent(this, PlaybackService::class.java))
+        }
         super.onDestroy()
     }
 
@@ -283,7 +293,15 @@ class PlayerActivity : BaseFullscreenActivity() {
         if (settings.backgroundPlayback) {
             runCatching { startService(Intent(this, PlaybackService::class.java)) }
         }
-        val player = PlaybackEngine.play(this, settings, url, saved)
+        val player = PlaybackEngine.play(
+            context = this,
+            settings = settings,
+            url = url,
+            title = title,
+            id = mediaId,
+            type = type,
+            startPosition = saved
+        )
         player.removeListener(playerListener)
         player.addListener(playerListener)
         b.playerView.player = player
@@ -499,11 +517,20 @@ class PlayerActivity : BaseFullscreenActivity() {
 
     private fun leavePlayer() {
         savePosition()
+
+        // Back from fullscreen LIVE returns the same shared player to Library mini-player.
+        if (type == MediaType.LIVE) {
+            returningToMini = true
+            finish()
+            return
+        }
+
         if (settings.backgroundPlayback && PlaybackEngine.player?.isPlaying == true) {
             maybeEnterPip()
             if (!inPip) finish()
         } else {
             PlaybackEngine.stopAndRelease()
+            stopService(Intent(this, PlaybackService::class.java))
             finish()
         }
     }

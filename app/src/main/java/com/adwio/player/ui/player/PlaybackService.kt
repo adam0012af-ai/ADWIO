@@ -1,5 +1,6 @@
 package com.adwio.player.ui.player
 
+import android.content.Intent
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
@@ -17,10 +18,15 @@ class PlaybackService : MediaSessionService() {
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = mediaSession
 
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        PlaybackEngine.stopAndRelease()
+        stopSelf()
+        super.onTaskRemoved(rootIntent)
+    }
+
     override fun onDestroy() {
         mediaSession?.release()
         mediaSession = null
-        // Player is intentionally owned by PlaybackEngine so Activity and service share one instance.
         super.onDestroy()
     }
 }

@@ -7,6 +7,7 @@ import android.view.View
 import androidx.lifecycle.lifecycleScope
 import com.adwio.player.data.M3uClient
 import com.adwio.player.data.M3uCache
+import com.adwio.player.data.M3uWarmup
 import com.adwio.player.data.PlaylistStore
 import com.adwio.player.data.SessionStore
 import com.adwio.player.data.XtreamClient
@@ -102,10 +103,8 @@ class LoginActivity : BaseFullscreenActivity() {
                 .putString("active_url", url)
                 .putString("active_epg", b.epgUrlInput.text?.toString()?.trim().orEmpty())
                 .apply()
-            saveAndOpen(name, Session("", "", ServerHost("m3u", host, url), null, "Active"))
-            lifecycleScope.launch(Dispatchers.IO) {
-                runCatching { M3uCache(this@LoginActivity).warm(url) }
-            }
+            M3uWarmup.start(this@LoginActivity, url)
+            saveAndOpen(name, Session("", "", ServerHost("m3u", host, url), null, "Active", displayName = name))
         }
     }
 

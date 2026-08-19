@@ -31,7 +31,7 @@ class M3uClient {
     fun probe(url: String): Boolean {
         val request = Request.Builder()
             .url(url)
-            .header("User-Agent", "ADWIO-Player/4.1")
+            .header("User-Agent", "ADWIO-Player/4.2")
             .header("Range", "bytes=0-65535")
             .build()
 
@@ -54,7 +54,7 @@ class M3uClient {
     fun loadPartial(url: String, maxItems: Int = 600): List<MediaItemModel> {
         val request = Request.Builder()
             .url(url)
-            .header("User-Agent", "ADWIO-Player/4.1")
+            .header("User-Agent", "ADWIO-Player/4.2")
             .build()
 
         return runCatching {
@@ -83,8 +83,51 @@ class M3uClient {
         }.getOrDefault(emptyList())
     }
 
+
+    fun loadForType(url: String, type: MediaType, maxItems: Int = 700): List<MediaItemModel> {
+        val scanClient = OkHttpClient.Builder()
+            .connectTimeout(7, TimeUnit.SECONDS)
+            .readTimeout(35, TimeUnit.SECONDS)
+            .callTimeout(45, TimeUnit.SECONDS)
+            .followRedirects(true)
+            .followSslRedirects(true)
+            .build()
+
+        val request = Request.Builder()
+            .url(url)
+            .header("User-Agent", "ADWIO-Player/4.2")
+            .build()
+
+        return runCatching {
+            scanClient.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) return@use emptyList()
+                val source = response.body?.source() ?: return@use emptyList()
+                val out = ArrayList<MediaItemModel>(maxItems.coerceAtMost(800))
+                var info: String? = null
+                var lines = 0
+
+                while (out.size < maxItems && lines++ < 160000) {
+                    val raw = source.readUtf8Line() ?: break
+                    val line = raw.trim()
+                    if (line.isEmpty()) continue
+                    if (line.startsWith("#EXTINF", true)) {
+                        info = line
+                        continue
+                    }
+                    if (line.startsWith("#")) continue
+
+                    val meta = info ?: continue
+                    info = null
+                    val item = parseEntry(meta, line) ?: continue
+                    if (item.type == type) out += item
+                }
+                out
+            }
+        }.getOrDefault(emptyList())
+    }
+
     fun downloadTo(url: String, destination: File): Boolean {
-        val request = Request.Builder().url(url).header("User-Agent", "ADWIO-Player/4.1").build()
+        val request = Request.Builder().url(url).header("User-Agent", "ADWIO-Player/4.2").build()
         val temp = File(destination.parentFile, destination.name + ".tmp")
         return runCatching {
             client.newCall(request).execute().use { response ->
@@ -102,7 +145,7 @@ class M3uClient {
     }
 
     fun load(url: String): List<MediaItemModel> {
-        val request = Request.Builder().url(url).header("User-Agent", "ADWIO-Player/4.1").build()
+        val request = Request.Builder().url(url).header("User-Agent", "ADWIO-Player/4.2").build()
         return client.newCall(request).execute().use { response ->
             if (!response.isSuccessful) return emptyList()
             val source = response.body?.source() ?: return emptyList()

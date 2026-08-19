@@ -1,107 +1,49 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_gradient"
-    android:gravity="center_horizontal"
-    android:orientation="vertical"
-    android:padding="14dp">
+    android:background="@drawable/bg_gradient">
 
     <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="40dp"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
+        android:layout_width="430dp"
+        android:layout_height="255dp"
+        android:layout_gravity="center"
+        android:background="@drawable/bg_card"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:padding="20dp">
 
         <ImageView
-            android:layout_width="34dp"
-            android:layout_height="34dp"
+            android:layout_width="82dp"
+            android:layout_height="82dp"
             android:src="@drawable/ic_adwio"/>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:text="ADWIO PLAYER"
+            android:layout_marginTop="8dp"
+            android:text="إضافة مستخدم"
             android:textColor="@color/adwio_text"
-            android:textSize="15sp"
+            android:textSize="21sp"
             android:textStyle="bold"/>
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="470dp"
-        android:layout_height="120dp"
-        android:layout_marginTop="8dp"
-        android:background="@drawable/bg_card"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:padding="14dp">
-
-        <ImageView
-            android:layout_width="74dp"
-            android:layout_height="74dp"
-            android:src="@drawable/ic_adwio"/>
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_weight="1"
-            android:orientation="vertical">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="إضافة مستخدم"
-                android:textColor="@color/adwio_text"
-                android:textSize="17sp"
-                android:textStyle="bold"/>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:text="Xtream Codes أو M3U URL"
-                android:textColor="@color/adwio_muted"
-                android:textSize="8.5sp"/>
-
-            <Button
-                android:id="@+id/addPlaylistButton"
-                android:layout_width="190dp"
-                android:layout_height="38dp"
-                android:layout_marginTop="9dp"
-                android:background="@drawable/bg_focus"
-                android:text="+  إضافة مستخدم"
-                android:textAllCaps="false"
-                android:textColor="@color/adwio_text"
-                android:textSize="10sp"
-                android:textStyle="bold"/>
-        </LinearLayout>
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="600dp"
-        android:layout_height="0dp"
-        android:layout_marginTop="10dp"
-        android:layout_weight="1"
-        android:background="@drawable/bg_category_panel"
-        android:orientation="vertical"
-        android:padding="8dp">
 
         <TextView
-            android:layout_width="match_parent"
-            android:layout_height="28dp"
-            android:gravity="center_vertical"
-            android:text="المستخدمون المضافون"
-            android:textColor="@color/adwio_cyan"
-            android:textSize="10sp"
-            android:textStyle="bold"/>
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:text="أضف بياناتك الخاصة للبدء"
+            android:textColor="@color/adwio_muted"
+            android:textSize="9sp"/>
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/playlistRecycler"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:clipToPadding="false"
-            android:paddingBottom="2dp"/>
+        <Button
+            android:id="@+id/addPlaylistButton"
+            android:layout_width="250dp"
+            android:layout_height="44dp"
+            android:layout_marginTop="18dp"
+            android:background="@drawable/bg_focus"
+            android:text="+  إضافة مستخدم"
+            android:textAllCaps="false"
+            android:textColor="@color/adwio_text"
+            android:textSize="12sp"
+            android:textStyle="bold"/>
     </LinearLayout>
-</LinearLayout>
+</FrameLayout>

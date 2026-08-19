@@ -7,8 +7,6 @@ import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Job
-import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.common.MediaItem
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.adwio.player.data.FavoritesStore
@@ -27,11 +25,14 @@ import com.adwio.player.ui.home.CategoryAdapter
 import com.adwio.player.ui.home.MediaAdapter
 import com.adwio.player.ui.home.PosterAdapter
 import com.adwio.player.ui.player.PlayerActivity
+import com.adwio.player.ui.player.PlaybackEngine
 import com.adwio.player.ui.player.ChannelNavigator
 import com.adwio.player.ui.player.LiveCatalog
 import com.adwio.player.ui.details.MovieDetailsActivity
 import com.adwio.player.ui.details.SeriesDetailsActivity
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -57,7 +58,6 @@ class LibraryActivity : BaseFullscreenActivity() {
     private lateinit var posterAdapter: PosterAdapter
     private var allItems: List<MediaItemModel> = emptyList()
     private var selectedCategory = ""
-    private var previewPlayer: ExoPlayer? = null
     private var previewJob: Job? = null
     private var activePreviewLiveId: String? = null
     private val type: MediaType by lazy { runCatching { MediaType.valueOf(intent.getStringExtra(EXTRA_TYPE) ?: "LIVE") }.getOrDefault(MediaType.LIVE) }
@@ -115,26 +115,30 @@ class LibraryActivity : BaseFullscreenActivity() {
         lifecycleScope.launch {
             val result = withContext(Dispatchers.IO) { runCatching {
                 if (session.server.id == "m3u") {
-                    val all = m3uCache.loadFast(session.server.baseUrl, 700)
-                    val items = all.filter { it.type == type }
+                    val items = m3uCache.loadForType(session.server.baseUrl, type, 700)
                     m3u.categories(items, type) to items
                 } else {
-                    var cats = api.loadCategories(session, type)
-                    var items = when(type) {
-                        MediaType.LIVE -> api.loadLive(session)
-                        MediaType.MOVIE -> api.loadMovies(session)
-                        MediaType.SERIES -> api.loadSeries(session)
-                    }
-
-                    if (items.isEmpty()) {
-                        cats = api.loadCategories(session, type)
-                        items = when(type) {
-                            MediaType.LIVE -> api.loadLive(session)
-                            MediaType.MOVIE -> api.loadMovies(session)
-                            MediaType.SERIES -> api.loadSeries(session)
+                    coroutineScope {
+                        val catsDeferred = async { api.loadCategories(session, type) }
+                        val itemsDeferred = async {
+                            when(type) {
+                                MediaType.LIVE -> api.loadLive(session)
+                                MediaType.MOVIE -> api.loadMovies(session)
+                                MediaType.SERIES -> api.loadSeries(session)
+                            }
                         }
+                        var cats = catsDeferred.await()
+                        var items = itemsDeferred.await()
+
+                        if (items.isEmpty()) {
+                            items = when(type) {
+                                MediaType.LIVE -> api.loadLive(session)
+                                MediaType.MOVIE -> api.loadMovies(session)
+                                MediaType.SERIES -> api.loadSeries(session)
+                            }
+                        }
+                        cats to items
                     }
-                    cats to items
                 }
             }}
             result.onSuccess { (cats, items) ->
@@ -150,9 +154,12 @@ class LibraryActivity : BaseFullscreenActivity() {
                 }
 
                 allItems = items
+                val accurateTotal = session.server.id != "m3u" || m3uCache.hasCache(session.server.baseUrl)
                 val totalLabel = java.text.NumberFormat.getIntegerInstance().format(items.size)
                 val allNamed = cats.map {
-                    if (it.id.isBlank()) it.copy(name = "ALL ($totalLabel)") else it
+                    if (it.id.isBlank()) {
+                        it.copy(name = if (accurateTotal) "ALL ($totalLabel)" else "ALL")
+                    } else it
                 }
                 val tools = mutableListOf(CategoryModel(SEARCH_ID, getString(com.adwio.player.R.string.search)))
                 if (type == MediaType.LIVE) {
@@ -182,8 +189,25 @@ class LibraryActivity : BaseFullscreenActivity() {
                     b.subtitleText.text = getString(com.adwio.player.R.string.recently_added)
                 }
                 if (session.server.id == "m3u" && !m3uCache.hasCache(session.server.baseUrl)) {
-                    lifecycleScope.launch(Dispatchers.IO) {
-                        runCatching { m3uCache.warm(session.server.baseUrl) }
+                    lifecycleScope.launch {
+                        val full = withContext(Dispatchers.IO) {
+                            runCatching { m3uCache.warm(session.server.baseUrl) }.getOrDefault(emptyList())
+                        }
+                        val fullType = full.filter { it.type == type }
+                        if (fullType.isNotEmpty() && fullType.size != allItems.size) {
+                            allItems = fullType
+                            val fullCats = m3u.categories(fullType, type)
+                            val totalLabel = java.text.NumberFormat.getIntegerInstance().format(fullType.size)
+                            val named = fullCats.map {
+                                if (it.id.isBlank()) it.copy(name = "ALL ($totalLabel)") else it
+                            }
+                            val tools = mutableListOf(CategoryModel(SEARCH_ID, getString(com.adwio.player.R.string.search)))
+                            if (type == MediaType.LIVE) tools += CategoryModel(RECENT_LIVE_ID, "أضيف حديثًا")
+                            else tools += CategoryModel(RECENTLY_ADDED_ID, getString(com.adwio.player.R.string.recently_added_30))
+                            tools += CategoryModel(FAVORITES_ID, getString(com.adwio.player.R.string.favorites))
+                            categoryAdapter.submit(tools + named)
+                            if (selectedCategory.isBlank()) submit(fullType)
+                        }
                     }
                 }
 
@@ -255,41 +279,43 @@ class LibraryActivity : BaseFullscreenActivity() {
     }
 
     private fun previewLive(item: MediaItemModel) {
-        if (type != MediaType.LIVE || activePreviewLiveId == item.id) return
-        previewJob?.cancel()
+        if (type != MediaType.LIVE) return
         b.previewChannelName.text = item.name
-        previewJob = lifecycleScope.launch {
-            delay(500)
-            val player = previewPlayer ?: ExoPlayer.Builder(this@LibraryActivity).build().also {
-                previewPlayer = it
-                b.previewPlayer.player = it
-            }
-            player.setMediaItem(MediaItem.fromUri(item.streamUrl))
-            player.prepare()
-            player.playWhenReady = true
-            player.volume = 0f
-        }
     }
 
     private fun activateLivePreview(item: MediaItemModel) {
         previewJob?.cancel()
         activePreviewLiveId = item.id
         b.previewChannelName.text = item.name
-        val player = previewPlayer ?: ExoPlayer.Builder(this).build().also {
-            previewPlayer = it
-            b.previewPlayer.player = it
-        }
-        player.setMediaItem(MediaItem.fromUri(item.streamUrl))
-        player.prepare()
-        player.playWhenReady = true
+
+        val player = PlaybackEngine.play(
+            context = this,
+            settings = AppSettings(this),
+            url = item.streamUrl,
+            title = item.name,
+            id = "LIVE:${item.id}",
+            type = MediaType.LIVE
+        )
+        b.previewPlayer.player = player
         player.volume = 1f
         b.previewPlayer.requestFocus()
     }
 
+    override fun onStart() {
+        super.onStart()
+        if (type == MediaType.LIVE &&
+            PlaybackEngine.player != null &&
+            PlaybackEngine.currentType == MediaType.LIVE &&
+            PlaybackEngine.currentUrl.isNotBlank()
+        ) {
+            b.previewPlayer.player = PlaybackEngine.player
+            b.previewChannelName.text = PlaybackEngine.currentTitle
+            activePreviewLiveId = PlaybackEngine.currentId.removePrefix("LIVE:").ifBlank { activePreviewLiveId }
+        }
+    }
+
     override fun onStop() {
         previewJob?.cancel()
-        previewPlayer?.release()
-        previewPlayer = null
         b.previewPlayer.player = null
         super.onStop()
     }
