@@ -54,6 +54,22 @@ class XtreamClient {
     fun loadLive(session: Session) = loadStreams(session, "get_live_streams", MediaType.LIVE)
 
     fun loadMovies(session: Session) = loadStreams(session, "get_vod_streams", MediaType.MOVIE)
+    fun loadShortEpg(session: Session, streamId: String, limit: Int = 2): List<EpgItemModel> {
+        val raw = get("${apiBase(session)}&action=get_short_epg&stream_id=${enc(streamId)}&limit=$limit") ?: return emptyList()
+        val root = parseObject(raw)
+        val rows = (root["epg_listings"] as? List<*>) ?: return emptyList()
+        return rows.mapNotNull { any ->
+            val row = any as? Map<*, *> ?: return@mapNotNull null
+            val title = row["title"]?.toString()?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
+            EpgItemModel(
+                title = decodeMaybeBase64(title),
+                start = row["start"]?.toString(),
+                end = row["end"]?.toString(),
+                description = row["description"]?.toString()?.takeIf { it.isNotBlank() }?.let(::decodeMaybeBase64)
+            )
+        }
+    }
+
 
     fun loadSeries(session: Session): List<MediaItemModel> {
         val raw = get("${apiBase(session)}&action=get_series") ?: return emptyList()
@@ -144,6 +160,14 @@ class XtreamClient {
         is Number -> v.toLong().toString()
         null -> null
         else -> v.toString()
+    }
+
+    private fun decodeMaybeBase64(value: String): String {
+        return try {
+            val decoded = android.util.Base64.decode(value, android.util.Base64.DEFAULT)
+            val text = decoded.toString(Charsets.UTF_8).trim()
+            if (text.isBlank() || text.any { it == '\uFFFD' }) value else text
+        } catch (_: Exception) { value }
     }
 
     private fun get(url: String): String? {

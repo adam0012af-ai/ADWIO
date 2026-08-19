@@ -31,6 +31,13 @@ data class MediaItemModel(
     val meta: String? = null
 )
 
+data class EpgItemModel(
+    val title: String,
+    val start: String? = null,
+    val end: String? = null,
+    val description: String? = null
+)
+
 data class EpisodeModel(
     val id: String,
     val title: String,

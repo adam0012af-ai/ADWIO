@@ -26,7 +26,7 @@ class PosterAdapter(
         fun bind(item: MediaItemModel) {
             b.posterTitle.text = item.name
             b.posterMeta.text = item.meta.orEmpty()
-            b.favoriteText.text = if (favorites.isFavorite(item.id)) "★" else "☆"
+            b.favoriteText.text = if (favorites.isFavorite(item.id, item.type)) "★" else "☆"
 
             if (!item.logoUrl.isNullOrBlank()) {
                 Picasso.get()
@@ -34,7 +34,7 @@ class PosterAdapter(
                     .placeholder(R.drawable.ic_adwio)
                     .error(R.drawable.ic_adwio)
                     .fit()
-                    .centerCrop()
+                    .centerInside()
                     .into(b.posterImage)
             } else {
                 b.posterImage.setImageResource(R.drawable.ic_adwio)
@@ -42,7 +42,7 @@ class PosterAdapter(
 
             b.root.setOnClickListener { onClick(item) }
             b.favoriteText.setOnClickListener {
-                val fav = favorites.toggle(item.id)
+                val fav = favorites.toggle(item.id, item.type)
                 b.favoriteText.text = if (fav) "★" else "☆"
             }
         }

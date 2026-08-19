@@ -1,32 +1,17 @@
-# ADWIO Player
+# ADWIO Professional 3.0.0
 
-ADWIO Player is a native Android TV/mobile player with:
+Clean consolidated Android project for ADWIO Player.
 
-- Landscape-first UI
-- Playlist-style entry
-- Username + password only
-- Automatic multi-server account discovery
-- Right-side navigation
-- Live TV
-- Movies
-- Series catalog
-- Search
-- Favorites
-- Settings/logout
-- Media3 / ExoPlayer playback
-- Architecture ready for ADWIO Control
+## GitHub build
+Push the project to the repository root, then open **Actions → Build ADWIO Professional → Run workflow**.
 
-Package: `com.adwio.player`
+The workflow always produces a Debug APK artifact. It can also produce a signed Release APK when these repository secrets are configured:
 
-## Build
-Run the GitHub Action **Build ADWIO APK**.
+- `ADWIO_KEYSTORE_BASE64`
+- `ADWIO_KEYSTORE_PASSWORD`
+- `ADWIO_KEY_ALIAS`
+- `ADWIO_KEY_PASSWORD`
 
-## Multi-host
-The initial build contains the two bootstrap hosts supplied for testing. No usernames, passwords, tokens, or admin credentials are stored in source.
+To install the new APK over an existing ADWIO installation without uninstalling it, the release APK must use the same `applicationId` and the same signing key as the currently installed APK. This project keeps `applicationId = com.adwio.player`.
 
-## ADWIO Control
-The host list is isolated in `ServerRepository`, so a future signed remote-config layer can replace it without changing the login and content layers.
-
-
-## Professional update signing
-Release builds use a fixed signing key stored only in GitHub Actions Secrets. Keep the signing key offline and never commit it to the repository.
+See `docs/IMPLEMENTATION_STATUS.md` for implemented features and validation status.

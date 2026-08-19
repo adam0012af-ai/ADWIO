@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-feature android:name="android.software.leanback" android:required="false" />
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
 
@@ -14,9 +16,20 @@
         android:icon="@drawable/ic_adwio"
         android:banner="@drawable/tv_banner">
 
+        <service
+            android:name=".ui.player.PlaybackService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
+
         <activity android:name=".ui.crash.CrashActivity" android:screenOrientation="landscape" android:exported="false" />
+        <activity android:name=".ui.favorites.FavoritesActivity" android:screenOrientation="landscape" android:exported="false" />
+        <activity android:name=".ui.continuewatching.ContinueWatchingActivity" android:screenOrientation="landscape" android:exported="false" />
         <activity android:name=".ui.settings.SettingsActivity" android:screenOrientation="landscape" android:exported="false" />
-        <activity android:name=".ui.player.PlayerActivity" android:screenOrientation="landscape" android:exported="false" />
+        <activity android:name=".ui.player.PlayerActivity" android:screenOrientation="landscape" android:supportsPictureInPicture="true" android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation" android:exported="false" />
+        <activity android:name=".ui.details.MovieDetailsActivity" android:screenOrientation="landscape" android:exported="false" />
+        <activity android:name=".ui.details.SeriesDetailsActivity" android:screenOrientation="landscape" android:exported="false" />
+        <activity android:name=".ui.library.GlobalSearchActivity" android:screenOrientation="landscape" android:exported="false" />
+        <activity android:name=".ui.library.LibraryActivity" android:screenOrientation="landscape" android:exported="false" />
         <activity android:name=".ui.home.HomeActivity" android:screenOrientation="landscape" android:exported="false" />
         <activity android:name=".ui.login.LoginActivity" android:screenOrientation="landscape" android:exported="false" />
         <activity android:name=".ui.playlist.PlaylistActivity" android:screenOrientation="landscape" android:exported="false" />

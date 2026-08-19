@@ -1,107 +1,41 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="horizontal"
-    android:background="@drawable/bg_gradient">
+    android:orientation="vertical"
+    android:background="@drawable/bg_gradient"
+    android:padding="24dp">
 
     <LinearLayout
-        android:layout_width="190dp"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:background="#CC0D0B18"
-        android:padding="12dp">
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="CATEGORIES"
-            android:textColor="@color/adwio_text"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:paddingBottom="8dp"/>
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/categoryRecycler"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:clipToPadding="false"/>
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+        <ImageView android:layout_width="52dp" android:layout_height="52dp" android:src="@drawable/ic_adwio"/>
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="12dp" android:orientation="vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="ADWIO" android:textColor="@color/adwio_text" android:textSize="24sp" android:textStyle="bold"/>
+            <TextView android:id="@+id/profileText" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Professional Player" android:textColor="@color/adwio_muted" android:textSize="12sp"/>
+        </LinearLayout>
+        <Button android:id="@+id/searchButton" android:layout_width="wrap_content" android:layout_height="48dp" android:text="@string/search" android:background="@drawable/bg_focus" android:textColor="@color/adwio_text"/>
+        <Button android:id="@+id/settingsButton" android:layout_width="wrap_content" android:layout_height="48dp" android:layout_marginStart="8dp" android:text="@string/settings" android:background="@drawable/bg_focus" android:textColor="@color/adwio_text"/>
     </LinearLayout>
 
-    <FrameLayout
-        android:layout_width="0dp"
-        android:layout_height="match_parent"
-        android:layout_weight="1"
-        android:paddingStart="14dp"
-        android:paddingEnd="12dp"
-        android:paddingTop="14dp"
-        android:paddingBottom="10dp">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical">
-
-            <TextView
-                android:id="@+id/titleText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Live TV"
-                android:textSize="24sp"
-                android:textStyle="bold"
-                android:textColor="@color/adwio_text"/>
-
-            <TextView
-                android:id="@+id/subtitleText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:text="Select a category"
-                android:textColor="@color/adwio_muted"
-                android:textSize="12sp"/>
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/contentRecycler"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                android:layout_marginTop="10dp"
-                android:clipToPadding="false"
-                android:paddingBottom="8dp"/>
-        </LinearLayout>
-    </FrameLayout>
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="24dp" android:text="@string/choose_entertainment" android:textColor="@color/adwio_text" android:textSize="18sp" android:textStyle="bold"/>
 
     <LinearLayout
-        android:id="@+id/rightMenu"
-        android:layout_width="190dp"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp"
-        android:paddingTop="12dp"
-        android:paddingBottom="10dp"
-        android:background="#E0120E20"
-        android:gravity="center_horizontal">
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="14dp"
+        android:orientation="horizontal"
+        android:weightSum="3">
 
-        <ImageView
-            android:layout_width="44dp"
-            android:layout_height="44dp"
-            android:src="@drawable/ic_adwio"/>
+        <Button android:id="@+id/liveCard" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginEnd="8dp" android:background="@drawable/bg_focus" android:text="LIVE TV" android:textColor="@color/adwio_text" android:textSize="22sp" android:textStyle="bold"/>
+        <Button android:id="@+id/moviesCard" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginHorizontal="4dp" android:background="@drawable/bg_focus" android:text="MOVIES" android:textColor="@color/adwio_text" android:textSize="22sp" android:textStyle="bold"/>
+        <Button android:id="@+id/seriesCard" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginStart="8dp" android:background="@drawable/bg_focus" android:text="SERIES" android:textColor="@color/adwio_text" android:textSize="22sp" android:textStyle="bold"/>
+    </LinearLayout>
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="ADWIO"
-            android:textColor="@color/adwio_text"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="10dp"/>
-
-        <Button android:id="@+id/menuLive" style="@style/MenuButton" android:text="LIVE TV"/>
-        <Button android:id="@+id/menuMovies" style="@style/MenuButton" android:text="MOVIES"/>
-        <Button android:id="@+id/menuSeries" style="@style/MenuButton" android:text="SERIES"/>
-        <Button android:id="@+id/menuSearch" style="@style/MenuButton" android:text="SEARCH"/>
-        <Button android:id="@+id/menuFavorites" style="@style/MenuButton" android:text="FAVORITES"/>
-        <Button android:id="@+id/menuSettings" style="@style/MenuButton" android:text="SETTINGS"/>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="58dp" android:layout_marginTop="14dp" android:orientation="horizontal" android:gravity="center">
+        <Button android:id="@+id/continueButton" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="@string/continue_watching" android:background="@drawable/bg_focus" android:textColor="@color/adwio_text"/>
+        <Button android:id="@+id/favoritesButton" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginStart="10dp" android:text="@string/favorites" android:background="@drawable/bg_focus" android:textColor="@color/adwio_text"/>
     </LinearLayout>
 </LinearLayout>

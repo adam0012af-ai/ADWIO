@@ -1,0 +1,17 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/bg_gradient" android:orientation="horizontal" android:padding="24dp">
+    <LinearLayout android:layout_width="300dp" android:layout_height="match_parent" android:orientation="vertical">
+        <Button android:id="@+id/backButton" android:layout_width="60dp" android:layout_height="48dp" android:text="‹" android:textSize="24sp" android:background="@drawable/bg_focus" android:textColor="@color/adwio_text"/>
+        <ImageView android:id="@+id/posterImage" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="12dp" android:scaleType="fitCenter" android:src="@drawable/ic_adwio"/>
+    </LinearLayout>
+    <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginStart="24dp" android:orientation="vertical">
+        <TextView android:id="@+id/titleText" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="@color/adwio_text" android:textSize="28sp" android:textStyle="bold"/>
+        <TextView android:id="@+id/metaText" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:textColor="@color/adwio_muted" android:textSize="14sp"/>
+        <Spinner android:id="@+id/seasonSpinner" android:layout_width="220dp" android:layout_height="52dp" android:layout_marginTop="16dp" android:background="@drawable/bg_focus"/>
+        <ProgressBar android:id="@+id/loading" android:layout_width="36dp" android:layout_height="36dp" android:layout_marginTop="12dp"/>
+        <TextView android:id="@+id/statusText" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="@color/adwio_muted" android:layout_marginTop="8dp"/>
+        <ScrollView android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="10dp">
+            <LinearLayout android:id="@+id/episodesContainer" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"/>
+        </ScrollView>
+    </LinearLayout>
+</LinearLayout>

@@ -10,7 +10,8 @@ import com.squareup.picasso.Picasso
 
 class MediaAdapter(
     private val favorites: FavoritesStore,
-    private val onClick: (MediaItemModel) -> Unit
+    private val onClick: (MediaItemModel) -> Unit,
+    private val onFocus: ((MediaItemModel) -> Unit)? = null
 ) : RecyclerView.Adapter<MediaAdapter.VH>() {
 
     private val items = mutableListOf<MediaItemModel>()
@@ -25,15 +26,16 @@ class MediaAdapter(
         fun bind(item: MediaItemModel) {
             b.nameText.text = item.name
             b.metaText.text = item.meta ?: item.type.name
-            b.favoriteText.text = if (favorites.isFavorite(item.id)) "★" else "☆"
+            b.favoriteText.text = if (favorites.isFavorite(item.id, item.type)) "★" else "☆"
             if (!item.logoUrl.isNullOrBlank()) {
                 Picasso.get().load(item.logoUrl).fit().centerInside().into(b.logoImage)
             } else {
                 b.logoImage.setImageResource(com.adwio.player.R.drawable.ic_adwio)
             }
             b.root.setOnClickListener { onClick(item) }
+            b.root.setOnFocusChangeListener { _, hasFocus -> if (hasFocus) onFocus?.invoke(item) }
             b.favoriteText.setOnClickListener {
-                val fav = favorites.toggle(item.id)
+                val fav = favorites.toggle(item.id, item.type)
                 b.favoriteText.text = if (fav) "★" else "☆"
             }
         }

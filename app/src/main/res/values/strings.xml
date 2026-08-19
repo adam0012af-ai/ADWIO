@@ -1,6 +1,36 @@
 <resources>
     <string name="app_name">ADWIO Player</string>
+    <string name="playlist_name">Playlist name</string>
     <string name="username">Username</string>
     <string name="password">Password</string>
+    <string name="show_password">Show password</string>
+    <string name="remember_me">Remember me</string>
     <string name="sign_in">SIGN IN</string>
+    <string name="enter_playlist_name">Enter playlist name</string>
+    <string name="enter_credentials">Enter username and password</string>
+    <string name="connection_failed">Unable to connect. Check account or connection.</string>
+    <string name="connecting">Connecting…</string>
+    <string name="search">SEARCH</string>
+    <string name="settings">SETTINGS</string>
+    <string name="favorites">FAVORITES</string>
+    <string name="continue_watching">CONTINUE WATCHING</string>
+    <string name="choose_entertainment">Choose what you want to watch</string>
+    <string name="live_subtitle">Channels &amp; EPG</string>
+    <string name="movies_subtitle">Your movie library</string>
+    <string name="series_subtitle">Seasons &amp; episodes</string>
+    <string name="categories">CATEGORIES</string>
+    <string name="loading_content">Loading content…</string>
+    <string name="load_failed">Unable to load content • Retry later</string>
+    <string name="search_hint">Search this section</string>
+    <string name="no_episodes">No episodes returned by server</string>
+    <string name="play">PLAY / RESUME</string>
+    <string name="add_favorite">ADD FAVORITE</string>
+    <string name="remove_favorite">REMOVE FAVORITE</string>
+    <string name="season_number">Season %1$d</string>
+    <string name="search_all">Search Live, Movies &amp; Series</string>
+    <string name="search_all_hint">Type to search all content</string>
+    <string name="results_count">%1$d results</string>
+    <string name="epg_loading">Loading guide…</string>
+    <string name="epg_unavailable">Guide unavailable</string>
+    <string name="recent">Recent</string>
 </resources>

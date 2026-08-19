@@ -1,0 +1,36 @@
+<resources>
+    <string name="app_name">ADWIO Player</string>
+    <string name="playlist_name">اسم القائمة</string>
+    <string name="username">اسم المستخدم</string>
+    <string name="password">كلمة المرور</string>
+    <string name="show_password">إظهار كلمة المرور</string>
+    <string name="remember_me">تذكرني</string>
+    <string name="sign_in">تسجيل الدخول</string>
+    <string name="enter_playlist_name">اكتب اسم القائمة</string>
+    <string name="enter_credentials">اكتب اسم المستخدم وكلمة المرور</string>
+    <string name="connection_failed">تعذر الاتصال. تحقق من الحساب أو الإنترنت.</string>
+    <string name="connecting">جاري الاتصال…</string>
+    <string name="search">بحث</string>
+    <string name="settings">الإعدادات</string>
+    <string name="favorites">المفضلة</string>
+    <string name="continue_watching">متابعة المشاهدة</string>
+    <string name="choose_entertainment">اختر ما تريد مشاهدته</string>
+    <string name="live_subtitle">القنوات ودليل البرامج</string>
+    <string name="movies_subtitle">مكتبة الأفلام</string>
+    <string name="series_subtitle">المواسم والحلقات</string>
+    <string name="categories">التصنيفات</string>
+    <string name="loading_content">جاري تحميل المحتوى…</string>
+    <string name="load_failed">تعذر تحميل المحتوى • حاول لاحقًا</string>
+    <string name="search_hint">ابحث داخل هذا القسم</string>
+    <string name="no_episodes">السيرفر لم يرجع حلقات</string>
+    <string name="play">تشغيل / استكمال</string>
+    <string name="add_favorite">إضافة للمفضلة</string>
+    <string name="remove_favorite">إزالة من المفضلة</string>
+    <string name="season_number">الموسم %1$d</string>
+    <string name="search_all">ابحث في القنوات والأفلام والمسلسلات</string>
+    <string name="search_all_hint">اكتب للبحث في كل المحتوى</string>
+    <string name="results_count">%1$d نتيجة</string>
+    <string name="epg_loading">جارٍ تحميل دليل البرامج…</string>
+    <string name="epg_unavailable">دليل البرامج غير متاح</string>
+    <string name="recent">الأخيرة</string>
+</resources>

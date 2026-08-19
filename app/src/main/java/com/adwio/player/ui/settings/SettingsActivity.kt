@@ -3,6 +3,8 @@ package com.adwio.player.ui.settings
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import com.adwio.player.data.AppSettings
 import com.adwio.player.data.PlaybackHistory
 import com.adwio.player.data.SessionStore
@@ -22,10 +24,16 @@ class SettingsActivity : BaseFullscreenActivity() {
         b.autoplaySwitch.isChecked = settings.autoplayLastChannel
         b.rememberSwitch.isChecked = settings.rememberPosition
         b.refreshSwitch.isChecked = settings.autoRefresh
+        b.backgroundSwitch.isChecked = settings.backgroundPlayback
+        b.pipSwitch.isChecked = settings.pictureInPicture
+        b.autoNextSwitch.isChecked = settings.autoNextEpisode
 
         b.autoplaySwitch.setOnCheckedChangeListener { _, v -> settings.autoplayLastChannel = v }
         b.rememberSwitch.setOnCheckedChangeListener { _, v -> settings.rememberPosition = v }
         b.refreshSwitch.setOnCheckedChangeListener { _, v -> settings.autoRefresh = v }
+        b.backgroundSwitch.setOnCheckedChangeListener { _, v -> settings.backgroundPlayback = v }
+        b.pipSwitch.setOnCheckedChangeListener { _, v -> settings.pictureInPicture = v }
+        b.autoNextSwitch.setOnCheckedChangeListener { _, v -> settings.autoNextEpisode = v }
 
         updateButtons()
 
@@ -57,6 +65,28 @@ class SettingsActivity : BaseFullscreenActivity() {
                 .show()
         }
 
+
+        b.languageButton.setOnClickListener {
+            val values = arrayOf("System", "English", "العربية")
+            val keys = arrayOf("system", "en", "ar")
+            AlertDialog.Builder(this).setTitle("Language").setItems(values) { _, which ->
+                settings.language = keys[which]
+                val locales = if (keys[which] == "system") LocaleListCompat.getEmptyLocaleList() else LocaleListCompat.forLanguageTags(keys[which])
+                AppCompatDelegate.setApplicationLocales(locales)
+                updateButtons()
+            }.show()
+        }
+        b.gridButton.setOnClickListener {
+            val values = arrayOf("Auto", "6 posters", "8 posters")
+            val keys = arrayOf("auto", "6", "8")
+            AlertDialog.Builder(this).setTitle("Grid density").setItems(values) { _, which -> settings.gridDensity = keys[which]; updateButtons() }.show()
+        }
+        b.startupButton.setOnClickListener {
+            val values = arrayOf("Home", "Live TV", "Movies", "Series")
+            val keys = arrayOf("home", "live", "movies", "series")
+            AlertDialog.Builder(this).setTitle("Startup screen").setItems(values) { _, which -> settings.startupScreen = keys[which]; updateButtons() }.show()
+        }
+
         b.clearCacheButton.setOnClickListener {
             cacheDir.deleteRecursively()
             Toast.makeText(this, "Cache cleared", Toast.LENGTH_SHORT).show()
@@ -81,5 +111,8 @@ class SettingsActivity : BaseFullscreenActivity() {
     private fun updateButtons() {
         b.bufferButton.text = "BUFFER: ${settings.bufferMode.uppercase()}"
         b.aspectButton.text = "ASPECT: ${settings.aspectMode.uppercase()}"
+        b.languageButton.text = "LANGUAGE: ${settings.language.uppercase()}"
+        b.gridButton.text = "GRID: ${settings.gridDensity.uppercase()}"
+        b.startupButton.text = "STARTUP: ${settings.startupScreen.uppercase()}"
     }
 }

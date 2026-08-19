@@ -1,0 +1,11 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:background="@drawable/bg_gradient" android:padding="24dp">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="56dp" android:orientation="horizontal" android:gravity="center_vertical">
+        <Button android:id="@+id/backButton" android:layout_width="52dp" android:layout_height="48dp" android:text="‹" android:textSize="24sp" android:background="@drawable/bg_focus" android:textColor="@color/adwio_text"/>
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="14dp" android:text="@string/favorites" android:textColor="@color/adwio_text" android:textSize="26sp" android:textStyle="bold"/>
+    </LinearLayout>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal" android:gravity="center" android:padding="36dp">
+        <Button android:id="@+id/liveFavorites" android:layout_width="0dp" android:layout_height="180dp" android:layout_weight="1" android:layout_margin="10dp" android:text="★  LIVE TV" android:textSize="20sp" android:textColor="@color/adwio_text" android:background="@drawable/bg_focus"/>
+        <Button android:id="@+id/movieFavorites" android:layout_width="0dp" android:layout_height="180dp" android:layout_weight="1" android:layout_margin="10dp" android:text="★  MOVIES" android:textSize="20sp" android:textColor="@color/adwio_text" android:background="@drawable/bg_focus"/>
+        <Button android:id="@+id/seriesFavorites" android:layout_width="0dp" android:layout_height="180dp" android:layout_weight="1" android:layout_margin="10dp" android:text="★  SERIES" android:textSize="20sp" android:textColor="@color/adwio_text" android:background="@drawable/bg_focus"/>
+    </LinearLayout>
+</LinearLayout>
