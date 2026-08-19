@@ -1,4 +1,4 @@
-name: Apply ADWIO 3.4 REBUILD
+name: Apply ADWIO 3.5 FOUNDATION
 
 on:
   workflow_dispatch:
@@ -13,36 +13,66 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Verify ADWIO 3.4 package
+      - name: Verify ADWIO 3.5 package
         run: |
-          test -f ADWIO_Professional_3.4_REBUILD.zip || {
-            echo "::error::ADWIO_Professional_3.4_REBUILD.zip not found in repository root"
+          test -f ADWIO_Professional_3.5_FOUNDATION.zip || {
+            echo "::error::ADWIO_Professional_3.5_FOUNDATION.zip not found in repository root"
             exit 1
           }
 
-      - name: Extract ADWIO 3.4
+      - name: Extract ADWIO 3.5
         shell: bash
         run: |
-          rm -rf /tmp/adwio_34
-          mkdir -p /tmp/adwio_34
-          unzip -q -o ADWIO_Professional_3.4_REBUILD.zip -d /tmp/adwio_34
+          rm -rf /tmp/adwio_35
+          mkdir -p /tmp/adwio_35
+          unzip -q -o ADWIO_Professional_3.5_FOUNDATION.zip -d /tmp/adwio_35
 
-          ROOT=$(find /tmp/adwio_34 -type f -name settings.gradle.kts -printf '%h\n' | head -n 1)
-          test -n "$ROOT" || { echo "::error::Project root not found"; exit 1; }
+          ROOT=$(find /tmp/adwio_35 -type f -name settings.gradle.kts -printf '%h\n' | head -n 1)
+
+          if [ -z "$ROOT" ]; then
+            echo "::error::Android project root not found"
+            find /tmp/adwio_35 -maxdepth 4 -type f | head -n 100
+            exit 1
+          fi
 
           echo "Project root: $ROOT"
 
-          rsync -a --delete             --exclude='.git/'             --exclude='.github/'             --exclude='ADWIO_Professional_3.4_REBUILD.zip'             "$ROOT"/ ./
+          test -d "$ROOT/app" || {
+            echo "::error::app/ missing from package"
+            exit 1
+          }
 
-          git checkout -- ADWIO_Professional_3.4_REBUILD.zip 2>/dev/null || true
+          test -f "$ROOT/build.gradle.kts" || {
+            echo "::error::build.gradle.kts missing from package"
+            exit 1
+          }
+
+          test -f "$ROOT/settings.gradle.kts" || {
+            echo "::error::settings.gradle.kts missing from package"
+            exit 1
+          }
+
+          rsync -a --delete             --exclude='.git/'             --exclude='.github/'             --exclude='ADWIO_Professional_3.5_FOUNDATION.zip'             "$ROOT"/ ./
+
+          git checkout -- ADWIO_Professional_3.5_FOUNDATION.zip 2>/dev/null || true
 
       - name: Verify applied version
         shell: bash
         run: |
-          grep -q 'versionCode = 10' app/build.gradle.kts
-          grep -q 'versionName = "3.4.0"' app/build.gradle.kts
-          echo "ADWIO 3.4 source verified."
+          grep -q 'versionCode = 11' app/build.gradle.kts || {
+            echo "::error::versionCode 11 not found after apply"
+            exit 1
+          }
+
+          grep -q 'versionName = "3.5.0"' app/build.gradle.kts || {
+            echo "::error::versionName 3.5.0 not found after apply"
+            exit 1
+          }
+
+          echo "ADWIO 3.5 source verified successfully."
           git status --short
 
       - name: Commit and push
@@ -58,5 +88,5 @@ jobs:
             exit 0
           fi
 
-          git commit -m "Apply ADWIO Professional 3.4 rebuild"
+          git commit -m "Apply ADWIO Professional 3.5 foundation"
           git push origin HEAD:main
