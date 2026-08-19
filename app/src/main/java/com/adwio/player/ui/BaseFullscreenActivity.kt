@@ -6,11 +6,32 @@ import android.view.WindowInsets
 import android.view.WindowInsetsController
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import com.adwio.player.data.SessionStore
+import com.adwio.player.data.TelemetryClient
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 
 abstract class BaseFullscreenActivity : AppCompatActivity() {
+    private var heartbeatJob: Job? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         runCatching { applyFullscreen() }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        startHeartbeat()
+    }
+
+    override fun onStop() {
+        heartbeatJob?.cancel()
+        heartbeatJob = null
+        super.onStop()
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -18,11 +39,21 @@ abstract class BaseFullscreenActivity : AppCompatActivity() {
         if (hasFocus) runCatching { applyFullscreen() }
     }
 
+    private fun startHeartbeat() {
+        heartbeatJob?.cancel()
+        val session = SessionStore(this).load() ?: return
+        heartbeatJob = lifecycleScope.launch(Dispatchers.IO) {
+            while (isActive) {
+                TelemetryClient(this@BaseFullscreenActivity).heartbeat(session)
+                delay(60_000L)
+            }
+        }
+    }
+
     private fun applyFullscreen() {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
             val attrs = window.attributes
-            attrs.layoutInDisplayCutoutMode =
-                WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+            attrs.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
             window.attributes = attrs
         }
 
@@ -30,8 +61,7 @@ abstract class BaseFullscreenActivity : AppCompatActivity() {
             window.setDecorFitsSystemWindows(false)
             window.insetsController?.let { controller ->
                 controller.hide(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
-                controller.systemBarsBehavior =
-                    WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                controller.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
             }
         } else {
             @Suppress("DEPRECATION")

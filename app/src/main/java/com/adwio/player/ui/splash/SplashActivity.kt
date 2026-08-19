@@ -25,7 +25,7 @@ class SplashActivity : BaseFullscreenActivity() {
             setContentView(R.layout.activity_splash)
 
             lifecycleScope.launch {
-                delay(120)
+                delay(80)
                 runCatching {
                     val settings = AppSettings(this@SplashActivity)
                     val locales = if (settings.language == "system") LocaleListCompat.getEmptyLocaleList() else LocaleListCompat.forLanguageTags(settings.language)

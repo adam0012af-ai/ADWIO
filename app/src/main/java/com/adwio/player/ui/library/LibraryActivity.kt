@@ -17,6 +17,7 @@ import com.adwio.player.data.SessionStore
 import com.adwio.player.data.RecentChannelsStore
 import com.adwio.player.data.XtreamClient
 import com.adwio.player.data.M3uClient
+import com.adwio.player.data.M3uCache
 import com.adwio.player.data.model.CategoryModel
 import com.adwio.player.data.model.MediaItemModel
 import com.adwio.player.data.model.MediaType
@@ -46,6 +47,7 @@ class LibraryActivity : BaseFullscreenActivity() {
     private lateinit var b: ActivityLibraryBinding
     private val api = XtreamClient()
     private val m3u = M3uClient()
+    private val m3uCache by lazy { M3uCache(this) }
     private lateinit var store: SessionStore
     private lateinit var favorites: FavoritesStore
     private lateinit var recentChannels: RecentChannelsStore
@@ -56,6 +58,7 @@ class LibraryActivity : BaseFullscreenActivity() {
     private var selectedCategory = ""
     private var previewPlayer: ExoPlayer? = null
     private var previewJob: Job? = null
+    private var activePreviewLiveId: String? = null
     private val type: MediaType by lazy { runCatching { MediaType.valueOf(intent.getStringExtra(EXTRA_TYPE) ?: "LIVE") }.getOrDefault(MediaType.LIVE) }
     private val categoryPrefs by lazy { getSharedPreferences("adwio_library_state", MODE_PRIVATE) }
 
@@ -104,12 +107,12 @@ class LibraryActivity : BaseFullscreenActivity() {
 
     private fun load() {
         val session = store.load() ?: return finish()
-        b.titleText.text = when(type) { MediaType.LIVE -> "LIVE TV"; MediaType.MOVIE -> "MOVIES"; MediaType.SERIES -> "SERIES" }
+        b.titleText.text = when(type) { MediaType.LIVE -> getString(com.adwio.player.R.string.live_title); MediaType.MOVIE -> getString(com.adwio.player.R.string.movies_title); MediaType.SERIES -> getString(com.adwio.player.R.string.series_title) }
         b.subtitleText.text = getString(com.adwio.player.R.string.loading_content)
         lifecycleScope.launch {
             val result = withContext(Dispatchers.IO) { runCatching {
                 if (session.server.id == "m3u") {
-                    val all = m3u.load(session.server.baseUrl)
+                    val all = m3uCache.load(session.server.baseUrl)
                     val items = all.filter { it.type == type }
                     m3u.categories(items, type) to items
                 } else {
@@ -121,9 +124,9 @@ class LibraryActivity : BaseFullscreenActivity() {
             result.onSuccess { (cats, items) ->
                 allItems = items
                 val allNamed = cats.map { if (it.id.isBlank()) it.copy(name = "ALL • ${items.size}") else it }
-                val tools = mutableListOf(CategoryModel(SEARCH_ID, "بحث"))
-                if (type != MediaType.LIVE) tools += CategoryModel(RECENTLY_ADDED_ID, "أضيف حديثًا • 30")
-                tools += CategoryModel(FAVORITES_ID, "المفضلة")
+                val tools = mutableListOf(CategoryModel(SEARCH_ID, getString(com.adwio.player.R.string.search)))
+                if (type != MediaType.LIVE) tools += CategoryModel(RECENTLY_ADDED_ID, getString(com.adwio.player.R.string.recently_added_30))
+                tools += CategoryModel(FAVORITES_ID, getString(com.adwio.player.R.string.favorites))
                 val displayCategories = tools + allNamed
 
                 if (type == MediaType.LIVE) {
@@ -144,7 +147,7 @@ class LibraryActivity : BaseFullscreenActivity() {
                     selectedCategory = RECENTLY_ADDED_ID
                     val recent = recentlyAdded(items)
                     submit(recent)
-                    b.subtitleText.text = "أضيف حديثًا"
+                    b.subtitleText.text = getString(com.adwio.player.R.string.recently_added)
                 }
                 if (intent.getBooleanExtra(EXTRA_FAVORITES, false)) showFavorites()
                 else if (intent.getBooleanExtra(EXTRA_SEARCH, false)) showSearch()
@@ -189,14 +192,14 @@ class LibraryActivity : BaseFullscreenActivity() {
                 val q = input.text.toString().trim()
                 val base = if (selectedCategory.isBlank()) allItems else allItems.filter { it.categoryId == selectedCategory }
                 val list = if (q.isBlank()) base else base.filter { it.name.contains(q, true) }
-                submit(list); b.subtitleText.text = "${list.size} results"
+                submit(list); b.subtitleText.text = getString(com.adwio.player.R.string.results_count, list.size)
             }.setNegativeButton(android.R.string.cancel, null).show()
     }
 
     private fun showFavorites() {
         val list = allItems.filter { favorites.isFavorite(it.id, it.type) }
         submit(list)
-        b.subtitleText.text = "${list.size} favorites"
+        b.subtitleText.text = getString(com.adwio.player.R.string.favorites_count, list.size)
     }
 
     private fun showRecentChannels() {
@@ -205,15 +208,15 @@ class LibraryActivity : BaseFullscreenActivity() {
         val byId = allItems.associateBy { it.id }
         val list = recentChannels.list().mapNotNull { recent -> byId[recent.id] ?: recent }
         submit(list)
-        b.subtitleText.text = "${list.size} recent channels"
+        b.subtitleText.text = getString(com.adwio.player.R.string.recent_channels_count, list.size)
     }
 
     private fun previewLive(item: MediaItemModel) {
-        if (type != MediaType.LIVE) return
+        if (type != MediaType.LIVE || activePreviewLiveId == item.id) return
         previewJob?.cancel()
         b.previewChannelName.text = item.name
         previewJob = lifecycleScope.launch {
-            delay(650)
+            delay(500)
             val player = previewPlayer ?: ExoPlayer.Builder(this@LibraryActivity).build().also {
                 previewPlayer = it
                 b.previewPlayer.player = it
@@ -223,6 +226,21 @@ class LibraryActivity : BaseFullscreenActivity() {
             player.playWhenReady = true
             player.volume = 0f
         }
+    }
+
+    private fun activateLivePreview(item: MediaItemModel) {
+        previewJob?.cancel()
+        activePreviewLiveId = item.id
+        b.previewChannelName.text = item.name
+        val player = previewPlayer ?: ExoPlayer.Builder(this).build().also {
+            previewPlayer = it
+            b.previewPlayer.player = it
+        }
+        player.setMediaItem(MediaItem.fromUri(item.streamUrl))
+        player.prepare()
+        player.playWhenReady = true
+        player.volume = 1f
+        b.previewPlayer.requestFocus()
     }
 
     override fun onStop() {
@@ -250,6 +268,11 @@ class LibraryActivity : BaseFullscreenActivity() {
             })
             MediaType.LIVE -> {
                 recentChannels.add(item)
+                if (activePreviewLiveId != item.id) {
+                    activateLivePreview(item)
+                    b.subtitleText.text = item.name
+                    return
+                }
                 LiveCatalog.setData(LiveCatalog.categories().ifEmpty { listOf(CategoryModel("", "All")) }, allItems, selectedCategory)
                 val visible = if (selectedCategory.isBlank()) allItems else allItems.filter { it.categoryId == selectedCategory }
                 ChannelNavigator.setQueue(visible, item.id)

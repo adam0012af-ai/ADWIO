@@ -43,14 +43,14 @@ class SettingsActivity : BaseFullscreenActivity() {
         b.streamFormatButton.setOnClickListener {
             val labels = arrayOf("Auto", "HLS", "MPEG-TS")
             val keys = arrayOf("auto", "hls", "ts")
-            AlertDialog.Builder(this).setTitle("Stream format").setSingleChoiceItems(labels, keys.indexOf(settings.streamFormat).coerceAtLeast(0)) { d, i ->
+            AlertDialog.Builder(this).setTitle(com.adwio.player.R.string.stream_format).setSingleChoiceItems(labels, keys.indexOf(settings.streamFormat).coerceAtLeast(0)) { d, i ->
                 settings.streamFormat = keys[i]; updateButtons(); d.dismiss()
             }.show()
         }
         b.decoderButton.setOnClickListener {
             val labels = arrayOf("Auto", "Hardware preferred", "Software fallback")
             val keys = arrayOf("auto", "hardware", "software")
-            AlertDialog.Builder(this).setTitle("Decoder").setSingleChoiceItems(labels, keys.indexOf(settings.decoderMode).coerceAtLeast(0)) { d, i ->
+            AlertDialog.Builder(this).setTitle(com.adwio.player.R.string.decoder).setSingleChoiceItems(labels, keys.indexOf(settings.decoderMode).coerceAtLeast(0)) { d, i ->
                 settings.decoderMode = keys[i]; updateButtons(); d.dismiss()
             }.show()
         }
@@ -60,7 +60,7 @@ class SettingsActivity : BaseFullscreenActivity() {
             val keys = arrayOf("small", "normal", "large")
             val selected = keys.indexOf(settings.bufferMode).coerceAtLeast(1)
             AlertDialog.Builder(this)
-                .setTitle("Buffer mode")
+                .setTitle(com.adwio.player.R.string.buffer_mode)
                 .setSingleChoiceItems(values, selected) { dialog, which ->
                     settings.bufferMode = keys[which]
                     updateButtons()
@@ -74,7 +74,7 @@ class SettingsActivity : BaseFullscreenActivity() {
             val keys = arrayOf("fit", "fill", "zoom")
             val selected = keys.indexOf(settings.aspectMode).coerceAtLeast(0)
             AlertDialog.Builder(this)
-                .setTitle("Aspect ratio")
+                .setTitle(com.adwio.player.R.string.aspect_ratio)
                 .setSingleChoiceItems(values, selected) { dialog, which ->
                     settings.aspectMode = keys[which]
                     updateButtons()
@@ -85,34 +85,34 @@ class SettingsActivity : BaseFullscreenActivity() {
 
 
         b.languageButton.setOnClickListener {
-            val values = arrayOf("System", "English", "العربية")
+            val values = arrayOf(getString(com.adwio.player.R.string.language_system), "English", "العربية")
             val keys = arrayOf("system", "en", "ar")
-            AlertDialog.Builder(this).setTitle("Language").setItems(values) { _, which ->
+            AlertDialog.Builder(this).setTitle(com.adwio.player.R.string.language).setItems(values) { _, which ->
                 settings.language = keys[which]
                 val locales = if (keys[which] == "system") LocaleListCompat.getEmptyLocaleList() else LocaleListCompat.forLanguageTags(keys[which])
                 AppCompatDelegate.setApplicationLocales(locales)
-                updateButtons()
+                window.decorView.postDelayed({ recreate() }, 120L)
             }.show()
         }
         b.gridButton.setOnClickListener {
             val values = arrayOf("Auto", "6 posters", "8 posters")
             val keys = arrayOf("auto", "6", "8")
-            AlertDialog.Builder(this).setTitle("Grid density").setItems(values) { _, which -> settings.gridDensity = keys[which]; updateButtons() }.show()
+            AlertDialog.Builder(this).setTitle(com.adwio.player.R.string.grid_density).setItems(values) { _, which -> settings.gridDensity = keys[which]; updateButtons() }.show()
         }
         b.startupButton.setOnClickListener {
             val values = arrayOf("Home", "Live TV", "Movies", "Series")
             val keys = arrayOf("home", "live", "movies", "series")
-            AlertDialog.Builder(this).setTitle("Startup screen").setItems(values) { _, which -> settings.startupScreen = keys[which]; updateButtons() }.show()
+            AlertDialog.Builder(this).setTitle(com.adwio.player.R.string.startup_screen).setItems(values) { _, which -> settings.startupScreen = keys[which]; updateButtons() }.show()
         }
 
         b.clearCacheButton.setOnClickListener {
             cacheDir.deleteRecursively()
-            Toast.makeText(this, "Cache cleared", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, com.adwio.player.R.string.cache_cleared, Toast.LENGTH_SHORT).show()
         }
 
         b.clearHistoryButton.setOnClickListener {
             PlaybackHistory(this).clearCurrentPlaylist()
-            Toast.makeText(this, "Watch history cleared", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, com.adwio.player.R.string.history_cleared, Toast.LENGTH_SHORT).show()
         }
 
         b.resetSettingsButton.setOnClickListener {
@@ -131,12 +131,16 @@ class SettingsActivity : BaseFullscreenActivity() {
     }
 
     private fun updateButtons() {
-        b.streamFormatButton.text = "صيغة البث • ${settings.streamFormat.uppercase()}"
-        b.decoderButton.text = "فك الترميز • ${settings.decoderMode}"
-        b.bufferButton.text = "المخزن المؤقت • ${settings.bufferMode}"
-        b.aspectButton.text = "مقاس الصورة • ${settings.aspectMode}"
-        b.languageButton.text = "اللغة • ${settings.language}"
-        b.gridButton.text = "كثافة العرض • ${settings.gridDensity}"
-        b.startupButton.text = "شاشة البداية • ${settings.startupScreen}"
+        val buffer = when (settings.bufferMode) { "small" -> getString(com.adwio.player.R.string.buffer_small); "large" -> getString(com.adwio.player.R.string.buffer_large); else -> getString(com.adwio.player.R.string.buffer_normal) }
+        val aspect = when (settings.aspectMode) { "fill" -> getString(com.adwio.player.R.string.aspect_fill); "zoom" -> getString(com.adwio.player.R.string.aspect_zoom); else -> getString(com.adwio.player.R.string.aspect_fit) }
+        val language = when (settings.language) { "ar" -> "العربية"; "en" -> "English"; else -> getString(com.adwio.player.R.string.language_system) }
+        val startup = when (settings.startupScreen) { "live" -> getString(com.adwio.player.R.string.live_title); "movies" -> getString(com.adwio.player.R.string.movies_title); "series" -> getString(com.adwio.player.R.string.series_title); else -> getString(com.adwio.player.R.string.home_title) }
+        b.streamFormatButton.text = getString(com.adwio.player.R.string.stream_format_value, settings.streamFormat.uppercase())
+        b.decoderButton.text = getString(com.adwio.player.R.string.decoder_value, settings.decoderMode.uppercase())
+        b.bufferButton.text = getString(com.adwio.player.R.string.buffer_value, buffer)
+        b.aspectButton.text = getString(com.adwio.player.R.string.aspect_value, aspect)
+        b.languageButton.text = getString(com.adwio.player.R.string.language_value, language)
+        b.gridButton.text = getString(com.adwio.player.R.string.grid_value, settings.gridDensity.uppercase())
+        b.startupButton.text = getString(com.adwio.player.R.string.startup_value, startup)
     }
 }

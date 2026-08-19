@@ -7,7 +7,7 @@ const ADMIN_TOKEN = process.env.ADWIO_ADMIN_TOKEN || '';
 const DB = path.join(__dirname, 'data', 'telemetry.json');
 const ONLINE_MS = 3 * 60 * 1000;
 
-function load(){ try { return JSON.parse(fs.readFileSync(DB,'utf8')); } catch { return {devices:{}}; } }
+function load(){ try { const x=JSON.parse(fs.readFileSync(DB,'utf8')); x.devices ||= {}; x.config ||= {maintenance:false,minVersionCode:0,message:''}; return x; } catch { return {devices:{},config:{maintenance:false,minVersionCode:0,message:''}}; } }
 function save(db){ fs.mkdirSync(path.dirname(DB),{recursive:true}); fs.writeFileSync(DB, JSON.stringify(db,null,2)); }
 function json(res, code, body){ res.writeHead(code, {'content-type':'application/json; charset=utf-8','cache-control':'no-store'}); res.end(JSON.stringify(body)); }
 function body(req){ return new Promise((ok,bad)=>{ let s=''; req.on('data',d=>{s+=d; if(s.length>65536) req.destroy();}); req.on('end',()=>{try{ok(JSON.parse(s||'{}'))}catch(e){bad(e)}});}); }
@@ -22,6 +22,14 @@ const server=http.createServer(async(req,res)=>{
       db.devices[id]={host:safeHost(b.host),playlistType:b.playlistType==='M3U'?'M3U':'XTREAM',appVersion:String(b.appVersion||'').slice(0,30),androidVersion:String(b.androidVersion||'').slice(0,30),device:String(b.device||'').slice(0,80),firstSeen:old.firstSeen||now,lastSeen:now};
       save(db); return json(res,200,{ok:true});
     }catch{return json(res,400,{ok:false});}
+  }
+
+  if(req.method==='GET' && req.url==='/v1/config'){
+    const db=load(); return json(res,200,db.config||{maintenance:false,minVersionCode:0,message:''});
+  }
+  if(req.method==='POST' && req.url==='/api/config'){
+    if(!authed(req)) return json(res,401,{error:'unauthorized'});
+    try{ const b=await body(req), db=load(); db.config={maintenance:!!b.maintenance,minVersionCode:Math.max(0,Number(b.minVersionCode||0)),message:String(b.message||'').slice(0,500)}; save(db); return json(res,200,{ok:true,config:db.config}); }catch{return json(res,400,{ok:false});}
   }
   if(req.url==='/api/dashboard'){
     if(!authed(req)) return json(res,401,{error:'unauthorized'});

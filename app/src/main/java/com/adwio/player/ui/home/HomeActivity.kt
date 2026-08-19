@@ -3,16 +3,13 @@ package com.adwio.player.ui.home
 import android.content.Intent
 import android.os.Bundle
 import com.adwio.player.data.SessionStore
-import com.adwio.player.data.TelemetryClient
-import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import com.adwio.player.data.RemoteConfigClient
 import com.adwio.player.data.model.MediaType
 import com.adwio.player.databinding.ActivityHomeBinding
 import com.adwio.player.ui.BaseFullscreenActivity
 import com.adwio.player.ui.library.GlobalSearchActivity
 import com.adwio.player.ui.library.LibraryActivity
-import com.adwio.player.ui.profile.ProfileActivity
+import com.adwio.player.ui.about.AboutActivity
 import com.adwio.player.ui.settings.SettingsActivity
 
 class HomeActivity : BaseFullscreenActivity() {
@@ -24,15 +21,15 @@ class HomeActivity : BaseFullscreenActivity() {
         setContentView(b.root)
 
         val session = SessionStore(this).load()
-        lifecycleScope.launch(Dispatchers.IO) { TelemetryClient(this@HomeActivity).heartbeat(session) }
         b.profileText.text = session?.server?.name ?: "ADWIO Professional"
+        RemoteConfigClient(this).check()
 
         b.liveCard.setOnClickListener { open(MediaType.LIVE) }
         b.moviesCard.setOnClickListener { open(MediaType.MOVIE) }
         b.seriesCard.setOnClickListener { open(MediaType.SERIES) }
         b.settingsButton.setOnClickListener { startActivity(Intent(this, SettingsActivity::class.java)) }
         b.searchButton.setOnClickListener { startActivity(Intent(this, GlobalSearchActivity::class.java)) }
-        b.profileButton.setOnClickListener { startActivity(Intent(this, ProfileActivity::class.java)) }
+        b.profileButton.setOnClickListener { startActivity(Intent(this, AboutActivity::class.java)) }
         b.liveCard.requestFocus()
     }
 
