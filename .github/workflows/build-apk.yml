@@ -3,16 +3,12 @@ name: Build ADWIO Professional APK
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
+    branches: [main]
     paths:
       - "app/**"
       - "build.gradle.kts"
       - "settings.gradle.kts"
       - "gradle.properties"
-      - "gradle/**"
-      - "gradlew"
-      - "gradlew.bat"
 
 permissions:
   contents: read
@@ -32,29 +28,23 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Set up Gradle
+      - name: Set up Gradle 9.5.0
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: "9.0.0"
+          gradle-version: "9.5.0"
 
       - name: Show source revision
         run: |
           echo "Commit: $GITHUB_SHA"
           git log -1 --oneline
-          echo "Kotlin files:"
-          find app/src/main -type f -name "*.kt" | sort | head -n 80
 
       - name: Build debug APK
         run: gradle --no-daemon :app:assembleDebug
 
       - name: Verify APK
-        shell: bash
         run: |
           APK="app/build/outputs/apk/debug/app-debug.apk"
-          test -f "$APK" || {
-            echo "::error::APK was not generated"
-            exit 1
-          }
+          test -f "$APK"
           ls -lh "$APK"
           sha256sum "$APK"
 
