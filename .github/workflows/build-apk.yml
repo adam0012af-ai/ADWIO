@@ -1,14 +1,7 @@
-name: Build ADWIO Professional APK
+name: Build ADWIO Professional 3.8 APK
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - "app/**"
-      - "build.gradle.kts"
-      - "settings.gradle.kts"
-      - "gradle.properties"
 
 permissions:
   contents: read
@@ -17,41 +10,25 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-
     steps:
-      - name: Checkout FINAL source
-        uses: actions/checkout@v4
-
-      - name: Set up Java 17
-        uses: actions/setup-java@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "17"
-
-      - name: Set up Gradle 9.5.0
-        uses: gradle/actions/setup-gradle@v4
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: "9.5.0"
-
-      - name: Show source revision
+          gradle-version: '9.5.0'
+      - name: Verify source
         run: |
-          echo "Commit: $GITHUB_SHA"
-          git log -1 --oneline
-
+          grep -q 'versionCode = 15' app/build.gradle.kts
+          grep -q 'versionName = "3.8.0"' app/build.gradle.kts
       - name: Build debug APK
         run: gradle --no-daemon :app:assembleDebug
-
-      - name: Verify APK
-        run: |
-          APK="app/build/outputs/apk/debug/app-debug.apk"
-          test -f "$APK"
-          ls -lh "$APK"
-          sha256sum "$APK"
-
-      - name: Upload ADWIO Professional APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: ADWIO-Professional-debug-${{ github.run_number }}
+          name: ADWIO-Professional-3.8-debug-${{ github.run_number }}
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
