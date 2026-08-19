@@ -17,8 +17,12 @@ class XtreamClient {
 
     private val moshi = Moshi.Builder().build()
 
-    fun authenticate(username: String, password: String): Session? {
-        for (server in ServerRepository.activeServers()) {
+    fun authenticate(username: String, password: String, serverUrl: String? = null): Session? {
+        val servers = if (!serverUrl.isNullOrBlank()) {
+            val normalized = normalizeBaseUrl(serverUrl) ?: return null
+            listOf(ServerHost("custom", hostLabel(normalized), normalized, true, 0))
+        } else ServerRepository.activeServers()
+        for (server in servers) {
             val url = "${server.baseUrl.trimEnd('/')}/player_api.php?username=${enc(username)}&password=${enc(password)}"
             try {
                 val body = get(url) ?: continue
@@ -217,6 +221,18 @@ class XtreamClient {
             return response.body?.string()
         }
     }
+
+    private fun normalizeBaseUrl(raw: String): String? {
+        var value = raw.trim()
+        if (value.isBlank()) return null
+        if (!value.startsWith("http://", true) && !value.startsWith("https://", true)) value = "http://$value"
+        return runCatching {
+            val u = java.net.URI(value)
+            if (u.host.isNullOrBlank()) null else value.substringBefore("/player_api.php").trimEnd('/')
+        }.getOrNull()
+    }
+
+    private fun hostLabel(url: String): String = runCatching { java.net.URI(url).host ?: "Server" }.getOrDefault("Server")
 
     private fun enc(value: String): String =
         URLEncoder.encode(value, Charsets.UTF_8.name())

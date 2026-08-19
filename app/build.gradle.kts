@@ -10,9 +10,10 @@ android {
         applicationId = "com.adwio.player"
         minSdk = 23
         targetSdk = 36
-        versionCode = 10
-        versionName = "3.4.0"
+        versionCode = 11
+        versionName = "3.5.0"
         buildConfigField("String", "APP_NAME", "\"ADWIO Player\"")
+        buildConfigField("String", "CONTROL_API_URL", "\"${System.getenv("ADWIO_CONTROL_API_URL") ?: ""}\"")
     }
 
     val keystorePath = System.getenv("ADWIO_KEYSTORE_PATH")

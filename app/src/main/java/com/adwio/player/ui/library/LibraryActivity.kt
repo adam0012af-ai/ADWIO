@@ -16,6 +16,7 @@ import com.adwio.player.data.AppSettings
 import com.adwio.player.data.SessionStore
 import com.adwio.player.data.RecentChannelsStore
 import com.adwio.player.data.XtreamClient
+import com.adwio.player.data.M3uClient
 import com.adwio.player.data.model.CategoryModel
 import com.adwio.player.data.model.MediaItemModel
 import com.adwio.player.data.model.MediaType
@@ -36,12 +37,15 @@ import kotlinx.coroutines.withContext
 class LibraryActivity : BaseFullscreenActivity() {
     companion object {
         private const val RECENTLY_ADDED_ID = "__recent_30__"
+        private const val SEARCH_ID = "__search__"
+        private const val FAVORITES_ID = "__favorites__"
         const val EXTRA_TYPE = "type"
         const val EXTRA_SEARCH = "search"
         const val EXTRA_FAVORITES = "favorites"
     }
     private lateinit var b: ActivityLibraryBinding
     private val api = XtreamClient()
+    private val m3u = M3uClient()
     private lateinit var store: SessionStore
     private lateinit var favorites: FavoritesStore
     private lateinit var recentChannels: RecentChannelsStore
@@ -68,8 +72,8 @@ class LibraryActivity : BaseFullscreenActivity() {
         b.categoryRecycler.layoutManager = LinearLayoutManager(this)
         b.categoryRecycler.adapter = categoryAdapter
         b.backButton.setOnClickListener { finish() }
-        b.searchButton.setOnClickListener { showSearch() }
-        b.favoritesButton.setOnClickListener { showFavorites() }
+        b.searchButton.visibility = android.view.View.GONE
+        b.favoritesButton.visibility = android.view.View.GONE
         b.recentButton.visibility = if (type == MediaType.LIVE) android.view.View.VISIBLE else android.view.View.GONE
         b.recentButton.setOnClickListener { showRecentChannels() }
         b.livePreviewPanel.visibility = if (type == MediaType.LIVE) android.view.View.VISIBLE else android.view.View.GONE
@@ -104,14 +108,23 @@ class LibraryActivity : BaseFullscreenActivity() {
         b.subtitleText.text = getString(com.adwio.player.R.string.loading_content)
         lifecycleScope.launch {
             val result = withContext(Dispatchers.IO) { runCatching {
-                val cats = api.loadCategories(session, type)
-                val items = when(type) { MediaType.LIVE -> api.loadLive(session); MediaType.MOVIE -> api.loadMovies(session); MediaType.SERIES -> api.loadSeries(session) }
-                cats to items
+                if (session.server.id == "m3u") {
+                    val all = m3u.load(session.server.baseUrl)
+                    val items = all.filter { it.type == type }
+                    m3u.categories(items, type) to items
+                } else {
+                    val cats = api.loadCategories(session, type)
+                    val items = when(type) { MediaType.LIVE -> api.loadLive(session); MediaType.MOVIE -> api.loadMovies(session); MediaType.SERIES -> api.loadSeries(session) }
+                    cats to items
+                }
             }}
             result.onSuccess { (cats, items) ->
                 allItems = items
                 val allNamed = cats.map { if (it.id.isBlank()) it.copy(name = "ALL • ${items.size}") else it }
-                val displayCategories = if (type == MediaType.LIVE) allNamed else listOf(CategoryModel(RECENTLY_ADDED_ID, "أضيف حديثًا • 30")) + allNamed
+                val tools = mutableListOf(CategoryModel(SEARCH_ID, "بحث"))
+                if (type != MediaType.LIVE) tools += CategoryModel(RECENTLY_ADDED_ID, "أضيف حديثًا • 30")
+                tools += CategoryModel(FAVORITES_ID, "المفضلة")
+                val displayCategories = tools + allNamed
 
                 if (type == MediaType.LIVE) {
                     val rememberedId = categoryPrefs.getString("last_category_${type.name}", null)
@@ -149,6 +162,8 @@ class LibraryActivity : BaseFullscreenActivity() {
             LiveCatalog.selectCategory(c.id)
             if (c.id.isNotBlank()) categoryPrefs.edit().putString("last_category_${type.name}", c.id).apply()
         }
+        if (c.id == SEARCH_ID) { showSearch(); return }
+        if (c.id == FAVORITES_ID) { showFavorites(); return }
         val list = when {
             c.id == RECENTLY_ADDED_ID -> recentlyAdded(allItems)
             c.id.isBlank() -> allItems
@@ -220,9 +235,16 @@ class LibraryActivity : BaseFullscreenActivity() {
 
     private fun openItem(item: MediaItemModel) {
         when (item.type) {
-            MediaType.SERIES -> startActivity(Intent(this, SeriesDetailsActivity::class.java).apply {
-                putExtra(SeriesDetailsActivity.EXTRA_ID, item.id); putExtra(SeriesDetailsActivity.EXTRA_TITLE, item.name); putExtra(SeriesDetailsActivity.EXTRA_IMAGE, item.logoUrl); putExtra(SeriesDetailsActivity.EXTRA_META, item.meta)
-            })
+            MediaType.SERIES -> {
+                val session = store.load()
+                if (session?.server?.id == "m3u" && item.streamUrl.isNotBlank()) {
+                    startActivity(Intent(this, PlayerActivity::class.java).apply {
+                        putExtra("url", item.streamUrl); putExtra("title", item.name); putExtra("id", "SERIES:${item.id}"); putExtra("type", MediaType.SERIES.name)
+                    })
+                } else startActivity(Intent(this, SeriesDetailsActivity::class.java).apply {
+                    putExtra(SeriesDetailsActivity.EXTRA_ID, item.id); putExtra(SeriesDetailsActivity.EXTRA_TITLE, item.name); putExtra(SeriesDetailsActivity.EXTRA_IMAGE, item.logoUrl); putExtra(SeriesDetailsActivity.EXTRA_META, item.meta)
+                })
+            }
             MediaType.MOVIE -> startActivity(Intent(this, MovieDetailsActivity::class.java).apply {
                 putExtra(MovieDetailsActivity.EXTRA_ID, item.id); putExtra(MovieDetailsActivity.EXTRA_TITLE, item.name); putExtra(MovieDetailsActivity.EXTRA_URL, item.streamUrl); putExtra(MovieDetailsActivity.EXTRA_IMAGE, item.logoUrl); putExtra(MovieDetailsActivity.EXTRA_META, item.meta)
             })

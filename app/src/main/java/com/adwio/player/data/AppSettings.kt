@@ -38,6 +38,12 @@ class AppSettings(context: Context) {
     var aspectMode: String
         get() = prefs.getString("aspect_mode", "fit") ?: "fit"
         set(v) = prefs.edit().putString("aspect_mode", v).apply()
+    var streamFormat: String
+        get() = prefs.getString("stream_format", "auto") ?: "auto"
+        set(v) = prefs.edit().putString("stream_format", v).apply()
+    var decoderMode: String
+        get() = prefs.getString("decoder_mode", "auto") ?: "auto"
+        set(v) = prefs.edit().putString("decoder_mode", v).apply()
     var playerControlsTimeoutMs: Int
         get() = prefs.getInt("controls_timeout", 4000)
         set(v) = prefs.edit().putInt("controls_timeout", v).apply()

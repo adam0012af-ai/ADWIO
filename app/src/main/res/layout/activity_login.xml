@@ -1,21 +1,43 @@
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/bg_gradient" android:padding="10dp">
-<LinearLayout android:layout_width="330dp" android:layout_height="wrap_content" android:layout_gravity="center" android:background="@drawable/bg_card" android:orientation="vertical" android:padding="12dp">
-<LinearLayout android:layout_width="match_parent" android:layout_height="38dp" android:gravity="center_vertical" android:orientation="horizontal">
-<ImageView android:layout_width="30dp" android:layout_height="30dp" android:src="@drawable/ic_adwio"/>
-<LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:layout_weight="1" android:orientation="vertical">
-<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="ADWIO" android:textColor="@color/adwio_text" android:textSize="16sp" android:textStyle="bold"/>
-<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Player" android:textColor="@color/adwio_muted" android:textSize="8sp"/>
-</LinearLayout></LinearLayout>
-<EditText android:id="@+id/playlistNameInput" android:layout_width="match_parent" android:layout_height="38dp" android:layout_marginTop="8dp" android:background="@drawable/bg_input" android:hint="@string/playlist_name" android:paddingHorizontal="11dp" android:singleLine="true" android:textColor="@color/adwio_text" android:textColorHint="@color/adwio_muted" android:textSize="11sp"/>
-<EditText android:id="@+id/usernameInput" android:layout_width="match_parent" android:layout_height="38dp" android:layout_marginTop="6dp" android:background="@drawable/bg_input" android:hint="@string/username" android:paddingHorizontal="11dp" android:singleLine="true" android:textColor="@color/adwio_text" android:textColorHint="@color/adwio_muted" android:textSize="11sp"/>
-<LinearLayout android:layout_width="match_parent" android:layout_height="38dp" android:layout_marginTop="6dp" android:background="@drawable/bg_input" android:orientation="horizontal">
-<EditText android:id="@+id/passwordInput" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:background="@android:color/transparent" android:hint="@string/password" android:inputType="textPassword" android:paddingHorizontal="11dp" android:singleLine="true" android:textColor="@color/adwio_text" android:textColorHint="@color/adwio_muted" android:textSize="11sp"/>
-<ImageButton android:id="@+id/passwordEye" android:layout_width="38dp" android:layout_height="38dp" android:background="@android:color/transparent" android:contentDescription="@string/show_password" android:padding="9dp" android:src="@android:drawable/ic_menu_view" android:tint="@color/adwio_muted"/>
-</LinearLayout>
-<LinearLayout android:layout_width="match_parent" android:layout_height="34dp" android:gravity="center_vertical" android:orientation="horizontal">
-<CheckBox android:id="@+id/rememberMe" android:layout_width="0dp" android:layout_height="32dp" android:layout_weight="1" android:checked="true" android:text="@string/remember_me" android:textColor="@color/adwio_text" android:textSize="10sp"/>
-<ProgressBar android:id="@+id/progressBar" android:layout_width="20dp" android:layout_height="20dp" android:visibility="gone"/>
-</LinearLayout>
-<Button android:id="@+id/signInButton" android:layout_width="match_parent" android:layout_height="38dp" android:background="@drawable/bg_focus" android:text="@string/sign_in" android:textAllCaps="false" android:textColor="@color/adwio_text" android:textSize="11sp" android:textStyle="bold"/>
-<TextView android:id="@+id/errorText" android:layout_width="match_parent" android:layout_height="18dp" android:gravity="center" android:textColor="#FF879A" android:textSize="9sp"/>
-</LinearLayout></FrameLayout>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@drawable/bg_gradient" android:padding="8dp">
+
+    <LinearLayout android:layout_width="390dp" android:layout_height="wrap_content"
+        android:layout_gravity="center" android:background="@drawable/bg_card"
+        android:orientation="vertical" android:padding="12dp">
+
+        <LinearLayout android:layout_width="match_parent" android:layout_height="34dp" android:gravity="center_vertical" android:orientation="horizontal">
+            <ImageView android:layout_width="28dp" android:layout_height="28dp" android:src="@drawable/ic_adwio"/>
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:layout_weight="1" android:text="ADWIO" android:textColor="@color/adwio_text" android:textSize="16sp" android:textStyle="bold"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="ADD PLAYLIST" android:textColor="@color/adwio_muted" android:textSize="8sp"/>
+        </LinearLayout>
+
+        <RadioGroup android:id="@+id/sourceTypeGroup" android:layout_width="match_parent" android:layout_height="34dp" android:layout_marginTop="6dp" android:gravity="center_vertical" android:orientation="horizontal">
+            <RadioButton android:id="@+id/xtreamRadio" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:checked="true" android:text="Xtream Codes" android:textColor="@color/adwio_text" android:textSize="10sp"/>
+            <RadioButton android:id="@+id/m3uRadio" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="M3U URL" android:textColor="@color/adwio_text" android:textSize="10sp"/>
+        </RadioGroup>
+
+        <EditText android:id="@+id/playlistNameInput" android:layout_width="match_parent" android:layout_height="36dp" android:layout_marginTop="4dp" android:background="@drawable/bg_input" android:hint="Playlist name" android:paddingHorizontal="10dp" android:singleLine="true" android:textColor="@color/adwio_text" android:textColorHint="@color/adwio_muted" android:textSize="10sp"/>
+
+        <LinearLayout android:id="@+id/xtreamFields" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+            <EditText android:id="@+id/serverUrlInput" android:layout_width="match_parent" android:layout_height="36dp" android:layout_marginTop="5dp" android:background="@drawable/bg_input" android:hint="Server URL / Host" android:inputType="textUri" android:paddingHorizontal="10dp" android:singleLine="true" android:textColor="@color/adwio_text" android:textColorHint="@color/adwio_muted" android:textSize="10sp"/>
+            <EditText android:id="@+id/usernameInput" android:layout_width="match_parent" android:layout_height="36dp" android:layout_marginTop="5dp" android:background="@drawable/bg_input" android:hint="Username" android:paddingHorizontal="10dp" android:singleLine="true" android:textColor="@color/adwio_text" android:textColorHint="@color/adwio_muted" android:textSize="10sp"/>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="36dp" android:layout_marginTop="5dp" android:background="@drawable/bg_input" android:orientation="horizontal">
+                <EditText android:id="@+id/passwordInput" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:background="@android:color/transparent" android:hint="Password" android:inputType="textPassword" android:paddingHorizontal="10dp" android:singleLine="true" android:textColor="@color/adwio_text" android:textColorHint="@color/adwio_muted" android:textSize="10sp"/>
+                <ImageButton android:id="@+id/passwordEye" android:layout_width="36dp" android:layout_height="36dp" android:background="@android:color/transparent" android:contentDescription="Show password" android:padding="9dp" android:src="@android:drawable/ic_menu_view" android:tint="@color/adwio_muted"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/m3uFields" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone">
+            <EditText android:id="@+id/m3uUrlInput" android:layout_width="match_parent" android:layout_height="36dp" android:layout_marginTop="5dp" android:background="@drawable/bg_input" android:hint="M3U URL" android:inputType="textUri" android:paddingHorizontal="10dp" android:singleLine="true" android:textColor="@color/adwio_text" android:textColorHint="@color/adwio_muted" android:textSize="10sp"/>
+            <EditText android:id="@+id/epgUrlInput" android:layout_width="match_parent" android:layout_height="36dp" android:layout_marginTop="5dp" android:background="@drawable/bg_input" android:hint="Guide URL (optional)" android:inputType="textUri" android:paddingHorizontal="10dp" android:singleLine="true" android:textColor="@color/adwio_text" android:textColorHint="@color/adwio_muted" android:textSize="10sp"/>
+        </LinearLayout>
+
+        <LinearLayout android:layout_width="match_parent" android:layout_height="31dp" android:gravity="center_vertical" android:orientation="horizontal">
+            <CheckBox android:id="@+id/rememberMe" android:layout_width="0dp" android:layout_height="30dp" android:layout_weight="1" android:checked="true" android:text="Save playlist" android:textColor="@color/adwio_text" android:textSize="9sp"/>
+            <ProgressBar android:id="@+id/progressBar" android:layout_width="18dp" android:layout_height="18dp" android:visibility="gone"/>
+        </LinearLayout>
+        <Button android:id="@+id/signInButton" android:layout_width="match_parent" android:layout_height="36dp" android:background="@drawable/bg_focus" android:text="CONNECT" android:textAllCaps="false" android:textColor="@color/adwio_text" android:textSize="10sp" android:textStyle="bold"/>
+        <TextView android:id="@+id/errorText" android:layout_width="match_parent" android:layout_height="17dp" android:gravity="center" android:textColor="#FF879A" android:textSize="8sp"/>
+    </LinearLayout>
+</FrameLayout>

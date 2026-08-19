@@ -5,9 +5,12 @@ import android.os.Bundle
 import android.text.InputType
 import android.view.View
 import androidx.lifecycle.lifecycleScope
+import com.adwio.player.data.M3uClient
 import com.adwio.player.data.PlaylistStore
 import com.adwio.player.data.SessionStore
 import com.adwio.player.data.XtreamClient
+import com.adwio.player.data.model.ServerHost
+import com.adwio.player.data.model.Session
 import com.adwio.player.databinding.ActivityLoginBinding
 import com.adwio.player.ui.BaseFullscreenActivity
 import com.adwio.player.ui.home.HomeActivity
@@ -18,59 +21,75 @@ import kotlinx.coroutines.withContext
 class LoginActivity : BaseFullscreenActivity() {
     private lateinit var b: ActivityLoginBinding
     private val api = XtreamClient()
+    private val m3u = M3uClient()
     private var passwordVisible = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         b = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(b.root)
-
+        b.sourceTypeGroup.setOnCheckedChangeListener { _, checked ->
+            val isM3u = checked == b.m3uRadio.id
+            b.xtreamFields.visibility = if (isM3u) View.GONE else View.VISIBLE
+            b.m3uFields.visibility = if (isM3u) View.VISIBLE else View.GONE
+            b.errorText.text = ""
+        }
         b.passwordEye.setOnClickListener {
             passwordVisible = !passwordVisible
-            b.passwordInput.inputType = if (passwordVisible) {
-                InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
-            } else {
-                InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-            }
+            b.passwordInput.inputType = if (passwordVisible) InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD else InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
             b.passwordInput.setSelection(b.passwordInput.text?.length ?: 0)
         }
-        b.signInButton.setOnClickListener { login() }
+        b.signInButton.setOnClickListener { connect() }
         b.playlistNameInput.requestFocus()
     }
 
-    private fun login() {
-        val playlistName = b.playlistNameInput.text?.toString()?.trim().orEmpty()
+    private fun connect() {
+        val name = b.playlistNameInput.text?.toString()?.trim().orEmpty()
+        if (name.isBlank()) { b.errorText.text = "Enter playlist name"; return }
+        if (b.m3uRadio.isChecked) connectM3u(name) else connectXtream(name)
+    }
+
+    private fun connectXtream(name: String) {
+        val server = b.serverUrlInput.text?.toString()?.trim().orEmpty()
         val username = b.usernameInput.text?.toString()?.trim().orEmpty()
         val password = b.passwordInput.text?.toString().orEmpty()
-
-        when {
-            playlistName.isBlank() -> b.errorText.text = getString(com.adwio.player.R.string.enter_playlist_name)
-            username.isBlank() || password.isBlank() -> b.errorText.text = getString(com.adwio.player.R.string.enter_credentials)
-            else -> authenticate(playlistName, username, password)
+        if (server.isBlank() || username.isBlank() || password.isBlank()) { b.errorText.text = "Enter server URL, username and password"; return }
+        setLoading(true)
+        lifecycleScope.launch {
+            val session = withContext(Dispatchers.IO) { api.authenticate(username, password, server) }
+            setLoading(false)
+            if (session == null) { b.errorText.text = "Unable to connect. Check playlist details."; return@launch }
+            saveAndOpen(name, session)
         }
     }
 
-    private fun authenticate(playlistName: String, username: String, password: String) {
+    private fun connectM3u(name: String) {
+        val url = b.m3uUrlInput.text?.toString()?.trim().orEmpty()
+        if (url.isBlank()) { b.errorText.text = "Enter M3U URL"; return }
         setLoading(true)
         lifecycleScope.launch {
-            val session = withContext(Dispatchers.IO) { api.authenticate(username, password) }
+            val items = withContext(Dispatchers.IO) { runCatching { m3u.load(url) }.getOrDefault(emptyList()) }
             setLoading(false)
-            if (session == null) {
-                b.errorText.text = getString(com.adwio.player.R.string.connection_failed)
-                return@launch
-            }
-            SessionStore(this@LoginActivity).save(session)
-            if (b.rememberMe.isChecked) PlaylistStore(this@LoginActivity).add(playlistName, session)
-            startActivity(Intent(this@LoginActivity, HomeActivity::class.java).addFlags(
-                Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            ))
+            if (items.isEmpty()) { b.errorText.text = "Playlist is empty or unavailable"; return@launch }
+            val host = runCatching { java.net.URI(url).host ?: "M3U" }.getOrDefault("M3U")
+            getSharedPreferences("adwio_m3u", MODE_PRIVATE).edit()
+                .putString("active_url", url)
+                .putString("active_epg", b.epgUrlInput.text?.toString()?.trim().orEmpty())
+                .apply()
+            saveAndOpen(name, Session("", "", ServerHost("m3u", host, url), null, "Active"))
         }
+    }
+
+    private fun saveAndOpen(name: String, session: Session) {
+        SessionStore(this).save(session)
+        if (b.rememberMe.isChecked) PlaylistStore(this).add(name, session)
+        startActivity(Intent(this, HomeActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK))
     }
 
     private fun setLoading(v: Boolean) {
         b.progressBar.visibility = if (v) View.VISIBLE else View.GONE
         b.signInButton.isEnabled = !v
         b.passwordEye.isEnabled = !v
-        b.errorText.text = if (v) getString(com.adwio.player.R.string.connecting) else ""
+        b.errorText.text = if (v) "Connecting…" else ""
     }
 }

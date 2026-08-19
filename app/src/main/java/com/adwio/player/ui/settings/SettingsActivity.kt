@@ -38,6 +38,21 @@ class SettingsActivity : BaseFullscreenActivity() {
 
         updateButtons()
 
+        b.streamFormatButton.setOnClickListener {
+            val labels = arrayOf("Auto", "HLS", "MPEG-TS")
+            val keys = arrayOf("auto", "hls", "ts")
+            AlertDialog.Builder(this).setTitle("Stream format").setSingleChoiceItems(labels, keys.indexOf(settings.streamFormat).coerceAtLeast(0)) { d, i ->
+                settings.streamFormat = keys[i]; updateButtons(); d.dismiss()
+            }.show()
+        }
+        b.decoderButton.setOnClickListener {
+            val labels = arrayOf("Auto", "Hardware preferred", "Software fallback")
+            val keys = arrayOf("auto", "hardware", "software")
+            AlertDialog.Builder(this).setTitle("Decoder").setSingleChoiceItems(labels, keys.indexOf(settings.decoderMode).coerceAtLeast(0)) { d, i ->
+                settings.decoderMode = keys[i]; updateButtons(); d.dismiss()
+            }.show()
+        }
+
         b.bufferButton.setOnClickListener {
             val values = arrayOf("Small", "Normal", "Large")
             val keys = arrayOf("small", "normal", "large")
@@ -110,6 +125,8 @@ class SettingsActivity : BaseFullscreenActivity() {
     }
 
     private fun updateButtons() {
+        b.streamFormatButton.text = "صيغة البث • ${settings.streamFormat.uppercase()}"
+        b.decoderButton.text = "فك الترميز • ${settings.decoderMode}"
         b.bufferButton.text = "المخزن المؤقت • ${settings.bufferMode}"
         b.aspectButton.text = "مقاس الصورة • ${settings.aspectMode}"
         b.languageButton.text = "اللغة • ${settings.language}"

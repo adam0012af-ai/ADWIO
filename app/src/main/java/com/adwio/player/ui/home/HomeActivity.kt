@@ -3,6 +3,10 @@ package com.adwio.player.ui.home
 import android.content.Intent
 import android.os.Bundle
 import com.adwio.player.data.SessionStore
+import com.adwio.player.data.TelemetryClient
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import com.adwio.player.data.model.MediaType
 import com.adwio.player.databinding.ActivityHomeBinding
 import com.adwio.player.ui.BaseFullscreenActivity
@@ -20,6 +24,7 @@ class HomeActivity : BaseFullscreenActivity() {
         setContentView(b.root)
 
         val session = SessionStore(this).load()
+        lifecycleScope.launch(Dispatchers.IO) { TelemetryClient(this@HomeActivity).heartbeat(session) }
         b.profileText.text = session?.server?.name ?: "ADWIO Professional"
 
         b.liveCard.setOnClickListener { open(MediaType.LIVE) }

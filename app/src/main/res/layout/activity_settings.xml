@@ -13,6 +13,8 @@
 </LinearLayout>
 <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="6dp" android:background="@drawable/bg_card" android:orientation="vertical" android:padding="7dp">
 <TextView android:layout_width="match_parent" android:layout_height="22dp" android:text="التخصيص" android:textColor="@color/adwio_cyan" android:textSize="9sp"/>
+<Button android:id="@+id/streamFormatButton" android:layout_width="match_parent" android:layout_height="34dp" android:background="@drawable/bg_focus" android:textColor="@color/adwio_text" android:textSize="8.5sp" android:textAllCaps="false"/>
+<Button android:id="@+id/decoderButton" android:layout_width="match_parent" android:layout_height="34dp" android:layout_marginTop="4dp" android:background="@drawable/bg_focus" android:textColor="@color/adwio_text" android:textSize="8.5sp" android:textAllCaps="false"/>
 <Button android:id="@+id/bufferButton" android:layout_width="match_parent" android:layout_height="34dp" android:background="@drawable/bg_focus" android:textColor="@color/adwio_text" android:textSize="8.5sp" android:textAllCaps="false"/>
 <Button android:id="@+id/aspectButton" android:layout_width="match_parent" android:layout_height="34dp" android:layout_marginTop="4dp" android:background="@drawable/bg_focus" android:textColor="@color/adwio_text" android:textSize="8.5sp" android:textAllCaps="false"/>
 <Button android:id="@+id/languageButton" android:layout_width="match_parent" android:layout_height="34dp" android:layout_marginTop="4dp" android:background="@drawable/bg_focus" android:textColor="@color/adwio_text" android:textSize="8.5sp" android:textAllCaps="false"/>
