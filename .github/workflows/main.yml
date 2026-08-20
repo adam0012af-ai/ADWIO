@@ -1,4 +1,4 @@
-name: Apply ADWIO 5.0.2 Stability Final
+name: Apply ADWIO 5.0.3 Orientation Sports Final
 
 on:
   workflow_dispatch:
@@ -9,6 +9,7 @@ permissions:
 jobs:
   apply:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -16,28 +17,29 @@ jobs:
           fetch-depth: 0
 
       - name: Verify package
-        run: test -f ADWIO_5.0.2_STABILITY_FINAL.zip
+        run: test -f ADWIO_5.0.3_ORIENTATION_SPORTS_FINAL.zip
 
       - name: Extract update
         shell: bash
         run: |
           set -euo pipefail
-          TMP_DIR="${RUNNER_TEMP}/adwio502"
+          TMP_DIR="${RUNNER_TEMP}/adwio503"
           rm -rf "$TMP_DIR"
           mkdir -p "$TMP_DIR"
-          unzip -q ADWIO_5.0.2_STABILITY_FINAL.zip -d "$TMP_DIR"
+          unzip -q ADWIO_5.0.3_ORIENTATION_SPORTS_FINAL.zip -d "$TMP_DIR"
           test -d "$TMP_DIR/ADWIO-main/app"
 
           rsync -a \
             --exclude='.git/' \
             --exclude='.github/workflows/' \
-            --exclude='ADWIO_5.0.2_STABILITY_FINAL.zip' \
+            --exclude='ADWIO_5.0.3_ORIENTATION_SPORTS_FINAL.zip' \
             "$TMP_DIR/ADWIO-main/" ./
 
-      - name: Verify version
+      - name: Verify version and orientation
         run: |
-          grep -q 'versionCode = 25' app/build.gradle.kts
-          grep -q 'versionName = "5.0.2"' app/build.gradle.kts
+          grep -q 'versionCode = 26' app/build.gradle.kts
+          grep -q 'versionName = "5.0.3"' app/build.gradle.kts
+          grep -q 'screenOrientation="sensorLandscape"' app/src/main/AndroidManifest.xml
 
       - name: Commit and push
         shell: bash
@@ -50,5 +52,5 @@ jobs:
             echo "No changes to commit."
             exit 0
           fi
-          git commit -m "Apply ADWIO 5.0.2 stability final"
+          git commit -m "Apply ADWIO 5.0.3 orientation and sports final"
           git push
