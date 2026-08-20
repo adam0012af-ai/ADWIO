@@ -22,7 +22,6 @@ class SportsClient {
         val result = mutableListOf<SportsMatch>()
 
         days.forEach { day ->
-            // Use multiple public endpoints automatically. No API key / GitHub secret.
             val dayMatches =
                 loadSofascore("https://api.sofascore.com/api/v1/sport/football/scheduled-events/$day")
                     .ifEmpty {
@@ -31,7 +30,6 @@ class SportsClient {
                     .ifEmpty {
                         loadEspn(day.replace("-", ""))
                     }
-
             result += dayMatches
         }
 
@@ -43,7 +41,7 @@ class SportsClient {
             .url(url)
             .header("Accept", "application/json")
             .header("Accept-Language", "ar,en;q=0.8")
-            .header("User-Agent", "Mozilla/5.0 (Linux; Android 14) ADWIO/5.0")
+            .header("User-Agent", "Mozilla/5.0 (Linux; Android 14) ADWIO/5.0.3")
             .build()
 
         client.newCall(req).execute().use { response ->
@@ -74,11 +72,13 @@ class SportsClient {
                 val hid = home?.optLong("id", 0L) ?: 0L
                 val aid = away?.optLong("id", 0L) ?: 0L
 
+                val competitionName =
+                    unique?.optString("name").orEmpty().trim()
+                        .ifBlank { tournament?.optString("name").orEmpty().trim() }
+
                 out += SportsMatch(
                     id = e.optLong("id"),
-                    competition = unique?.optString("name").orEmpty()
-                        .ifBlank { tournament?.optString("name").orEmpty() }
-                        .ifBlank { "Football" },
+                    competition = competitionName,
                     homeTeam = home?.optString("name").orEmpty().ifBlank { "Home" },
                     awayTeam = away?.optString("name").orEmpty().ifBlank { "Away" },
                     homeCrest = if (hid > 0) "https://api.sofascore.com/api/v1/team/$hid/image" else null,
@@ -113,7 +113,10 @@ class SportsClient {
                 var away: JSONObject? = null
                 for (j in 0 until competitors.length()) {
                     val c = competitors.optJSONObject(j) ?: continue
-                    if (c.optString("homeAway") == "home") home = c else if (c.optString("homeAway") == "away") away = c
+                    when (c.optString("homeAway")) {
+                        "home" -> home = c
+                        "away" -> away = c
+                    }
                 }
                 if (home == null || away == null) continue
 
@@ -123,6 +126,10 @@ class SportsClient {
                 val league = event.optJSONObject("league")
                 val date = event.optString("date")
                 if (date.isBlank()) continue
+
+                val competitionName =
+                    league?.optString("name").orEmpty().trim()
+                        .ifBlank { league?.optString("abbreviation").orEmpty().trim() }
 
                 val broadcasts = comp.optJSONArray("broadcasts")
                 val broadcaster = buildList {
@@ -141,9 +148,7 @@ class SportsClient {
 
                 out += SportsMatch(
                     id = event.optString("id").hashCode().toLong().let { if (it < 0) -it else it },
-                    competition = league?.optString("name").orEmpty()
-                        .ifBlank { league?.optString("abbreviation").orEmpty() }
-                        .ifBlank { "Football" },
+                    competition = competitionName,
                     homeTeam = homeTeam?.optString("displayName").orEmpty().ifBlank { "Home" },
                     awayTeam = awayTeam?.optString("displayName").orEmpty().ifBlank { "Away" },
                     homeCrest = homeTeam?.optString("logo")?.takeIf { it.isNotBlank() },
@@ -164,7 +169,6 @@ class SportsClient {
     }
 
     private fun normalizeIso(value: String): String {
-        // ESPN may include milliseconds; keep a canonical UTC Z value for existing UI.
         return runCatching {
             val candidates = listOf(
                 "yyyy-MM-dd'T'HH:mm'Z'",
@@ -172,7 +176,9 @@ class SportsClient {
                 "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
             )
             for (pattern in candidates) {
-                val f = SimpleDateFormat(pattern, Locale.US).apply { timeZone = TimeZone.getTimeZone("UTC") }
+                val f = SimpleDateFormat(pattern, Locale.US).apply {
+                    timeZone = TimeZone.getTimeZone("UTC")
+                }
                 val d = runCatching { f.parse(value) }.getOrNull()
                 if (d != null) return@runCatching isoUtc(d.time)
             }
@@ -180,11 +186,10 @@ class SportsClient {
         }.getOrDefault(value)
     }
 
-    private fun isoUtc(ms: Long): String {
-        return SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
+    private fun isoUtc(ms: Long): String =
+        SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
             timeZone = TimeZone.getTimeZone("UTC")
         }.format(Date(ms))
-    }
 
     private fun datesBetween(from: String, to: String): List<String> {
         val f = SimpleDateFormat("yyyy-MM-dd", Locale.US)
