@@ -1,0 +1,127 @@
+name: Apply ADWIO Reference Live Player Architecture
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply-reference-live:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply single-player Live architecture
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          python3 <<'PY'
+          from pathlib import Path
+          import base64
+
+          def dec(v):
+              return base64.b64decode(v).decode("utf-8")
+
+          def rep(path, old64, new64, label):
+              p = Path(path)
+              text = p.read_text(encoding="utf-8")
+              old = dec(old64)
+              new = dec(new64)
+              if old not in text:
+                  raise SystemExit(f"Missing expected block: {label}")
+              p.write_text(text.replace(old, new, 1), encoding="utf-8")
+
+          library = Path("app/src/main/java/com/adwio/player/ui/library/LibraryActivity.kt")
+          engine = Path("app/src/main/java/com/adwio/player/ui/player/PlaybackEngine.kt")
+          preview = Path("app/src/main/java/com/adwio/player/ui/player/AdwioPreviewPlayerView.kt")
+          layout = Path("app/src/main/res/layout/activity_library.xml")
+          gradle = Path("app/build.gradle.kts")
+
+          rep(str(library), "aW1wb3J0IGFuZHJvaWQuYXBwLlBpY3R1cmVJblBpY3R1cmVQYXJhbXMKaW1wb3J0IGFuZHJvaWQuY29udGVudC5JbnRlbnQKaW1wb3J0IGFuZHJvaWQuY29udGVudC5yZXMuQ29uZmlndXJhdGlvbgppbXBvcnQgYW5kcm9pZC5vcy5CdWlsZAppbXBvcnQgYW5kcm9pZC5vcy5CdW5kbGUKaW1wb3J0IGFuZHJvaWQudXRpbC5SYXRpb25hbAppbXBvcnQgYW5kcm9pZC52aWV3LlZpZXcKaW1wb3J0IGFuZHJvaWQudmlldy5WaWV3R3JvdXAKaW1wb3J0IGFuZHJvaWQud2lkZ2V0LkxpbmVhckxheW91dAppbXBvcnQgYW5kcm9pZC53aWRnZXQuRWRpdFRleHQKaW1wb3J0IGFuZHJvaWR4LmFwcGNvbXBhdC5hcHAuQWxlcnREaWFsb2cK", "aW1wb3J0IGFuZHJvaWQuYXBwLlBpY3R1cmVJblBpY3R1cmVQYXJhbXMKaW1wb3J0IGFuZHJvaWQuY29udGVudC5JbnRlbnQKaW1wb3J0IGFuZHJvaWQuY29udGVudC5yZXMuQ29uZmlndXJhdGlvbgppbXBvcnQgYW5kcm9pZC5ncmFwaGljcy5Db2xvcgppbXBvcnQgYW5kcm9pZC5vcy5CdWlsZAppbXBvcnQgYW5kcm9pZC5vcy5CdW5kbGUKaW1wb3J0IGFuZHJvaWQudXRpbC5SYXRpb25hbAppbXBvcnQgYW5kcm9pZC52aWV3LlZpZXcKaW1wb3J0IGFuZHJvaWQudmlldy5WaWV3R3JvdXAKaW1wb3J0IGFuZHJvaWQud2lkZ2V0LkxpbmVhckxheW91dAppbXBvcnQgYW5kcm9pZC53aWRnZXQuRWRpdFRleHQKaW1wb3J0IGFuZHJvaWR4LmFjdGl2aXR5Lk9uQmFja1ByZXNzZWRDYWxsYmFjawppbXBvcnQgYW5kcm9pZHguYXBwY29tcGF0LmFwcC5BbGVydERpYWxvZwppbXBvcnQgYW5kcm9pZHgubWVkaWEzLnVpLkFzcGVjdFJhdGlvRnJhbWVMYXlvdXQK", "Library imports")
+          rep(str(library), "ICAgIHByaXZhdGUgdmFyIHdhc01pbmlQaXAgPSBmYWxzZQogICAgcHJpdmF0ZSB2YXIgcHJldmlld09yaWdpbmFsUGFyYW1zOiBMaW5lYXJMYXlvdXQuTGF5b3V0UGFyYW1zPyA9IG51bGwK", "ICAgIHByaXZhdGUgdmFyIHdhc01pbmlQaXAgPSBmYWxzZQogICAgcHJpdmF0ZSB2YXIgcHJldmlld09yaWdpbmFsUGFyYW1zOiBMaW5lYXJMYXlvdXQuTGF5b3V0UGFyYW1zPyA9IG51bGwKICAgIHByaXZhdGUgdmFyIGxpdmVGdWxsc2NyZWVuTW9kZSA9IGZhbHNlCg==", "Library fullscreen state")
+          rep(str(library), "ICAgICAgICBiLmxpdmVQcmV2aWV3UGFuZWwudmlzaWJpbGl0eSA9IGlmICh0eXBlID09IE1lZGlhVHlwZS5MSVZFKSBWaWV3LlZJU0lCTEUgZWxzZSBWaWV3LkdPTkUKICAgICAgICBiLnByZXZpZXdGdWxsc2NyZWVuQnV0dG9uLnZpc2liaWxpdHkgPSBpZiAodHlwZSA9PSBNZWRpYVR5cGUuTElWRSkgVmlldy5WSVNJQkxFIGVsc2UgVmlldy5HT05FCiAgICAgICAgYi5wcmV2aWV3RnVsbHNjcmVlbkJ1dHRvbi5zZXRPbkNsaWNrTGlzdGVuZXIgeyBvcGVuQ3VycmVudExpdmVGdWxsc2NyZWVuKCkgfQoKICAgICAgICBjb25maWd1cmVHcmlkKCkKICAgICAgICBsb2FkKCkK", "ICAgICAgICBiLmxpdmVQcmV2aWV3UGFuZWwudmlzaWJpbGl0eSA9IGlmICh0eXBlID09IE1lZGlhVHlwZS5MSVZFKSBWaWV3LlZJU0lCTEUgZWxzZSBWaWV3LkdPTkUKICAgICAgICBiLnByZXZpZXdGdWxsc2NyZWVuQnV0dG9uLnZpc2liaWxpdHkgPSBpZiAodHlwZSA9PSBNZWRpYVR5cGUuTElWRSkgVmlldy5WSVNJQkxFIGVsc2UgVmlldy5HT05FCgogICAgICAgIGlmICh0eXBlID09IE1lZGlhVHlwZS5MSVZFKSB7CiAgICAgICAgICAgIC8vIFJlZmVyZW5jZSBhcmNoaXRlY3R1cmU6IHRoZSBzYW1lIGxpdmUgUGxheWVyVmlldy9FeG9QbGF5ZXIgc3RheXMgYWxpdmUKICAgICAgICAgICAgLy8gZm9yIHByZXZpZXcsIGZ1bGxzY3JlZW4gYW5kIFBpUC4gRnVsbHNjcmVlbiBpcyBhIFVJIG1vZGUsIG5vdCBhIG5ldyBBY3Rpdml0eS4KICAgICAgICAgICAgYi5wcmV2aWV3UGxheWVyLnNldEtlZXBDb250ZW50T25QbGF5ZXJSZXNldCh0cnVlKQogICAgICAgICAgICBiLnByZXZpZXdQbGF5ZXIucmVzaXplTW9kZSA9IEFzcGVjdFJhdGlvRnJhbWVMYXlvdXQuUkVTSVpFX01PREVfRklUCiAgICAgICAgICAgIGIucHJldmlld1BsYXllci5vbkZ1bGxzY3JlZW5SZXF1ZXN0ZWQgPSB7IGVudGVyTGl2ZUZ1bGxzY3JlZW5JblBsYWNlKCkgfQogICAgICAgICAgICBiLnByZXZpZXdGdWxsc2NyZWVuQnV0dG9uLnNldE9uQ2xpY2tMaXN0ZW5lciB7IGVudGVyTGl2ZUZ1bGxzY3JlZW5JblBsYWNlKCkgfQoKICAgICAgICAgICAgb25CYWNrUHJlc3NlZERpc3BhdGNoZXIuYWRkQ2FsbGJhY2sodGhpcywgb2JqZWN0IDogT25CYWNrUHJlc3NlZENhbGxiYWNrKHRydWUpIHsKICAgICAgICAgICAgICAgIG92ZXJyaWRlIGZ1biBoYW5kbGVPbkJhY2tQcmVzc2VkKCkgewogICAgICAgICAgICAgICAgICAgIGlmIChsaXZlRnVsbHNjcmVlbk1vZGUpIHsKICAgICAgICAgICAgICAgICAgICAgICAgZXhpdExpdmVGdWxsc2NyZWVuSW5QbGFjZSgpCiAgICAgICAgICAgICAgICAgICAgfSBlbHNlIHsKICAgICAgICAgICAgICAgICAgICAgICAgUGxheWJhY2tFbmdpbmUuc3RvcEFuZFJlbGVhc2UoKQogICAgICAgICAgICAgICAgICAgICAgICBBcHBSZXN1bWVTdGF0ZSh0aGlzQExpYnJhcnlBY3Rpdml0eSkuY2xlYXJQbGF5YmFja0tlZXBpbmdMaWJyYXJ5KCkKICAgICAgICAgICAgICAgICAgICAgICAgZmluaXNoKCkKICAgICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgIH0pCiAgICAgICAgfSBlbHNlIHsKICAgICAgICAgICAgYi5wcmV2aWV3RnVsbHNjcmVlbkJ1dHRvbi5zZXRPbkNsaWNrTGlzdGVuZXIgeyBvcGVuQ3VycmVudExpdmVGdWxsc2NyZWVuKCkgfQogICAgICAgIH0KCiAgICAgICAgY29uZmlndXJlR3JpZCgpCiAgICAgICAgbG9hZCgpCg==", "Library Live setup")
+          rep(str(library), "ICAgIHByaXZhdGUgZnVuIHByZXBhcmVNaW5pUGlwVWkoKSB7CiAgICAgICAgaWYgKHR5cGUgIT0gTWVkaWFUeXBlLkxJVkUpIHJldHVybgogICAgICAgIGIudG9wQmFyLnZpc2liaWxpdHkgPSBWaWV3LkdPTkUKICAgICAgICBiLmNhdGVnb3J5UGFuZWwudmlzaWJpbGl0eSA9IFZpZXcuR09ORQogICAgICAgIGIuY29udGVudFJlY3ljbGVyLnZpc2liaWxpdHkgPSBWaWV3LkdPTkUKICAgICAgICBiLnByZXZpZXdGb290ZXIudmlzaWJpbGl0eSA9IFZpZXcuR09ORQoKICAgICAgICBpZiAocHJldmlld09yaWdpbmFsUGFyYW1zID09IG51bGwpIHsKICAgICAgICAgICAgcHJldmlld09yaWdpbmFsUGFyYW1zID0gTGluZWFyTGF5b3V0LkxheW91dFBhcmFtcyhiLmxpdmVQcmV2aWV3UGFuZWwubGF5b3V0UGFyYW1zIGFzIExpbmVhckxheW91dC5MYXlvdXRQYXJhbXMpCiAgICAgICAgfQoKICAgICAgICBiLmxpdmVQcmV2aWV3UGFuZWwubGF5b3V0UGFyYW1zID0gTGluZWFyTGF5b3V0LkxheW91dFBhcmFtcygKICAgICAgICAgICAgMCwKICAgICAgICAgICAgVmlld0dyb3VwLkxheW91dFBhcmFtcy5NQVRDSF9QQVJFTlQsCiAgICAgICAgICAgIDFmCiAgICAgICAgKS5hcHBseSB7IG1hcmdpblN0YXJ0ID0gMCB9CiAgICAgICAgYi5saXZlUHJldmlld1BhbmVsLnNldFBhZGRpbmcoMCwgMCwgMCwgMCkKICAgIH0KCiAgICBwcml2YXRlIGZ1biByZXN0b3JlTWluaVVpKCkgewogICAgICAgIGlmICh0eXBlICE9IE1lZGlhVHlwZS5MSVZFKSByZXR1cm4KICAgICAgICBiLnRvcEJhci52aXNpYmlsaXR5ID0gVmlldy5WSVNJQkxFCiAgICAgICAgYi5jYXRlZ29yeVBhbmVsLnZpc2liaWxpdHkgPSBWaWV3LlZJU0lCTEUKICAgICAgICBiLmNvbnRlbnRSZWN5Y2xlci52aXNpYmlsaXR5ID0gVmlldy5WSVNJQkxFCiAgICAgICAgYi5wcmV2aWV3Rm9vdGVyLnZpc2liaWxpdHkgPSBWaWV3LlZJU0lCTEUKCiAgICAgICAgcHJldmlld09yaWdpbmFsUGFyYW1zPy5sZXQgewogICAgICAgICAgICBiLmxpdmVQcmV2aWV3UGFuZWwubGF5b3V0UGFyYW1zID0gTGluZWFyTGF5b3V0LkxheW91dFBhcmFtcyhpdCkKICAgICAgICB9CiAgICAgICAgdmFsIHBhZCA9ICg1ICogcmVzb3VyY2VzLmRpc3BsYXlNZXRyaWNzLmRlbnNpdHkpLnRvSW50KCkKICAgICAgICBiLmxpdmVQcmV2aWV3UGFuZWwuc2V0UGFkZGluZyhwYWQsIHBhZCwgcGFkLCBwYWQpCiAgICB9Cg==", "ICAgIHByaXZhdGUgZnVuIHByZXBhcmVNaW5pUGlwVWkoKSB7CiAgICAgICAgaWYgKHR5cGUgIT0gTWVkaWFUeXBlLkxJVkUpIHJldHVybgogICAgICAgIGFwcGx5RXhwYW5kZWRMaXZlVWkoKQogICAgfQoKICAgIHByaXZhdGUgZnVuIHJlc3RvcmVNaW5pVWkoKSB7CiAgICAgICAgaWYgKHR5cGUgIT0gTWVkaWFUeXBlLkxJVkUpIHJldHVybgogICAgICAgIGlmIChsaXZlRnVsbHNjcmVlbk1vZGUpIHsKICAgICAgICAgICAgYXBwbHlFeHBhbmRlZExpdmVVaSgpCiAgICAgICAgfSBlbHNlIHsKICAgICAgICAgICAgcmVzdG9yZU5vcm1hbExpdmVVaSgpCiAgICAgICAgfQogICAgfQoKICAgIHByaXZhdGUgZnVuIGVudGVyTGl2ZUZ1bGxzY3JlZW5JblBsYWNlKCkgewogICAgICAgIGlmICh0eXBlICE9IE1lZGlhVHlwZS5MSVZFIHx8CiAgICAgICAgICAgIFBsYXliYWNrRW5naW5lLmN1cnJlbnRUeXBlICE9IE1lZGlhVHlwZS5MSVZFIHx8CiAgICAgICAgICAgIFBsYXliYWNrRW5naW5lLmN1cnJlbnRVcmwuaXNCbGFuaygpCiAgICAgICAgKSByZXR1cm4KCiAgICAgICAgcGVyc2lzdExpdmVVaVN0YXRlKCkKICAgICAgICBsaXZlRnVsbHNjcmVlbk1vZGUgPSB0cnVlCiAgICAgICAgYi5wcmV2aWV3UGxheWVyLnBsYXllciA9IFBsYXliYWNrRW5naW5lLnBsYXllcgogICAgICAgIGIucHJldmlld1BsYXllci5yZXNpemVNb2RlID0gQXNwZWN0UmF0aW9GcmFtZUxheW91dC5SRVNJWkVfTU9ERV9aT09NCiAgICAgICAgY29uZmlndXJlTGl2ZUF1dG9QaXAoKQogICAgICAgIGFwcGx5RXhwYW5kZWRMaXZlVWkoKQogICAgfQoKICAgIHByaXZhdGUgZnVuIGV4aXRMaXZlRnVsbHNjcmVlbkluUGxhY2UoKSB7CiAgICAgICAgaWYgKHR5cGUgIT0gTWVkaWFUeXBlLkxJVkUpIHJldHVybgogICAgICAgIGxpdmVGdWxsc2NyZWVuTW9kZSA9IGZhbHNlCiAgICAgICAgcmVzdG9yZU5vcm1hbExpdmVVaSgpCiAgICAgICAgYi5wcmV2aWV3UGxheWVyLnBsYXllciA9IFBsYXliYWNrRW5naW5lLnBsYXllcgogICAgICAgIGIucHJldmlld1BsYXllci5yZXF1ZXN0Rm9jdXMoKQogICAgfQoKICAgIHByaXZhdGUgZnVuIGFwcGx5RXhwYW5kZWRMaXZlVWkoKSB7CiAgICAgICAgaWYgKHR5cGUgIT0gTWVkaWFUeXBlLkxJVkUpIHJldHVybgoKICAgICAgICBpZiAocHJldmlld09yaWdpbmFsUGFyYW1zID09IG51bGwpIHsKICAgICAgICAgICAgcHJldmlld09yaWdpbmFsUGFyYW1zID0gTGluZWFyTGF5b3V0LkxheW91dFBhcmFtcygKICAgICAgICAgICAgICAgIGIubGl2ZVByZXZpZXdQYW5lbC5sYXlvdXRQYXJhbXMgYXMgTGluZWFyTGF5b3V0LkxheW91dFBhcmFtcwogICAgICAgICAgICApCiAgICAgICAgfQoKICAgICAgICBiLnRvcEJhci52aXNpYmlsaXR5ID0gVmlldy5HT05FCiAgICAgICAgYi5jYXRlZ29yeVBhbmVsLnZpc2liaWxpdHkgPSBWaWV3LkdPTkUKICAgICAgICBiLmNvbnRlbnRSZWN5Y2xlci52aXNpYmlsaXR5ID0gVmlldy5HT05FCiAgICAgICAgYi5wcmV2aWV3Rm9vdGVyLnZpc2liaWxpdHkgPSBWaWV3LkdPTkUKCiAgICAgICAgYi5saWJyYXJ5Um9vdC5zZXRQYWRkaW5nKDAsIDAsIDAsIDApCiAgICAgICAgKGIubGlicmFyeUNvbnRlbnRSb3cubGF5b3V0UGFyYW1zIGFzPyBMaW5lYXJMYXlvdXQuTGF5b3V0UGFyYW1zKT8ubGV0IHsgcm93IC0+CiAgICAgICAgICAgIHJvdy50b3BNYXJnaW4gPSAwCiAgICAgICAgICAgIGIubGlicmFyeUNvbnRlbnRSb3cubGF5b3V0UGFyYW1zID0gcm93CiAgICAgICAgfQoKICAgICAgICBiLmxpdmVQcmV2aWV3UGFuZWwubGF5b3V0UGFyYW1zID0gTGluZWFyTGF5b3V0LkxheW91dFBhcmFtcygKICAgICAgICAgICAgMCwKICAgICAgICAgICAgVmlld0dyb3VwLkxheW91dFBhcmFtcy5NQVRDSF9QQVJFTlQsCiAgICAgICAgICAgIDFmCiAgICAgICAgKS5hcHBseSB7IG1hcmdpblN0YXJ0ID0gMCB9CgogICAgICAgIGIubGl2ZVByZXZpZXdQYW5lbC5zZXRQYWRkaW5nKDAsIDAsIDAsIDApCiAgICAgICAgYi5saXZlUHJldmlld1BhbmVsLnNldEJhY2tncm91bmRDb2xvcihDb2xvci5CTEFDSykKICAgICAgICBiLnByZXZpZXdQbGF5ZXIucmVzaXplTW9kZSA9IEFzcGVjdFJhdGlvRnJhbWVMYXlvdXQuUkVTSVpFX01PREVfWk9PTQogICAgICAgIGIucHJldmlld1BsYXllci5wbGF5ZXIgPSBQbGF5YmFja0VuZ2luZS5wbGF5ZXIKICAgIH0KCiAgICBwcml2YXRlIGZ1biByZXN0b3JlTm9ybWFsTGl2ZVVpKCkgewogICAgICAgIGlmICh0eXBlICE9IE1lZGlhVHlwZS5MSVZFKSByZXR1cm4KCiAgICAgICAgYi50b3BCYXIudmlzaWJpbGl0eSA9IFZpZXcuVklTSUJMRQogICAgICAgIGIuY2F0ZWdvcnlQYW5lbC52aXNpYmlsaXR5ID0gVmlldy5WSVNJQkxFCiAgICAgICAgYi5jb250ZW50UmVjeWNsZXIudmlzaWJpbGl0eSA9IFZpZXcuVklTSUJMRQogICAgICAgIGIucHJldmlld0Zvb3Rlci52aXNpYmlsaXR5ID0gVmlldy5WSVNJQkxFCgogICAgICAgIHZhbCBkZW5zaXR5ID0gcmVzb3VyY2VzLmRpc3BsYXlNZXRyaWNzLmRlbnNpdHkKICAgICAgICB2YWwgcm9vdFBhZCA9ICg3ICogZGVuc2l0eSkudG9JbnQoKQogICAgICAgIHZhbCBwcmV2aWV3UGFkID0gKDUgKiBkZW5zaXR5KS50b0ludCgpCiAgICAgICAgdmFsIHJvd1RvcCA9ICg1ICogZGVuc2l0eSkudG9JbnQoKQoKICAgICAgICBiLmxpYnJhcnlSb290LnNldFBhZGRpbmcocm9vdFBhZCwgcm9vdFBhZCwgcm9vdFBhZCwgcm9vdFBhZCkKICAgICAgICAoYi5saWJyYXJ5Q29udGVudFJvdy5sYXlvdXRQYXJhbXMgYXM/IExpbmVhckxheW91dC5MYXlvdXRQYXJhbXMpPy5sZXQgeyByb3cgLT4KICAgICAgICAgICAgcm93LnRvcE1hcmdpbiA9IHJvd1RvcAogICAgICAgICAgICBiLmxpYnJhcnlDb250ZW50Um93LmxheW91dFBhcmFtcyA9IHJvdwogICAgICAgIH0KCiAgICAgICAgcHJldmlld09yaWdpbmFsUGFyYW1zPy5sZXQgewogICAgICAgICAgICBiLmxpdmVQcmV2aWV3UGFuZWwubGF5b3V0UGFyYW1zID0gTGluZWFyTGF5b3V0LkxheW91dFBhcmFtcyhpdCkKICAgICAgICB9CgogICAgICAgIGIubGl2ZVByZXZpZXdQYW5lbC5zZXRQYWRkaW5nKHByZXZpZXdQYWQsIHByZXZpZXdQYWQsIHByZXZpZXdQYWQsIHByZXZpZXdQYWQpCiAgICAgICAgYi5saXZlUHJldmlld1BhbmVsLnNldEJhY2tncm91bmRSZXNvdXJjZShSLmRyYXdhYmxlLmJnX2xpdmVfcHJldmlld19wcmVtaXVtKQogICAgICAgIGIucHJldmlld1BsYXllci5yZXNpemVNb2RlID0gQXNwZWN0UmF0aW9GcmFtZUxheW91dC5SRVNJWkVfTU9ERV9GSVQKICAgIH0K", "Live PiP/fullscreen UI")
+          rep(str(library), "ICAgIHByaXZhdGUgZnVuIG9wZW5DdXJyZW50TGl2ZUZ1bGxzY3JlZW4oKSB7CiAgICAgICAgaWYgKHR5cGUgIT0gTWVkaWFUeXBlLkxJVkUgfHwKICAgICAgICAgICAgUGxheWJhY2tFbmdpbmUuY3VycmVudFR5cGUgIT0gTWVkaWFUeXBlLkxJVkUgfHwKICAgICAgICAgICAgUGxheWJhY2tFbmdpbmUuY3VycmVudFVybC5pc0JsYW5rKCkKICAgICAgICApIHJldHVybgoKICAgICAgICBwZXJzaXN0TGl2ZVVpU3RhdGUoKQogICAgICAgIHJlc3RvcmVMaXZlT25SZXN1bWUgPSB0cnVlCgogICAgICAgIC8vIE9uZSBFeG9QbGF5ZXIgbXVzdCBvd24gb25lIHZpZGVvIHN1cmZhY2UgYXQgYSB0aW1lLiBEZXRhY2ggdGhlIG1pbmkKICAgICAgICAvLyBzdXJmYWNlIGJlZm9yZSBQbGF5ZXJBY3Rpdml0eSBhdHRhY2hlcyB0aGUgc2FtZSBsaXZlIHNlc3Npb24uCiAgICAgICAgYi5wcmV2aWV3UGxheWVyLnBsYXllciA9IG51bGwKCiAgICAgICAgc3RhcnRBY3Rpdml0eShJbnRlbnQodGhpcywgUGxheWVyQWN0aXZpdHk6OmNsYXNzLmphdmEpLmFwcGx5IHsKICAgICAgICAgICAgcHV0RXh0cmEoInVybCIsIFBsYXliYWNrRW5naW5lLmN1cnJlbnRVcmwpCiAgICAgICAgICAgIHB1dEV4dHJhKCJ0aXRsZSIsIFBsYXliYWNrRW5naW5lLmN1cnJlbnRUaXRsZSkKICAgICAgICAgICAgcHV0RXh0cmEoImlkIiwgUGxheWJhY2tFbmdpbmUuY3VycmVudElkKQogICAgICAgICAgICBwdXRFeHRyYSgidHlwZSIsIE1lZGlhVHlwZS5MSVZFLm5hbWUpCiAgICAgICAgfSkKICAgIH0K", "ICAgIHByaXZhdGUgZnVuIG9wZW5DdXJyZW50TGl2ZUZ1bGxzY3JlZW4oKSB7CiAgICAgICAgZW50ZXJMaXZlRnVsbHNjcmVlbkluUGxhY2UoKQogICAgfQo=", "Live fullscreen action")
+          rep(str(library), "ICAgICAgICAgICAgICAgIENoYW5uZWxOYXZpZ2F0b3Iuc2V0UXVldWUodmlzaWJsZSwgaXRlbS5pZCkKICAgICAgICAgICAgICAgIHBlcnNpc3RMaXZlVWlTdGF0ZSgpCiAgICAgICAgICAgICAgICByZXN0b3JlTGl2ZU9uUmVzdW1lID0gdHJ1ZQoKICAgICAgICAgICAgICAgIC8vIFRyYW5zZmVyIHRoZSBleGlzdGluZyBsaXZlIHNlc3Npb24gY2xlYW5seSB0byBmdWxsc2NyZWVuLgogICAgICAgICAgICAgICAgYi5wcmV2aWV3UGxheWVyLnBsYXllciA9IG51bGwKCiAgICAgICAgICAgICAgICBzdGFydEFjdGl2aXR5KEludGVudCh0aGlzLCBQbGF5ZXJBY3Rpdml0eTo6Y2xhc3MuamF2YSkuYXBwbHkgewogICAgICAgICAgICAgICAgICAgIHB1dEV4dHJhKCJ1cmwiLCBpdGVtLnN0cmVhbVVybCkKICAgICAgICAgICAgICAgICAgICBwdXRFeHRyYSgidGl0bGUiLCBpdGVtLm5hbWUpCiAgICAgICAgICAgICAgICAgICAgcHV0RXh0cmEoImlkIiwgIkxJVkU6JHtpdGVtLmlkfSIpCiAgICAgICAgICAgICAgICAgICAgcHV0RXh0cmEoInR5cGUiLCBNZWRpYVR5cGUuTElWRS5uYW1lKQogICAgICAgICAgICAgICAgfSkK", "ICAgICAgICAgICAgICAgIENoYW5uZWxOYXZpZ2F0b3Iuc2V0UXVldWUodmlzaWJsZSwgaXRlbS5pZCkKICAgICAgICAgICAgICAgIHBlcnNpc3RMaXZlVWlTdGF0ZSgpCgogICAgICAgICAgICAgICAgLy8gU2Vjb25kIHRhcCBlbmxhcmdlcyB0aGUgU0FNRSBsaXZlIHByZXZpZXcvcGxheWVyIGluLXBsYWNlLgogICAgICAgICAgICAgICAgZW50ZXJMaXZlRnVsbHNjcmVlbkluUGxhY2UoKQo=", "Live second-tap action")
+
+          # Reference source keeps the live player owned by application context,
+          # not by a foreground service. Remove the experimental service start.
+          rep(str(engine), "aW1wb3J0IGFuZHJvaWQuY29udGVudC5Db250ZXh0CmltcG9ydCBhbmRyb2lkLmNvbnRlbnQuSW50ZW50CmltcG9ydCBhbmRyb2lkLm9zLkJ1aWxkCmltcG9ydCBhbmRyb2lkeC5jb3JlLmNvbnRlbnQuQ29udGV4dENvbXBhdAppbXBvcnQgYW5kcm9pZHgubWVkaWEzLmNvbW1vbi5NZWRpYUl0ZW0K", "aW1wb3J0IGFuZHJvaWQuY29udGVudC5Db250ZXh0CmltcG9ydCBhbmRyb2lkeC5tZWRpYTMuY29tbW9uLk1lZGlhSXRlbQo=", "PlaybackEngine imports")
+          text = engine.read_text(encoding="utf-8")
+          service_block = dec("ICAgICAgICAvLyBMSVZFIHBsYXliYWNrIG11c3Qgc3Vydml2ZSBBY3Rpdml0eSAtPiBIb21lIC8gUGlQIHRyYW5zaXRpb25zLgogICAgICAgIC8vIFN0YXJ0IHRoZSBNZWRpYVNlc3Npb25TZXJ2aWNlIHdoaWxlIHRoZSBhcHAgaXMgZm9yZWdyb3VuZGVkLCBiZWZvcmUKICAgICAgICAvLyBwbGF5YmFjayBzdGFydHMsIHNvIEFuZHJvaWQga2VlcHMgdGhlIHNhbWUgRXhvUGxheWVyIHNlc3Npb24gYWxpdmUuCiAgICAgICAgaWYgKHR5cGUgPT0gTWVkaWFUeXBlLkxJVkUpIHsKICAgICAgICAgICAgZW5zdXJlUGxheWJhY2tTZXJ2aWNlKGNvbnRleHQpCiAgICAgICAgfQoK")
+          helper_block = dec("ICAgIHByaXZhdGUgZnVuIGVuc3VyZVBsYXliYWNrU2VydmljZShjb250ZXh0OiBDb250ZXh0KSB7CiAgICAgICAgdmFsIGFwcCA9IGNvbnRleHQuYXBwbGljYXRpb25Db250ZXh0CiAgICAgICAgdmFsIGludGVudCA9IEludGVudChhcHAsIFBsYXliYWNrU2VydmljZTo6Y2xhc3MuamF2YSkKCiAgICAgICAgcnVuQ2F0Y2hpbmcgewogICAgICAgICAgICBpZiAoQnVpbGQuVkVSU0lPTi5TREtfSU5UID49IEJ1aWxkLlZFUlNJT05fQ09ERVMuTykgewogICAgICAgICAgICAgICAgQ29udGV4dENvbXBhdC5zdGFydEZvcmVncm91bmRTZXJ2aWNlKGFwcCwgaW50ZW50KQogICAgICAgICAgICB9IGVsc2UgewogICAgICAgICAgICAgICAgYXBwLnN0YXJ0U2VydmljZShpbnRlbnQpCiAgICAgICAgICAgIH0KICAgICAgICB9CiAgICB9Cgo=")
+          if service_block in text:
+              text = text.replace(service_block, "", 1)
+          if helper_block in text:
+              text = text.replace(helper_block, "", 1)
+          engine.write_text(text, encoding="utf-8")
+
+          # Callback-capable preview view: no Activity switch for LIVE fullscreen.
+          preview.write_text(dec("cGFja2FnZSBjb20uYWR3aW8ucGxheWVyLnVpLnBsYXllcgoKaW1wb3J0IGFuZHJvaWQuY29udGVudC5Db250ZXh0CmltcG9ydCBhbmRyb2lkLmNvbnRlbnQuSW50ZW50CmltcG9ydCBhbmRyb2lkLm9zLlN5c3RlbUNsb2NrCmltcG9ydCBhbmRyb2lkLnV0aWwuQXR0cmlidXRlU2V0CmltcG9ydCBhbmRyb2lkLnZpZXcuS2V5RXZlbnQKaW1wb3J0IGFuZHJvaWR4Lm1lZGlhMy51aS5QbGF5ZXJWaWV3CmltcG9ydCBjb20uYWR3aW8ucGxheWVyLmRhdGEubW9kZWwuTWVkaWFUeXBlCgpjbGFzcyBBZHdpb1ByZXZpZXdQbGF5ZXJWaWV3IEBKdm1PdmVybG9hZHMgY29uc3RydWN0b3IoCiAgICBjb250ZXh0OiBDb250ZXh0LAogICAgYXR0cnM6IEF0dHJpYnV0ZVNldD8gPSBudWxsLAogICAgZGVmU3R5bGVBdHRyOiBJbnQgPSAwCikgOiBQbGF5ZXJWaWV3KGNvbnRleHQsIGF0dHJzLCBkZWZTdHlsZUF0dHIpIHsKCiAgICBwcml2YXRlIHZhciBsYXN0T3BlbkF0ID0gMEwKCiAgICAvKioKICAgICAqIExpYnJhcnlBY3Rpdml0eSBpbnN0YWxscyB0aGlzIGNhbGxiYWNrIGZvciBMSVZFIHNvIGZ1bGxzY3JlZW4gaXMgb25seSBhCiAgICAgKiBsYXlvdXQgdHJhbnNpdGlvbi4gVGhpcyBrZWVwcyB0aGUgZXhhY3Qgc2FtZSBQbGF5ZXJWaWV3L0V4b1BsYXllci9zdXJmYWNlLgogICAgICovCiAgICB2YXIgb25GdWxsc2NyZWVuUmVxdWVzdGVkOiAoKCkgLT4gVW5pdCk/ID0gbnVsbAoKICAgIGluaXQgewogICAgICAgIGlzQ2xpY2thYmxlID0gdHJ1ZQogICAgICAgIGlzRm9jdXNhYmxlID0gdHJ1ZQogICAgICAgIHNldE9uQ2xpY2tMaXN0ZW5lciB7IHJlcXVlc3RGdWxsc2NyZWVuT25jZSgpIH0KICAgIH0KCiAgICBvdmVycmlkZSBmdW4gZGlzcGF0Y2hLZXlFdmVudChldmVudDogS2V5RXZlbnQpOiBCb29sZWFuIHsKICAgICAgICBpZiAoZXZlbnQuYWN0aW9uID09IEtleUV2ZW50LkFDVElPTl9ET1dOICYmCiAgICAgICAgICAgIGV2ZW50LmtleUNvZGUgaW4gc2V0T2YoCiAgICAgICAgICAgICAgICBLZXlFdmVudC5LRVlDT0RFX0RQQURfQ0VOVEVSLAogICAgICAgICAgICAgICAgS2V5RXZlbnQuS0VZQ09ERV9FTlRFUiwKICAgICAgICAgICAgICAgIEtleUV2ZW50LktFWUNPREVfTlVNUEFEX0VOVEVSCiAgICAgICAgICAgICkKICAgICAgICApIHsKICAgICAgICAgICAgcmVxdWVzdEZ1bGxzY3JlZW5PbmNlKCkKICAgICAgICAgICAgcmV0dXJuIHRydWUKICAgICAgICB9CiAgICAgICAgcmV0dXJuIHN1cGVyLmRpc3BhdGNoS2V5RXZlbnQoZXZlbnQpCiAgICB9CgogICAgcHJpdmF0ZSBmdW4gcmVxdWVzdEZ1bGxzY3JlZW5PbmNlKCkgewogICAgICAgIHZhbCBub3cgPSBTeXN0ZW1DbG9jay5lbGFwc2VkUmVhbHRpbWUoKQogICAgICAgIGlmIChub3cgLSBsYXN0T3BlbkF0IDwgNzAwTCkgcmV0dXJuCiAgICAgICAgbGFzdE9wZW5BdCA9IG5vdwoKICAgICAgICBvbkZ1bGxzY3JlZW5SZXF1ZXN0ZWQ/LmxldCB7CiAgICAgICAgICAgIGl0Lmludm9rZSgpCiAgICAgICAgICAgIHJldHVybgogICAgICAgIH0KCiAgICAgICAgLy8gU2FmZSBsZWdhY3kgZmFsbGJhY2sgZm9yIGFueSBzY3JlZW4gdGhhdCBkb2VzIG5vdCBpbnN0YWxsIHRoZSBjYWxsYmFjay4KICAgICAgICBpZiAoUGxheWJhY2tFbmdpbmUuY3VycmVudFR5cGUgIT0gTWVkaWFUeXBlLkxJVkUgfHwgUGxheWJhY2tFbmdpbmUuY3VycmVudFVybC5pc0JsYW5rKCkpIHJldHVybgogICAgICAgIGNvbnRleHQuc3RhcnRBY3Rpdml0eShJbnRlbnQoY29udGV4dCwgUGxheWVyQWN0aXZpdHk6OmNsYXNzLmphdmEpLmFwcGx5IHsKICAgICAgICAgICAgcHV0RXh0cmEoInVybCIsIFBsYXliYWNrRW5naW5lLmN1cnJlbnRVcmwpCiAgICAgICAgICAgIHB1dEV4dHJhKCJ0aXRsZSIsIFBsYXliYWNrRW5naW5lLmN1cnJlbnRUaXRsZSkKICAgICAgICAgICAgcHV0RXh0cmEoImlkIiwgUGxheWJhY2tFbmdpbmUuY3VycmVudElkKQogICAgICAgICAgICBwdXRFeHRyYSgidHlwZSIsIE1lZGlhVHlwZS5MSVZFLm5hbWUpCiAgICAgICAgICAgIGFkZEZsYWdzKEludGVudC5GTEFHX0FDVElWSVRZX1NJTkdMRV9UT1ApCiAgICAgICAgfSkKICAgIH0KfQo="), encoding="utf-8")
+
+          # Give the root a binding id so fullscreen/PiP can truly remove all outer padding.
+          lt = layout.read_text(encoding="utf-8")
+          root_old = '<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"\n    xmlns:app="http://schemas.android.com/apk/res-auto"\n    android:layout_width="match_parent"'
+          root_new = '<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"\n    xmlns:app="http://schemas.android.com/apk/res-auto"\n    android:id="@+id/libraryRoot"\n    android:layout_width="match_parent"'
+          if root_old not in lt:
+              raise SystemExit("Library root layout pattern missing")
+          lt = lt.replace(root_old, root_new, 1)
+          layout.write_text(lt, encoding="utf-8")
+
+          # Install-safe version bump.
+          g = gradle.read_text(encoding="utf-8")
+          if 'versionCode = 30' not in g or 'versionName = "5.0.5.2"' not in g:
+              raise SystemExit("Unexpected ADWIO version baseline")
+          g = g.replace('versionCode = 30', 'versionCode = 31', 1)
+          g = g.replace('versionName = "5.0.5.2"', 'versionName = "5.0.5.3"', 1)
+          gradle.write_text(g, encoding="utf-8")
+
+          print("Reference Live architecture applied.")
+          PY
+
+      - name: Verify exact scope
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          LIB="app/src/main/java/com/adwio/player/ui/library/LibraryActivity.kt"
+          ENGINE="app/src/main/java/com/adwio/player/ui/player/PlaybackEngine.kt"
+          PREVIEW="app/src/main/java/com/adwio/player/ui/player/AdwioPreviewPlayerView.kt"
+
+          grep -q 'liveFullscreenMode' "$LIB"
+          grep -q 'enterLiveFullscreenInPlace' "$LIB"
+          grep -q 'applyExpandedLiveUi' "$LIB"
+          grep -q 'setKeepContentOnPlayerReset(true)' "$LIB"
+          grep -q 'onFullscreenRequested' "$PREVIEW"
+          ! grep -q 'ensurePlaybackService' "$ENGINE"
+          grep -q 'android:id="@+id/libraryRoot"' app/src/main/res/layout/activity_library.xml
+          grep -q 'versionCode = 31' app/build.gradle.kts
+          grep -q 'versionName = "5.0.5.3"' app/build.gradle.kts
+
+          rm -f .github/workflows/apply-reference-live-player.yml
+
+      - name: Commit reference Live architecture
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+
+          ALLOWED='^(app/build.gradle.kts|app/src/main/java/com/adwio/player/ui/library/LibraryActivity.kt|app/src/main/java/com/adwio/player/ui/player/PlaybackEngine.kt|app/src/main/java/com/adwio/player/ui/player/AdwioPreviewPlayerView.kt|app/src/main/res/layout/activity_library.xml|.github/workflows/apply-reference-live-player.yml)$'
+          BAD="$(git diff --cached --name-only | grep -Ev "$ALLOWED" || true)"
+
+          if [ -n "$BAD" ]; then
+            echo "Unexpected files changed:"
+            echo "$BAD"
+            exit 1
+          fi
+
+          git commit -m "Adopt stable single-player Live fullscreen and PiP architecture"
+          git push origin HEAD:main
