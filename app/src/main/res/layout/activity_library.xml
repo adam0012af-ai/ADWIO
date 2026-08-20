@@ -111,9 +111,22 @@
             <LinearLayout
                 android:id="@+id/previewFooter"
                 android:layout_width="match_parent"
-                android:layout_height="30dp"
+                android:layout_height="38dp"
+                android:background="#B8000000"
                 android:gravity="center_vertical"
-                android:orientation="horizontal">
+                android:orientation="horizontal"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp">
+
+                <ImageButton
+                    android:id="@+id/previewBackButton"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:background="@android:color/transparent"
+                    android:contentDescription="@string/back"
+                    android:padding="7dp"
+                    android:src="@drawable/ic_back"
+                    android:visibility="gone"/>
 
                 <TextView
                     android:id="@+id/previewChannelName"
@@ -123,17 +136,28 @@
                     android:ellipsize="end"
                     android:gravity="center_vertical"
                     android:maxLines="1"
+                    android:paddingStart="6dp"
                     android:textColor="@color/adwio_text"
                     android:textSize="10sp"
                     android:textStyle="bold"/>
 
                 <ImageButton
+                    android:id="@+id/previewAspectButton"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:background="@android:color/transparent"
+                    android:contentDescription="@string/aspect_ratio"
+                    android:padding="7dp"
+                    android:src="@drawable/ic_zoom"
+                    android:visibility="gone"/>
+
+                <ImageButton
                     android:id="@+id/previewFullscreenButton"
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
                     android:background="@android:color/transparent"
                     android:contentDescription="@string/fullscreen"
-                    android:padding="6dp"
+                    android:padding="7dp"
                     android:src="@drawable/ic_zoom"/>
             </LinearLayout>
 

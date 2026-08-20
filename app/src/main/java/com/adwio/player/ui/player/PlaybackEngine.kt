@@ -1,6 +1,9 @@
 package com.adwio.player.ui.player
 
 import android.content.Context
+import android.content.Intent
+import android.os.Build
+import androidx.core.content.ContextCompat
 import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.DefaultLoadControl
@@ -64,7 +67,28 @@ object PlaybackEngine {
         }
         p.playWhenReady = true
         p.volume = 1f
+
+        // Start the MediaSessionService only after the LIVE player is already
+        // prepared/playing. This lets MediaSessionService promote itself with
+        // an active media notification and keep the same ExoPlayer alive.
+        if (type == MediaType.LIVE) {
+            ensureLivePlaybackService(context)
+        }
+
         return p
+    }
+
+    private fun ensureLivePlaybackService(context: Context) {
+        val app = context.applicationContext
+        val intent = Intent(app, PlaybackService::class.java)
+
+        runCatching {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                ContextCompat.startForegroundService(app, intent)
+            } else {
+                app.startService(intent)
+            }
+        }
     }
 
     fun updateMetadata(title: String, id: String, type: MediaType?) {

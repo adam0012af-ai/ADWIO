@@ -118,7 +118,12 @@ class LibraryActivity : BaseFullscreenActivity() {
             b.previewPlayer.setKeepContentOnPlayerReset(true)
             b.previewPlayer.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
             b.previewPlayer.onFullscreenRequested = { enterLiveFullscreenInPlace() }
-            b.previewFullscreenButton.setOnClickListener { enterLiveFullscreenInPlace() }
+            b.previewFullscreenButton.setOnClickListener {
+                if (liveFullscreenMode) exitLiveFullscreenInPlace()
+                else enterLiveFullscreenInPlace()
+            }
+            b.previewBackButton.setOnClickListener { exitLiveFullscreenInPlace() }
+            b.previewAspectButton.setOnClickListener { cycleLiveAspectRatio() }
 
             onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
                 override fun handleOnBackPressed() {
@@ -452,6 +457,10 @@ class LibraryActivity : BaseFullscreenActivity() {
             PlaybackEngine.player != null && PlaybackEngine.currentType == MediaType.LIVE
         ) {
             b.previewPlayer.player = PlaybackEngine.player
+            PlaybackEngine.player?.let { player ->
+                player.playWhenReady = true
+                player.play()
+            }
         }
         if (type == MediaType.LIVE && restoreLiveOnResume && allItems.isNotEmpty()) {
             restoreLiveOnResume = false
@@ -499,8 +508,18 @@ class LibraryActivity : BaseFullscreenActivity() {
 
         if (isInPictureInPictureMode) {
             wasMiniPip = true
+            PlaybackEngine.player?.let { player ->
+                player.playWhenReady = true
+                player.play()
+                b.previewPlayer.player = player
+            }
             prepareMiniPipUi()
         } else {
+            PlaybackEngine.player?.let { player ->
+                b.previewPlayer.player = player
+                player.playWhenReady = true
+                player.play()
+            }
             restoreMiniUi()
         }
     }
@@ -563,7 +582,13 @@ class LibraryActivity : BaseFullscreenActivity() {
         persistLiveUiState()
         liveFullscreenMode = true
         b.previewPlayer.player = PlaybackEngine.player
-        b.previewPlayer.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+
+        // Fullscreen means the player occupies the complete device area.
+        // Keep the video aspect ratio by default; do not crop/over-zoom.
+        b.previewPlayer.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
+
+        b.previewBackButton.visibility = View.VISIBLE
+        b.previewAspectButton.visibility = View.VISIBLE
         configureLiveAutoPip()
         applyExpandedLiveUi()
     }
@@ -571,9 +596,25 @@ class LibraryActivity : BaseFullscreenActivity() {
     private fun exitLiveFullscreenInPlace() {
         if (type != MediaType.LIVE) return
         liveFullscreenMode = false
+        b.previewBackButton.visibility = View.GONE
+        b.previewAspectButton.visibility = View.GONE
         restoreNormalLiveUi()
         b.previewPlayer.player = PlaybackEngine.player
+        PlaybackEngine.player?.play()
         b.previewPlayer.requestFocus()
+    }
+
+    private fun cycleLiveAspectRatio() {
+        if (type != MediaType.LIVE) return
+
+        b.previewPlayer.resizeMode = when (b.previewPlayer.resizeMode) {
+            AspectRatioFrameLayout.RESIZE_MODE_FIT ->
+                AspectRatioFrameLayout.RESIZE_MODE_FILL
+            AspectRatioFrameLayout.RESIZE_MODE_FILL ->
+                AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+            else ->
+                AspectRatioFrameLayout.RESIZE_MODE_FIT
+        }
     }
 
     private fun applyExpandedLiveUi() {
@@ -588,7 +629,11 @@ class LibraryActivity : BaseFullscreenActivity() {
         b.topBar.visibility = View.GONE
         b.categoryPanel.visibility = View.GONE
         b.contentRecycler.visibility = View.GONE
-        b.previewFooter.visibility = View.GONE
+
+        // Keep the live control strip visible in fullscreen.
+        b.previewFooter.visibility = if (inMiniPip) View.GONE else View.VISIBLE
+        b.previewBackButton.visibility = if (inMiniPip) View.GONE else View.VISIBLE
+        b.previewAspectButton.visibility = if (inMiniPip) View.GONE else View.VISIBLE
 
         b.libraryRoot.setPadding(0, 0, 0, 0)
         (b.libraryContentRow.layoutParams as? LinearLayout.LayoutParams)?.let { row ->
@@ -604,8 +649,17 @@ class LibraryActivity : BaseFullscreenActivity() {
 
         b.livePreviewPanel.setPadding(0, 0, 0, 0)
         b.livePreviewPanel.setBackgroundColor(Color.BLACK)
-        b.previewPlayer.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+
+        // FIT is the default fullscreen presentation. The control button lets
+        // the user choose Fill/Zoom manually without forcing a cropped image.
+        if (!inMiniPip) {
+            b.previewPlayer.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
+        }
         b.previewPlayer.player = PlaybackEngine.player
+        PlaybackEngine.player?.let { player ->
+            player.playWhenReady = true
+            player.play()
+        }
     }
 
     private fun restoreNormalLiveUi() {
@@ -615,6 +669,8 @@ class LibraryActivity : BaseFullscreenActivity() {
         b.categoryPanel.visibility = View.VISIBLE
         b.contentRecycler.visibility = View.VISIBLE
         b.previewFooter.visibility = View.VISIBLE
+        b.previewBackButton.visibility = View.GONE
+        b.previewAspectButton.visibility = View.GONE
 
         val density = resources.displayMetrics.density
         val rootPad = (7 * density).toInt()
