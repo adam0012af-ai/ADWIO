@@ -404,6 +404,7 @@ class LibraryActivity : BaseFullscreenActivity() {
         )
         b.previewPlayer.player = player
         player.volume = 1f
+        configureLiveAutoPip()
         b.previewPlayer.requestFocus()
     }
 
@@ -415,6 +416,7 @@ class LibraryActivity : BaseFullscreenActivity() {
             b.previewPlayer.player = PlaybackEngine.player
             b.previewChannelName.text = PlaybackEngine.currentTitle
             activePreviewLiveId = PlaybackEngine.currentId.removePrefix("LIVE:").ifBlank { activePreviewLiveId }
+            configureLiveAutoPip()
         }
     }
 
@@ -446,9 +448,15 @@ class LibraryActivity : BaseFullscreenActivity() {
     }
 
     override fun onUserLeaveHint() {
-        if (type == MediaType.LIVE &&
-            PlaybackEngine.player?.isPlaying == true &&
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+        val hasActiveLive =
+            type == MediaType.LIVE &&
+            PlaybackEngine.player != null &&
+            PlaybackEngine.currentType == MediaType.LIVE &&
+            PlaybackEngine.currentUrl.isNotBlank()
+
+        if (hasActiveLive &&
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+            Build.VERSION.SDK_INT < Build.VERSION_CODES.S
         ) {
             enterMiniPictureInPicture()
         }
@@ -468,6 +476,23 @@ class LibraryActivity : BaseFullscreenActivity() {
             prepareMiniPipUi()
         } else {
             restoreMiniUi()
+        }
+    }
+
+    private fun configureLiveAutoPip() {
+        if (type != MediaType.LIVE || Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        if (PlaybackEngine.currentUrl.isBlank()) return
+
+        runCatching {
+            val builder = PictureInPictureParams.Builder()
+                .setAspectRatio(Rational(16, 9))
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                builder.setAutoEnterEnabled(true)
+                builder.setSeamlessResizeEnabled(true)
+            }
+
+            setPictureInPictureParams(builder.build())
         }
     }
 

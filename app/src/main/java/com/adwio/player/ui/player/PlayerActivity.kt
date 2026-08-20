@@ -163,10 +163,15 @@ class PlayerActivity : BaseFullscreenActivity() {
         b.progressBar.visibility = if (type == MediaType.LIVE) View.INVISIBLE else View.VISIBLE
         b.progressBar.isEnabled = type != MediaType.LIVE
 
-        resizeMode = when (settings.aspectMode) {
-            "fill" -> AspectRatioFrameLayout.RESIZE_MODE_FILL
-            "zoom" -> AspectRatioFrameLayout.RESIZE_MODE_ZOOM
-            else -> AspectRatioFrameLayout.RESIZE_MODE_FIT
+        resizeMode = if (type == MediaType.LIVE) {
+            // Live fullscreen always fills the physical display.
+            AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+        } else {
+            when (settings.aspectMode) {
+                "fill" -> AspectRatioFrameLayout.RESIZE_MODE_FILL
+                "zoom" -> AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+                else -> AspectRatioFrameLayout.RESIZE_MODE_FIT
+            }
         }
         b.playerView.resizeMode = resizeMode
 
@@ -275,7 +280,14 @@ class PlayerActivity : BaseFullscreenActivity() {
     }
 
     override fun onUserLeaveHint() {
-        if (PlaybackEngine.player?.isPlaying == true) {
+        val hasActivePlayback =
+            PlaybackEngine.player != null &&
+            PlaybackEngine.currentUrl.isNotBlank()
+
+        if (type == MediaType.LIVE &&
+            hasActivePlayback &&
+            Build.VERSION.SDK_INT < Build.VERSION_CODES.S
+        ) {
             enteringPip = true
             maybeEnterPip()
         }
@@ -384,6 +396,7 @@ class PlayerActivity : BaseFullscreenActivity() {
         b.playerView.player = p
         b.playerView.resizeMode = resizeMode
         p.playWhenReady = true
+        configureFullscreenLiveAutoPip()
         updateQuality()
         updatePlayPauseIcon()
     }
@@ -578,6 +591,29 @@ class PlayerActivity : BaseFullscreenActivity() {
         val p = PlaybackEngine.player ?: return
         if (mediaId.isBlank() || type == MediaType.LIVE) return
         history.save(mediaId, title, url, type, p.currentPosition, p.duration.coerceAtLeast(0L))
+    }
+
+    private fun configureFullscreenLiveAutoPip() {
+        if (type != MediaType.LIVE || Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        if (PlaybackEngine.currentUrl.isBlank()) return
+
+        runCatching {
+            val format = PlaybackEngine.player?.videoFormat
+            val width = format?.width?.takeIf { it > 0 } ?: 16
+            val height = format?.height?.takeIf { it > 0 } ?: 9
+            val ratio = runCatching { Rational(width, height) }
+                .getOrDefault(Rational(16, 9))
+
+            val builder = PictureInPictureParams.Builder()
+                .setAspectRatio(ratio)
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                builder.setAutoEnterEnabled(true)
+                builder.setSeamlessResizeEnabled(true)
+            }
+
+            setPictureInPictureParams(builder.build())
+        }
     }
 
     private fun maybeEnterPip() {

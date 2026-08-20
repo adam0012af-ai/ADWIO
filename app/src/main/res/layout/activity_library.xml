@@ -86,7 +86,7 @@
             android:layout_height="match_parent"
             android:layout_marginStart="7dp"
             android:layout_weight="1.35"
-            android:background="@drawable/bg_preview_panel"
+            android:background="@drawable/bg_live_preview_premium"
             android:orientation="vertical"
             android:padding="5dp"
             android:visibility="gone">
