@@ -1,0 +1,18 @@
+<resources>
+    <string name="home_player_label">PLAYER</string>
+    <string name="home_live_hint">القنوات المباشرة</string>
+    <string name="home_movies_hint">مكتبة الأفلام</string>
+    <string name="home_series_hint">المواسم والحلقات</string>
+    <string name="home_matches_hint">الرياضة المباشرة</string>
+    <string name="home_recently_added">أضيف حديثًا</string>
+    <string name="home_recently_added_sub">الأفلام والمسلسلات</string>
+    <string name="home_favorites">المفضلة</string>
+    <string name="home_favorites_sub">قائمتك المحفوظة</string>
+    <string name="home_continue">متابعة المشاهدة</string>
+    <string name="home_continue_sub">أكمل من حيث توقفت</string>
+    <string name="home_collection">المكتبة</string>
+    <string name="home_collection_sub">تصفح المحتوى</string>
+    <string name="recent_watched_channels">آخر القنوات المشاهدة</string>
+    <string name="all_channels">كل القنوات</string>
+    <string name="fullscreen">ملء الشاشة</string>
+</resources>

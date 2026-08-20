@@ -1,0 +1,18 @@
+<resources>
+    <string name="home_player_label">PLAYER</string>
+    <string name="home_live_hint">Live channels</string>
+    <string name="home_movies_hint">Movie library</string>
+    <string name="home_series_hint">Seasons &amp; episodes</string>
+    <string name="home_matches_hint">Live sports</string>
+    <string name="home_recently_added">Recently Added</string>
+    <string name="home_recently_added_sub">Movies &amp; Series</string>
+    <string name="home_favorites">Favorites</string>
+    <string name="home_favorites_sub">Your saved list</string>
+    <string name="home_continue">Continue Watching</string>
+    <string name="home_continue_sub">Pick up where you left off</string>
+    <string name="home_collection">Collection</string>
+    <string name="home_collection_sub">Browse your library</string>
+    <string name="recent_watched_channels">Recently Watched</string>
+    <string name="all_channels">All Channels</string>
+    <string name="fullscreen">Full screen</string>
+</resources>

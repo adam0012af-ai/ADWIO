@@ -1,0 +1,15 @@
+ADWIO 5.0.4 Premium Home + Live Navigation
+
+Implemented:
+- Premium cinematic ADWIO home based on the approved visual concept.
+- Original artwork extracted from the approved ADWIO concept image.
+- Four premium Live / Movies / Series / Matches hero cards.
+- TV focus animation with subtle scale + elevation.
+- Premium quick-access strip.
+- Mini Player now has a large, always-visible Full Screen button.
+- Live opens on Recently Watched channels when available.
+- All Channels is the first category directly under Search.
+- Live category + list scroll position are persisted.
+- Returning from Full Screen restores the same category/list position.
+- Recent watched category is kept separate from Recently Added.
+- versionCode 27 / versionName 5.0.4.

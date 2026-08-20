@@ -1,69 +1,238 @@
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_gradient">
+    android:background="@drawable/bg_home_premium_root"
+    android:orientation="vertical"
+    android:paddingStart="16dp"
+    android:paddingTop="10dp"
+    android:paddingEnd="16dp"
+    android:paddingBottom="9dp">
+
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:padding="12dp">
+        android:layout_height="55dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
 
-        <LinearLayout android:layout_width="match_parent" android:layout_height="50dp" android:gravity="center_vertical" android:orientation="horizontal">
-            <ImageView android:layout_width="38dp" android:layout_height="38dp" android:src="@drawable/ic_adwio" android:scaleType="centerInside"/>
-            <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_marginStart="8dp" android:layout_weight="1" android:gravity="center_vertical" android:orientation="vertical">
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="ADWIO" android:textColor="@color/adwio_text" android:textSize="17sp" android:textStyle="bold"/>
-                <TextView android:id="@+id/expiryText" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="@color/adwio_muted" android:textSize="8sp" android:visibility="gone"/>
-            </LinearLayout>
-            <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginEnd="5dp" android:gravity="end" android:orientation="vertical">
-                <TextView android:id="@+id/clockText" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="@color/adwio_text" android:textSize="11sp" android:textStyle="bold"/>
-                <TextView android:id="@+id/dateText" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="@color/adwio_muted" android:textSize="7sp"/>
-            </LinearLayout>
-            <ImageButton android:id="@+id/searchButton" android:layout_width="34dp" android:layout_height="34dp" android:layout_marginStart="5dp" android:background="@drawable/bg_top_icon" android:contentDescription="@string/search" android:padding="8dp" android:src="@drawable/ic_search_modern"/>
-            <ImageButton android:id="@+id/refreshButton" android:layout_width="34dp" android:layout_height="34dp" android:layout_marginStart="5dp" android:background="@drawable/bg_top_icon" android:contentDescription="Refresh" android:padding="8dp" android:src="@drawable/ic_refresh_modern"/>
-            <ImageButton android:id="@+id/settingsButton" android:layout_width="34dp" android:layout_height="34dp" android:layout_marginStart="5dp" android:background="@drawable/bg_top_icon" android:contentDescription="@string/settings" android:padding="8dp" android:src="@drawable/ic_settings_modern"/>
-            <ImageButton android:id="@+id/userInfoButton" android:layout_width="34dp" android:layout_height="34dp" android:layout_marginStart="5dp" android:background="@drawable/bg_top_icon" android:contentDescription="User information" android:padding="8dp" android:src="@drawable/ic_user_modern"/>
-            <ImageButton android:id="@+id/switchAccountButton" android:layout_width="34dp" android:layout_height="34dp" android:layout_marginStart="5dp" android:background="@drawable/bg_top_icon" android:contentDescription="Switch account" android:padding="8dp" android:src="@drawable/ic_switch_modern"/>
-        </LinearLayout>
+        <ImageView
+            android:layout_width="47dp"
+            android:layout_height="47dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_adwio"/>
 
         <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_marginTop="10dp"
+            android:layout_width="150dp"
+            android:layout_height="match_parent"
+            android:layout_marginStart="9dp"
+            android:gravity="center_vertical"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:letterSpacing="0.04"
+                android:text="ADWIO"
+                android:textColor="@color/adwio_text"
+                android:textSize="20sp"
+                android:textStyle="bold"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:letterSpacing="0.32"
+                android:text="@string/home_player_label"
+                android:textColor="@color/adwio_muted"
+                android:textSize="5.5sp"/>
+        </LinearLayout>
+
+        <View
+            android:layout_width="1dp"
+            android:layout_height="35dp"
+            android:layout_marginHorizontal="10dp"
+            android:background="#26384A62"/>
+
+        <TextView
+            android:id="@+id/expiryText"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
             android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="horizontal"
-            android:weightSum="4">
+            android:gravity="center_vertical"
+            android:textColor="@color/adwio_muted"
+            android:textSize="8.5sp"
+            android:visibility="gone"/>
 
-            <FrameLayout android:id="@+id/liveCard" android:layout_width="0dp" android:layout_height="160dp" android:layout_weight="1" android:layout_marginEnd="4dp" android:background="@drawable/bg_home_card_final" android:clickable="true" android:focusable="true">
-                <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:orientation="vertical">
-                    <ImageView android:layout_width="50dp" android:layout_height="50dp" android:src="@drawable/ic_live_modern"/>
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="@string/live_title" android:textColor="@color/adwio_text" android:textSize="15sp" android:textStyle="bold"/>
-                    <TextView android:id="@+id/liveCountText" android:layout_width="1dp" android:layout_height="1dp" android:visibility="gone"/>
-                </LinearLayout>
-            </FrameLayout>
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_marginEnd="8dp"
+            android:gravity="center_vertical|end"
+            android:orientation="vertical">
 
-            <FrameLayout android:id="@+id/moviesCard" android:layout_width="0dp" android:layout_height="160dp" android:layout_weight="1" android:layout_marginHorizontal="4dp" android:background="@drawable/bg_home_card_final" android:clickable="true" android:focusable="true">
-                <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:orientation="vertical">
-                    <ImageView android:layout_width="50dp" android:layout_height="50dp" android:src="@drawable/ic_movie_modern"/>
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="@string/movies_title" android:textColor="@color/adwio_text" android:textSize="15sp" android:textStyle="bold"/>
-                    <TextView android:id="@+id/moviesCountText" android:layout_width="1dp" android:layout_height="1dp" android:visibility="gone"/>
-                </LinearLayout>
-            </FrameLayout>
+            <TextView
+                android:id="@+id/clockText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/adwio_text"
+                android:textSize="13sp"
+                android:textStyle="bold"/>
 
-            <FrameLayout android:id="@+id/seriesCard" android:layout_width="0dp" android:layout_height="160dp" android:layout_weight="1" android:layout_marginHorizontal="4dp" android:background="@drawable/bg_home_card_final" android:clickable="true" android:focusable="true">
-                <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:orientation="vertical">
-                    <ImageView android:layout_width="50dp" android:layout_height="50dp" android:src="@drawable/ic_series_modern"/>
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="@string/series_title" android:textColor="@color/adwio_text" android:textSize="15sp" android:textStyle="bold"/>
-                    <TextView android:id="@+id/seriesCountText" android:layout_width="1dp" android:layout_height="1dp" android:visibility="gone"/>
-                </LinearLayout>
-            </FrameLayout>
+            <TextView
+                android:id="@+id/dateText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/adwio_muted"
+                android:textSize="7sp"/>
+        </LinearLayout>
 
-            <FrameLayout android:id="@+id/matchesCard" android:layout_width="0dp" android:layout_height="160dp" android:layout_weight="1" android:layout_marginStart="4dp" android:background="@drawable/bg_home_card_final" android:clickable="true" android:focusable="true">
-                <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:orientation="vertical">
-                    <TextView android:layout_width="54dp" android:layout_height="54dp" android:gravity="center" android:text="⚽" android:textSize="34sp"/>
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="7dp" android:text="@string/sports_title" android:textColor="@color/adwio_text" android:textSize="14sp" android:textStyle="bold"/>
-                </LinearLayout>
-            </FrameLayout>
+        <ImageButton android:id="@+id/searchButton" android:layout_width="38dp" android:layout_height="38dp" android:layout_marginStart="5dp" android:background="@drawable/bg_top_icon" android:contentDescription="@string/search" android:padding="9dp" android:src="@drawable/ic_search_modern"/>
+        <ImageButton android:id="@+id/refreshButton" android:layout_width="38dp" android:layout_height="38dp" android:layout_marginStart="5dp" android:background="@drawable/bg_top_icon" android:contentDescription="Refresh" android:padding="9dp" android:src="@drawable/ic_refresh_modern"/>
+        <ImageButton android:id="@+id/settingsButton" android:layout_width="38dp" android:layout_height="38dp" android:layout_marginStart="5dp" android:background="@drawable/bg_top_icon" android:contentDescription="@string/settings" android:padding="9dp" android:src="@drawable/ic_settings_modern"/>
+        <ImageButton android:id="@+id/userInfoButton" android:layout_width="38dp" android:layout_height="38dp" android:layout_marginStart="5dp" android:background="@drawable/bg_top_icon" android:contentDescription="User information" android:padding="9dp" android:src="@drawable/ic_user_modern"/>
+        <ImageButton android:id="@+id/switchAccountButton" android:layout_width="38dp" android:layout_height="38dp" android:layout_marginStart="5dp" android:background="@drawable/bg_top_icon" android:contentDescription="Switch account" android:padding="9dp" android:src="@drawable/ic_switch_modern"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="9dp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:weightSum="4">
+
+        <FrameLayout
+            android:id="@+id/liveCard"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginEnd="5dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_home_premium_card"
+            android:clickable="true"
+            android:focusable="true"
+            android:foregroundGravity="fill">
+
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:alpha="0.95"
+                android:scaleType="centerCrop"
+                android:src="@drawable/home_live_art"/>
+
+            <View android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/bg_home_card_scrim"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="bottom|start"
+                android:orientation="vertical"
+                android:padding="14dp">
+
+                <ImageView android:layout_width="40dp" android:layout_height="40dp" android:src="@drawable/ic_live_modern"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="@string/live_title" android:textColor="@color/adwio_text" android:textSize="17sp" android:textStyle="bold"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="3dp" android:text="@string/home_live_hint" android:textColor="#C835D6FF" android:textSize="7.5sp"/>
+                <TextView android:id="@+id/liveCountText" android:layout_width="1dp" android:layout_height="1dp" android:visibility="gone"/>
+            </LinearLayout>
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/moviesCard"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginHorizontal="5dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_home_premium_card"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView android:layout_width="match_parent" android:layout_height="match_parent" android:alpha="0.95" android:scaleType="centerCrop" android:src="@drawable/home_movies_art"/>
+            <View android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/bg_home_card_scrim"/>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="bottom|start" android:orientation="vertical" android:padding="14dp">
+                <ImageView android:layout_width="40dp" android:layout_height="40dp" android:src="@drawable/ic_movie_modern"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="@string/movies_title" android:textColor="@color/adwio_text" android:textSize="17sp" android:textStyle="bold"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="3dp" android:text="@string/home_movies_hint" android:textColor="#D5B050FF" android:textSize="7.5sp"/>
+                <TextView android:id="@+id/moviesCountText" android:layout_width="1dp" android:layout_height="1dp" android:visibility="gone"/>
+            </LinearLayout>
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/seriesCard"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginHorizontal="5dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_home_premium_card"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView android:layout_width="match_parent" android:layout_height="match_parent" android:alpha="0.95" android:scaleType="centerCrop" android:src="@drawable/home_series_art"/>
+            <View android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/bg_home_card_scrim"/>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="bottom|start" android:orientation="vertical" android:padding="14dp">
+                <ImageView android:layout_width="40dp" android:layout_height="40dp" android:src="@drawable/ic_series_modern"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="@string/series_title" android:textColor="@color/adwio_text" android:textSize="17sp" android:textStyle="bold"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="3dp" android:text="@string/home_series_hint" android:textColor="#C835D6FF" android:textSize="7.5sp"/>
+                <TextView android:id="@+id/seriesCountText" android:layout_width="1dp" android:layout_height="1dp" android:visibility="gone"/>
+            </LinearLayout>
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/matchesCard"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginStart="5dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_home_premium_card"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView android:layout_width="match_parent" android:layout_height="match_parent" android:alpha="0.95" android:scaleType="centerCrop" android:src="@drawable/home_matches_art"/>
+            <View android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/bg_home_card_scrim"/>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="bottom|start" android:orientation="vertical" android:padding="14dp">
+                <TextView android:layout_width="40dp" android:layout_height="40dp" android:gravity="center" android:text="⚽" android:textSize="25sp"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="@string/sports_title" android:textColor="@color/adwio_text" android:textSize="17sp" android:textStyle="bold"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="3dp" android:text="@string/home_matches_hint" android:textColor="#C857E17A" android:textSize="7.5sp"/>
+            </LinearLayout>
+        </FrameLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:layout_marginTop="9dp"
+        android:background="@drawable/bg_home_quick"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="7dp">
+
+        <LinearLayout android:id="@+id/recentlyAddedQuick" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:background="@drawable/bg_home_quick" android:clickable="true" android:focusable="true" android:gravity="center_vertical" android:orientation="horizontal" android:paddingHorizontal="10dp">
+            <TextView android:layout_width="35dp" android:layout_height="35dp" android:gravity="center" android:text="◉" android:textColor="#B8624CFF" android:textSize="22sp"/>
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="7dp" android:layout_weight="1" android:orientation="vertical">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/home_recently_added" android:textColor="@color/adwio_text" android:textSize="9sp" android:textStyle="bold"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/home_recently_added_sub" android:textColor="@color/adwio_muted" android:textSize="6.5sp"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/favoritesQuick" android:layout_width="0dp" android:layout_height="48dp" android:layout_marginStart="5dp" android:layout_weight="1" android:background="@drawable/bg_home_quick" android:clickable="true" android:focusable="true" android:gravity="center_vertical" android:orientation="horizontal" android:paddingHorizontal="10dp">
+            <TextView android:layout_width="35dp" android:layout_height="35dp" android:gravity="center" android:text="☆" android:textColor="#FFFFAD35" android:textSize="24sp"/>
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="7dp" android:layout_weight="1" android:orientation="vertical">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/home_favorites" android:textColor="@color/adwio_text" android:textSize="9sp" android:textStyle="bold"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/home_favorites_sub" android:textColor="@color/adwio_muted" android:textSize="6.5sp"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/continueQuick" android:layout_width="0dp" android:layout_height="48dp" android:layout_marginStart="5dp" android:layout_weight="1" android:background="@drawable/bg_home_quick" android:clickable="true" android:focusable="true" android:gravity="center_vertical" android:orientation="horizontal" android:paddingHorizontal="10dp">
+            <TextView android:layout_width="35dp" android:layout_height="35dp" android:gravity="center" android:text="↻" android:textColor="#FF57E17A" android:textSize="23sp"/>
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="7dp" android:layout_weight="1" android:orientation="vertical">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/home_continue" android:textColor="@color/adwio_text" android:textSize="9sp" android:textStyle="bold"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/home_continue_sub" android:textColor="@color/adwio_muted" android:textSize="6.5sp"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/collectionQuick" android:layout_width="0dp" android:layout_height="48dp" android:layout_marginStart="5dp" android:layout_weight="1" android:background="@drawable/bg_home_quick" android:clickable="true" android:focusable="true" android:gravity="center_vertical" android:orientation="horizontal" android:paddingHorizontal="10dp">
+            <TextView android:layout_width="35dp" android:layout_height="35dp" android:gravity="center" android:text="♡" android:textColor="#FFFF3D9A" android:textSize="24sp"/>
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="7dp" android:layout_weight="1" android:orientation="vertical">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/home_collection" android:textColor="@color/adwio_text" android:textSize="9sp" android:textStyle="bold"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/home_collection_sub" android:textColor="@color/adwio_muted" android:textSize="6.5sp"/>
+            </LinearLayout>
         </LinearLayout>
     </LinearLayout>
-</FrameLayout>
+</LinearLayout>
