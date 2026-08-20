@@ -1,14 +1,21 @@
 package com.adwio.player.ui.library
 
+import android.app.PictureInPictureParams
 import android.content.Intent
+import android.content.res.Configuration
+import android.os.Build
 import android.os.Bundle
+import android.util.Rational
 import android.view.View
+import android.view.ViewGroup
+import android.widget.LinearLayout
 import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.adwio.player.R
+import com.adwio.player.data.AppResumeState
 import com.adwio.player.data.AppSettings
 import com.adwio.player.data.FavoritesStore
 import com.adwio.player.data.LibrarySnapshotCache
@@ -43,6 +50,7 @@ class LibraryActivity : BaseFullscreenActivity() {
     companion object {
         private const val RECENTLY_ADDED_ID = "__recent_30__"
         private const val RECENT_LIVE_ID = "__recent_live__"
+        private const val RECENT_WATCHED_ID = "__recent_watched__"
         private const val SEARCH_ID = "__search__"
         private const val FAVORITES_ID = "__favorites__"
         const val EXTRA_TYPE = "type"
@@ -66,6 +74,12 @@ class LibraryActivity : BaseFullscreenActivity() {
     private var previewJob: Job? = null
     private var activePreviewLiveId: String? = null
     private var hasVisibleContent = false
+    private val liveUiState by lazy { getSharedPreferences("adwio_live_ui_state", MODE_PRIVATE) }
+    private var restoreLiveOnResume = false
+    private var enteringMiniPip = false
+    private var inMiniPip = false
+    private var wasMiniPip = false
+    private var previewOriginalParams: LinearLayout.LayoutParams? = null
 
     private val type: MediaType by lazy {
         runCatching { MediaType.valueOf(intent.getStringExtra(EXTRA_TYPE) ?: "LIVE") }
@@ -92,6 +106,8 @@ class LibraryActivity : BaseFullscreenActivity() {
         b.recentButton.visibility = if (type == MediaType.LIVE) View.VISIBLE else View.GONE
         b.recentButton.setOnClickListener { showRecentChannels() }
         b.livePreviewPanel.visibility = if (type == MediaType.LIVE) View.VISIBLE else View.GONE
+        b.previewFullscreenButton.visibility = if (type == MediaType.LIVE) View.VISIBLE else View.GONE
+        b.previewFullscreenButton.setOnClickListener { openCurrentLiveFullscreen() }
 
         configureGrid()
         load()
@@ -209,28 +225,83 @@ class LibraryActivity : BaseFullscreenActivity() {
 
         val totalLabel = java.text.NumberFormat.getIntegerInstance().format(items.size)
         val named = (if (cats.isEmpty()) listOf(CategoryModel("", getString(R.string.all))) else cats).map {
-            if (it.id.isBlank()) it.copy(name = "${getString(R.string.all)} ($totalLabel)") else it
+            if (it.id.isBlank()) it.copy(name = "${getString(R.string.all_channels)} ($totalLabel)") else it
         }
 
-        val tools = mutableListOf(CategoryModel(SEARCH_ID, getString(R.string.search)))
+        val allCategory = named.firstOrNull { it.id.isBlank() }
+            ?: CategoryModel("", "${getString(R.string.all_channels)} ($totalLabel)")
+        val providerCategories = named.filterNot { it.id.isBlank() }
+
+        val tools = mutableListOf(
+            CategoryModel(SEARCH_ID, getString(R.string.search)),
+            allCategory
+        )
+
         if (type == MediaType.LIVE) {
+            tools += CategoryModel(RECENT_WATCHED_ID, getString(R.string.recent_watched_channels))
             tools += CategoryModel(RECENT_LIVE_ID, getString(R.string.recently_added))
         } else {
             tools += CategoryModel(RECENTLY_ADDED_ID, getString(R.string.recently_added_30))
         }
+
         tools += CategoryModel(FAVORITES_ID, getString(R.string.favorites))
-        categoryAdapter.submit(tools + named)
+        categoryAdapter.submit(tools + providerCategories)
 
         if (type == MediaType.LIVE) {
-            selectedCategory = RECENT_LIVE_ID
             LiveCatalog.setData(named, items, "")
-            val latest = recentlyAdded(items).take(40)
-            val first = if (latest.isNotEmpty()) latest else items.take(40)
-            submit(first)
+            restoreLiveStateOrDefault()
         } else {
             selectedCategory = RECENTLY_ADDED_ID
             submit(recentlyAdded(items))
         }
+    }
+
+    private fun restoreLiveStateOrDefault() {
+        if (type != MediaType.LIVE) return
+
+        val resume = AppResumeState(this).load()
+        val savedCategory = liveUiState.getString("category", null)
+            ?: resume.categoryId.takeIf { resume.screen == AppResumeState.SCREEN_LIBRARY && resume.mediaType == MediaType.LIVE }
+        val recent = recentWatchedItems()
+
+        selectedCategory = when {
+            !savedCategory.isNullOrBlank() &&
+                (savedCategory == RECENT_WATCHED_ID ||
+                 savedCategory == RECENT_LIVE_ID ||
+                 savedCategory == FAVORITES_ID ||
+                 allItems.any { it.categoryId == savedCategory }) -> savedCategory
+
+            recent.isNotEmpty() -> RECENT_WATCHED_ID
+            else -> ""
+        }
+
+        submitListForSelectedCategory()
+
+        val position = liveUiState.getInt("scroll_position", 0).coerceAtLeast(0)
+        b.contentRecycler.post {
+            (b.contentRecycler.layoutManager as? LinearLayoutManager)
+                ?.scrollToPositionWithOffset(position, 0)
+        }
+    }
+
+    private fun recentWatchedItems(): List<MediaItemModel> {
+        val byId = allItems.associateBy { it.id }
+        return recentChannels.list()
+            .mapNotNull { recent -> byId[recent.id] ?: recent }
+            .distinctBy { it.id }
+            .take(30)
+    }
+
+    private fun submitListForSelectedCategory() {
+        val list = when {
+            selectedCategory == RECENT_WATCHED_ID -> recentWatchedItems()
+            selectedCategory == RECENT_LIVE_ID -> recentlyAdded(allItems).take(40)
+            selectedCategory == FAVORITES_ID -> allItems.filter { favorites.isFavorite(it.id, it.type) }
+            selectedCategory.isBlank() -> allItems
+            selectedCategory.startsWith("__") -> allItems
+            else -> allItems.filter { it.categoryId == selectedCategory }
+        }
+        submit(list)
     }
 
     private fun applyLaunchIntent() {
@@ -247,6 +318,13 @@ class LibraryActivity : BaseFullscreenActivity() {
         if (type == MediaType.LIVE) LiveCatalog.selectCategory(c.id)
         if (c.id == SEARCH_ID) return showSearch()
         if (c.id == FAVORITES_ID) return showFavorites()
+        if (c.id == RECENT_WATCHED_ID) {
+            val list = recentWatchedItems()
+            submit(list)
+            b.subtitleText.text = getString(R.string.recent_watched_channels)
+            persistLiveUiState()
+            return
+        }
 
         val list = when {
             c.id == RECENTLY_ADDED_ID -> recentlyAdded(allItems)
@@ -256,6 +334,7 @@ class LibraryActivity : BaseFullscreenActivity() {
         }
         submit(list)
         b.subtitleText.text = c.name
+        if (type == MediaType.LIVE) persistLiveUiState()
     }
 
     private fun recentlyAdded(items: List<MediaItemModel>): List<MediaItemModel> {
@@ -294,10 +373,11 @@ class LibraryActivity : BaseFullscreenActivity() {
 
     private fun showRecentChannels() {
         if (type != MediaType.LIVE) return
-        val byId = allItems.associateBy { it.id }
-        val list = recentChannels.list().mapNotNull { recent -> byId[recent.id] ?: recent }
+        selectedCategory = RECENT_WATCHED_ID
+        val list = recentWatchedItems()
         submit(list)
         b.subtitleText.text = getString(R.string.recent_channels_count, list.size)
+        persistLiveUiState()
     }
 
     private fun previewLive(item: MediaItemModel) {
@@ -332,10 +412,171 @@ class LibraryActivity : BaseFullscreenActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        if (type == MediaType.LIVE && !inMiniPip &&
+            PlaybackEngine.player != null && PlaybackEngine.currentType == MediaType.LIVE
+        ) {
+            b.previewPlayer.player = PlaybackEngine.player
+        }
+        if (type == MediaType.LIVE && restoreLiveOnResume && allItems.isNotEmpty()) {
+            restoreLiveOnResume = false
+            restoreLiveStateOrDefault()
+        }
+    }
+
+    override fun onPause() {
+        if (type == MediaType.LIVE) {
+            persistLiveUiState()
+        } else {
+            AppResumeState(this).saveLibrary(
+                type = type,
+                categoryId = selectedCategory,
+                scrollPosition = (b.contentRecycler.layoutManager as? LinearLayoutManager)
+                    ?.findFirstVisibleItemPosition()?.coerceAtLeast(0) ?: 0
+            )
+        }
+        super.onPause()
+    }
+
+    override fun onUserLeaveHint() {
+        if (type == MediaType.LIVE &&
+            AppSettings(this).pictureInPicture &&
+            PlaybackEngine.player?.isPlaying == true &&
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+        ) {
+            enterMiniPictureInPicture()
+        }
+        super.onUserLeaveHint()
+    }
+
+    override fun onPictureInPictureModeChanged(
+        isInPictureInPictureMode: Boolean,
+        newConfig: Configuration
+    ) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
+        inMiniPip = isInPictureInPictureMode
+        enteringMiniPip = false
+
+        if (isInPictureInPictureMode) {
+            wasMiniPip = true
+            prepareMiniPipUi()
+        } else {
+            restoreMiniUi()
+        }
+    }
+
+    private fun enterMiniPictureInPicture() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        enteringMiniPip = true
+        prepareMiniPipUi()
+        val entered = runCatching {
+            enterPictureInPictureMode(
+                PictureInPictureParams.Builder()
+                    .setAspectRatio(Rational(16, 9))
+                    .build()
+            )
+        }.getOrDefault(false)
+        inMiniPip = entered
+        if (!entered) {
+            enteringMiniPip = false
+            restoreMiniUi()
+        }
+    }
+
+    private fun prepareMiniPipUi() {
+        if (type != MediaType.LIVE) return
+        b.topBar.visibility = View.GONE
+        b.categoryPanel.visibility = View.GONE
+        b.contentRecycler.visibility = View.GONE
+        b.previewFooter.visibility = View.GONE
+
+        if (previewOriginalParams == null) {
+            previewOriginalParams = LinearLayout.LayoutParams(b.livePreviewPanel.layoutParams as LinearLayout.LayoutParams)
+        }
+
+        b.livePreviewPanel.layoutParams = LinearLayout.LayoutParams(
+            0,
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            1f
+        ).apply { marginStart = 0 }
+        b.livePreviewPanel.setPadding(0, 0, 0, 0)
+    }
+
+    private fun restoreMiniUi() {
+        if (type != MediaType.LIVE) return
+        b.topBar.visibility = View.VISIBLE
+        b.categoryPanel.visibility = View.VISIBLE
+        b.contentRecycler.visibility = View.VISIBLE
+        b.previewFooter.visibility = View.VISIBLE
+
+        previewOriginalParams?.let {
+            b.livePreviewPanel.layoutParams = LinearLayout.LayoutParams(it)
+        }
+        val pad = (5 * resources.displayMetrics.density).toInt()
+        b.livePreviewPanel.setPadding(pad, pad, pad, pad)
+    }
+
+    private fun persistLiveUiState() {
+        if (type != MediaType.LIVE) return
+        val position = (b.contentRecycler.layoutManager as? LinearLayoutManager)
+            ?.findFirstVisibleItemPosition()
+            ?.coerceAtLeast(0) ?: 0
+
+        liveUiState.edit()
+            .putString("category", selectedCategory)
+            .putInt("scroll_position", position)
+            .putString("channel_id", activePreviewLiveId)
+            .apply()
+
+        val active = PlaybackEngine.currentType == MediaType.LIVE &&
+            PlaybackEngine.currentUrl.isNotBlank()
+        AppResumeState(this).saveLibrary(
+            type = MediaType.LIVE,
+            categoryId = selectedCategory,
+            scrollPosition = position,
+            playbackActive = active,
+            mediaId = if (active) PlaybackEngine.currentId else "",
+            title = if (active) PlaybackEngine.currentTitle else "",
+            url = if (active) PlaybackEngine.currentUrl else ""
+        )
+    }
+
+    private fun openCurrentLiveFullscreen() {
+        if (type != MediaType.LIVE ||
+            PlaybackEngine.currentType != MediaType.LIVE ||
+            PlaybackEngine.currentUrl.isBlank()
+        ) return
+
+        persistLiveUiState()
+        restoreLiveOnResume = true
+
+        startActivity(Intent(this, PlayerActivity::class.java).apply {
+            putExtra("url", PlaybackEngine.currentUrl)
+            putExtra("title", PlaybackEngine.currentTitle)
+            putExtra("id", PlaybackEngine.currentId)
+            putExtra("type", MediaType.LIVE.name)
+        })
+    }
+
     override fun onStop() {
         previewJob?.cancel()
-        b.previewPlayer.player = null
+
+        val keepPlayerAttached = inMiniPip || enteringMiniPip ||
+            (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && isInPictureInPictureMode)
+
+        if (!keepPlayerAttached) {
+            b.previewPlayer.player = null
+        }
         super.onStop()
+    }
+
+    override fun onDestroy() {
+        if (wasMiniPip && isFinishing) {
+            PlaybackEngine.stopAndRelease()
+            AppResumeState(this).clearPlaybackKeepingLibrary()
+        }
+        super.onDestroy()
     }
 
     private fun openItem(item: MediaItemModel) {
@@ -381,6 +622,8 @@ class LibraryActivity : BaseFullscreenActivity() {
                     allItems
                 } else allItems.filter { it.categoryId == selectedCategory }
                 ChannelNavigator.setQueue(visible, item.id)
+                persistLiveUiState()
+                restoreLiveOnResume = true
                 startActivity(Intent(this, PlayerActivity::class.java).apply {
                     putExtra("url", item.streamUrl)
                     putExtra("title", item.name)
