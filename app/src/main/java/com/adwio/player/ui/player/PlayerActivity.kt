@@ -12,8 +12,8 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.widget.SeekBar
-import androidx.appcompat.app.AlertDialog
 import androidx.activity.OnBackPressedCallback
+import androidx.appcompat.app.AlertDialog
 import androidx.core.view.isVisible
 import androidx.media3.common.C
 import androidx.media3.common.PlaybackException
@@ -22,6 +22,7 @@ import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.adwio.player.R
 import com.adwio.player.data.AppSettings
 import com.adwio.player.data.FavoritesStore
 import com.adwio.player.data.PlaybackHistory
@@ -54,9 +55,7 @@ class PlayerActivity : BaseFullscreenActivity() {
     private var nextUrl = ""
     private var nextTitle = ""
     private var nextId = ""
-    private var controlsVisible = true
     private var dragging = false
-    private var returningToMini = false
     private var resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
 
     private val hideControls = Runnable { setControlsVisible(false) }
@@ -148,14 +147,10 @@ class PlayerActivity : BaseFullscreenActivity() {
         b.browseButton.visibility = if (type == MediaType.LIVE) View.VISIBLE else View.GONE
         b.progressBar.isEnabled = type != MediaType.LIVE
 
-        resizeMode = if (type == MediaType.LIVE) {
-            AspectRatioFrameLayout.RESIZE_MODE_ZOOM
-        } else {
-            when (settings.aspectMode) {
-                "fill" -> AspectRatioFrameLayout.RESIZE_MODE_FILL
-                "zoom" -> AspectRatioFrameLayout.RESIZE_MODE_ZOOM
-                else -> AspectRatioFrameLayout.RESIZE_MODE_FIT
-            }
+        resizeMode = when (settings.aspectMode) {
+            "fill" -> AspectRatioFrameLayout.RESIZE_MODE_FILL
+            "zoom" -> AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+            else -> AspectRatioFrameLayout.RESIZE_MODE_FIT
         }
         b.playerView.resizeMode = resizeMode
 
@@ -170,11 +165,17 @@ class PlayerActivity : BaseFullscreenActivity() {
         b.subtitleButton.setOnClickListener { showTrackMenu(C.TRACK_TYPE_TEXT) }
         b.zoomButton.setOnClickListener {
             resizeMode = when (resizeMode) {
-                AspectRatioFrameLayout.RESIZE_MODE_ZOOM -> AspectRatioFrameLayout.RESIZE_MODE_FIT
                 AspectRatioFrameLayout.RESIZE_MODE_FIT -> AspectRatioFrameLayout.RESIZE_MODE_FILL
-                else -> AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+                AspectRatioFrameLayout.RESIZE_MODE_FILL -> AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+                else -> AspectRatioFrameLayout.RESIZE_MODE_FIT
+            }
+            settings.aspectMode = when (resizeMode) {
+                AspectRatioFrameLayout.RESIZE_MODE_FILL -> "fill"
+                AspectRatioFrameLayout.RESIZE_MODE_ZOOM -> "zoom"
+                else -> "fit"
             }
             b.playerView.resizeMode = resizeMode
+            showStatus(settings.aspectMode.uppercase())
             showControls()
         }
         b.browseButton.setOnClickListener { showLiveOverlay() }
@@ -193,9 +194,7 @@ class PlayerActivity : BaseFullscreenActivity() {
         })
 
         b.playerRoot.setOnTouchListener { _, event ->
-            if (event.action == MotionEvent.ACTION_UP && !b.liveBrowseOverlay.isVisible) {
-                showControls()
-            }
+            if (event.action == MotionEvent.ACTION_UP && !b.liveBrowseOverlay.isVisible) showControls()
             true
         }
         b.playerView.setOnClickListener { showControls() }
@@ -231,16 +230,17 @@ class PlayerActivity : BaseFullscreenActivity() {
         inPip = isInPictureInPictureMode
         if (isInPictureInPictureMode) {
             b.playerControls.visibility = View.GONE
+            b.backControlButton.visibility = View.GONE
             b.liveBrowseOverlay.visibility = View.GONE
             b.statusText.visibility = View.GONE
+        } else {
+            b.backControlButton.visibility = View.VISIBLE
         }
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (event.action == KeyEvent.ACTION_DOWN) {
-            if (type == MediaType.LIVE && event.keyCode in setOf(KeyEvent.KEYCODE_MEDIA_PAUSE, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE)) {
-                return true
-            }
+            if (type == MediaType.LIVE && event.keyCode in setOf(KeyEvent.KEYCODE_MEDIA_PAUSE, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE)) return true
             when (event.keyCode) {
                 KeyEvent.KEYCODE_MENU, KeyEvent.KEYCODE_DPAD_UP -> {
                     if (type == MediaType.LIVE) {
@@ -248,11 +248,7 @@ class PlayerActivity : BaseFullscreenActivity() {
                         return true
                     }
                 }
-                KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
-                    if (!b.liveBrowseOverlay.isVisible) {
-                        showControls()
-                    }
-                }
+                KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> if (!b.liveBrowseOverlay.isVisible) showControls()
                 else -> if (!b.liveBrowseOverlay.isVisible) showControls()
             }
         }
@@ -266,7 +262,7 @@ class PlayerActivity : BaseFullscreenActivity() {
         savePosition()
         PlaybackEngine.player?.removeListener(playerListener)
         b.playerView.player = null
-        if (!returningToMini && !settings.backgroundPlayback && !inPip) {
+        if (!inPip) {
             PlaybackEngine.stopAndRelease()
             stopService(Intent(this, PlaybackService::class.java))
         }
@@ -276,9 +272,7 @@ class PlayerActivity : BaseFullscreenActivity() {
     override fun onDestroy() {
         handler.removeCallbacksAndMessages(null)
         b.playerView.player = null
-
-        // Closing the system PiP/background window with X must stop playback completely.
-        if (isFinishing && inPip) {
+        if (isFinishing && !inPip) {
             PlaybackEngine.stopAndRelease()
             stopService(Intent(this, PlaybackService::class.java))
         }
@@ -286,27 +280,13 @@ class PlayerActivity : BaseFullscreenActivity() {
     }
 
     private fun attachAndPlay() {
-        val saved = if (settings.rememberPosition && type != MediaType.LIVE && mediaId.isNotBlank()) {
-            history.positionFor(mediaId, type)
-        } else 0L
-
-        if (settings.backgroundPlayback) {
-            runCatching { startService(Intent(this, PlaybackService::class.java)) }
-        }
-        val player = PlaybackEngine.play(
-            context = this,
-            settings = settings,
-            url = url,
-            title = title,
-            id = mediaId,
-            type = type,
-            startPosition = saved
-        )
-        player.removeListener(playerListener)
-        player.addListener(playerListener)
-        b.playerView.player = player
+        val saved = if (settings.rememberPosition && type != MediaType.LIVE && mediaId.isNotBlank()) history.positionFor(mediaId, type) else 0L
+        val p = PlaybackEngine.play(this, settings, url, title, mediaId, type, saved)
+        p.removeListener(playerListener)
+        p.addListener(playerListener)
+        b.playerView.player = p
         b.playerView.resizeMode = resizeMode
-        if (type == MediaType.LIVE) player.playWhenReady = true
+        if (type == MediaType.LIVE) p.playWhenReady = true
         updateQuality()
         updatePlayPauseIcon()
     }
@@ -325,7 +305,7 @@ class PlayerActivity : BaseFullscreenActivity() {
 
     private fun updateQuality() {
         val f = PlaybackEngine.player?.videoFormat
-        val label = when {
+        b.qualityText.text = when {
             f == null -> "—"
             f.height >= 2160 -> "2160p"
             f.height >= 1440 -> "1440p"
@@ -335,25 +315,24 @@ class PlayerActivity : BaseFullscreenActivity() {
             f.width > 0 -> "${f.width}w"
             else -> "—"
         }
-        b.qualityText.text = label
     }
 
     private data class TrackChoice(val group: androidx.media3.common.Tracks.Group, val index: Int, val label: String)
 
     private fun collectTrackChoices(trackType: Int): List<TrackChoice> {
-        val player = PlaybackEngine.player ?: return emptyList()
+        val p = PlaybackEngine.player ?: return emptyList()
         val out = mutableListOf<TrackChoice>()
-        player.currentTracks.groups.forEach { group ->
+        p.currentTracks.groups.forEach { group ->
             if (group.type == trackType && group.isSupported) {
                 for (i in 0 until group.length) {
                     if (!group.isTrackSupported(i)) continue
                     val f = group.getTrackFormat(i)
                     val label = when (trackType) {
                         C.TRACK_TYPE_VIDEO -> {
-                            val quality = if (f.height > 0) "${f.height}p" else "Video"
+                            val q = if (f.height > 0) "${f.height}p" else "Video"
                             val fps = if (f.frameRate > 0) " • ${f.frameRate.toInt()}fps" else ""
                             val bitrate = if (f.bitrate > 0) " • ${f.bitrate / 1000}kbps" else ""
-                            quality + fps + bitrate
+                            q + fps + bitrate
                         }
                         C.TRACK_TYPE_AUDIO -> listOfNotNull(f.label, f.language, if (f.channelCount > 0) "${f.channelCount}ch" else null).distinct().joinToString(" • ").ifBlank { "Audio ${out.size + 1}" }
                         else -> listOfNotNull(f.label, f.language).distinct().joinToString(" • ").ifBlank { "Subtitle ${out.size + 1}" }
@@ -366,45 +345,40 @@ class PlayerActivity : BaseFullscreenActivity() {
     }
 
     private fun showTrackMenu(trackType: Int) {
-        val player = PlaybackEngine.player ?: return
+        val p = PlaybackEngine.player ?: return
         val choices = collectTrackChoices(trackType)
         if (choices.isEmpty()) {
             showStatus(if (trackType == C.TRACK_TYPE_AUDIO) "No audio tracks" else "No subtitles")
             return
         }
         val isText = trackType == C.TRACK_TYPE_TEXT
-        val labels = buildList {
-            if (isText) add("Off")
-            addAll(choices.map { it.label })
-        }.toTypedArray()
-        AlertDialog.Builder(this)
-            .setTitle(if (isText) "Subtitles" else "Audio")
-            .setItems(labels) { _, which ->
-                val builder = player.trackSelectionParameters.buildUpon().clearOverridesOfType(trackType)
-                if (isText && which == 0) {
-                    builder.setTrackTypeDisabled(trackType, true)
-                } else {
-                    builder.setTrackTypeDisabled(trackType, false)
-                    val choice = choices[which - if (isText) 1 else 0]
-                    builder.setOverrideForType(TrackSelectionOverride(choice.group.mediaTrackGroup, listOf(choice.index)))
-                }
-                player.trackSelectionParameters = builder.build()
-                updateQuality(); showControls()
-            }.show()
+        val labels = buildList { if (isText) add("Off"); addAll(choices.map { it.label }) }.toTypedArray()
+        AlertDialog.Builder(this).setTitle(if (isText) "Subtitles" else "Audio").setItems(labels) { _, which ->
+            val builder = p.trackSelectionParameters.buildUpon().clearOverridesOfType(trackType)
+            if (isText && which == 0) {
+                builder.setTrackTypeDisabled(trackType, true)
+            } else {
+                builder.setTrackTypeDisabled(trackType, false)
+                val choice = choices[which - if (isText) 1 else 0]
+                builder.setOverrideForType(TrackSelectionOverride(choice.group.mediaTrackGroup, listOf(choice.index)))
+            }
+            p.trackSelectionParameters = builder.build()
+            updateQuality(); showControls()
+        }.show()
     }
 
     private fun showVideoQualityMenu() {
-        val player = PlaybackEngine.player ?: return
+        val p = PlaybackEngine.player ?: return
         val choices = collectTrackChoices(C.TRACK_TYPE_VIDEO)
         if (choices.isEmpty()) { showStatus("Quality unavailable"); return }
         val labels = (listOf("Auto") + choices.map { it.label }).toTypedArray()
         AlertDialog.Builder(this).setTitle("Quality").setItems(labels) { _, which ->
-            val builder = player.trackSelectionParameters.buildUpon().clearOverridesOfType(C.TRACK_TYPE_VIDEO)
+            val builder = p.trackSelectionParameters.buildUpon().clearOverridesOfType(C.TRACK_TYPE_VIDEO)
             if (which > 0) {
                 val choice = choices[which - 1]
                 builder.setOverrideForType(TrackSelectionOverride(choice.group.mediaTrackGroup, listOf(choice.index)))
             }
-            player.trackSelectionParameters = builder.build()
+            p.trackSelectionParameters = builder.build()
             updateQuality(); showControls()
         }.show()
     }
@@ -413,11 +387,9 @@ class PlayerActivity : BaseFullscreenActivity() {
         if (type != MediaType.LIVE) return
         val categories = LiveCatalog.categories()
         val channels = LiveCatalog.channelsFor()
-        if (categories.isEmpty() || channels.isEmpty()) {
-            showStatus("Channel list unavailable")
-            return
-        }
+        if (categories.isEmpty() || channels.isEmpty()) { showStatus("Channel list unavailable"); return }
         setControlsVisible(false)
+        b.backControlButton.visibility = View.GONE
         b.liveBrowseOverlay.visibility = View.VISIBLE
         overlayCategoryAdapter.submit(categories)
         overlayChannelAdapter.submit(channels)
@@ -427,6 +399,7 @@ class PlayerActivity : BaseFullscreenActivity() {
 
     private fun hideLiveOverlay() {
         b.liveBrowseOverlay.visibility = View.GONE
+        b.backControlButton.visibility = View.VISIBLE
         showControls()
     }
 
@@ -439,48 +412,45 @@ class PlayerActivity : BaseFullscreenActivity() {
     }
 
     private fun selectOverlayChannel(item: MediaItemModel) {
-        val visible = LiveCatalog.channelsFor()
-        ChannelNavigator.setQueue(visible, item.id)
+        ChannelNavigator.setQueue(LiveCatalog.channelsFor(), item.id)
         switchLiveChannel(item)
-        hideLiveOverlay()
+        b.liveBrowseOverlay.visibility = View.VISIBLE
+        b.overlayChannelRecycler.requestFocus()
     }
 
     private fun showControls() {
         if (inPip || b.liveBrowseOverlay.isVisible) return
         setControlsVisible(true)
+        b.backControlButton.visibility = View.VISIBLE
         handler.removeCallbacks(hideControls)
-        handler.postDelayed(hideControls, 3200L)
+        handler.postDelayed(hideControls, settings.playerControlsTimeoutMs.toLong().coerceAtLeast(1800L))
     }
 
     private fun setControlsVisible(visible: Boolean) {
-        controlsVisible = visible
         b.playerControls.visibility = if (visible) View.VISIBLE else View.GONE
     }
 
     private fun updatePlayPauseIcon() {
         if (type == MediaType.LIVE) return
-        val res = if (PlaybackEngine.player?.isPlaying == true) com.adwio.player.R.drawable.ic_pause else com.adwio.player.R.drawable.ic_play
-        b.playPauseButton.setImageResource(res)
+        b.playPauseButton.setImageResource(if (PlaybackEngine.player?.isPlaying == true) R.drawable.ic_pause else R.drawable.ic_play)
     }
 
     private fun retryPlayback() {
-        val player = PlaybackEngine.player ?: return attachAndPlay()
+        val p = PlaybackEngine.player ?: return attachAndPlay()
         showStatus("Reconnecting…")
-        player.prepare()
-        player.playWhenReady = true
+        p.prepare(); p.playWhenReady = true
     }
 
     private fun savePosition() {
-        val player = PlaybackEngine.player ?: return
+        val p = PlaybackEngine.player ?: return
         if (mediaId.isBlank() || type == MediaType.LIVE) return
-        history.save(mediaId, title, url, type, player.currentPosition, player.duration.coerceAtLeast(0L))
+        history.save(mediaId, title, url, type, p.currentPosition, p.duration.coerceAtLeast(0L))
     }
 
     private fun maybeEnterPip() {
         if (!settings.pictureInPicture || Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         runCatching {
-            val params = PictureInPictureParams.Builder().setAspectRatio(Rational(16, 9)).build()
-            inPip = enterPictureInPictureMode(params)
+            inPip = enterPictureInPictureMode(PictureInPictureParams.Builder().setAspectRatio(Rational(16, 9)).build())
         }
     }
 
@@ -492,10 +462,8 @@ class PlayerActivity : BaseFullscreenActivity() {
         url = item.streamUrl
         showStatus("Loading…")
         retryCount = 0
-        PlaybackEngine.player?.let { player ->
-            player.setMediaItem(androidx.media3.common.MediaItem.fromUri(url))
-            player.prepare()
-            player.playWhenReady = true
+        PlaybackEngine.player?.let { p ->
+            p.setMediaItem(androidx.media3.common.MediaItem.fromUri(url)); p.prepare(); p.playWhenReady = true
         } ?: attachAndPlay()
     }
 
@@ -504,35 +472,18 @@ class PlayerActivity : BaseFullscreenActivity() {
         mediaId = nextId
         title = nextTitle.ifBlank { "Next episode" }
         url = nextUrl
-        nextUrl = ""
-        nextTitle = ""
-        nextId = ""
+        nextUrl = ""; nextTitle = ""; nextId = ""
         showStatus("Loading…")
         retryCount = 0
-        val player = PlaybackEngine.player ?: return attachAndPlay()
-        player.setMediaItem(androidx.media3.common.MediaItem.fromUri(url))
-        player.prepare()
-        player.playWhenReady = true
+        val p = PlaybackEngine.player ?: return attachAndPlay()
+        p.setMediaItem(androidx.media3.common.MediaItem.fromUri(url)); p.prepare(); p.playWhenReady = true
     }
 
     private fun leavePlayer() {
         savePosition()
-
-        // Back from fullscreen LIVE returns the same shared player to Library mini-player.
-        if (type == MediaType.LIVE) {
-            returningToMini = true
-            finish()
-            return
-        }
-
-        if (settings.backgroundPlayback && PlaybackEngine.player?.isPlaying == true) {
-            maybeEnterPip()
-            if (!inPip) finish()
-        } else {
-            PlaybackEngine.stopAndRelease()
-            stopService(Intent(this, PlaybackService::class.java))
-            finish()
-        }
+        PlaybackEngine.stopAndRelease()
+        stopService(Intent(this, PlaybackService::class.java))
+        finish()
     }
 
     private fun showStatus(text: String) {

@@ -7,6 +7,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.adwio.player.R
 import com.adwio.player.data.FavoritesStore
 import com.adwio.player.data.model.MediaItemModel
+import com.adwio.player.data.model.MediaType
 import com.adwio.player.databinding.ItemMediaBinding
 import com.squareup.picasso.Picasso
 
@@ -29,6 +30,7 @@ class MediaAdapter(
             b.nameText.text = item.name
             b.metaText.text = item.meta ?: item.type.name
             b.favoriteText.text = if (favorites.isFavorite(item.id, item.type)) "★" else "☆"
+
             if (!item.logoUrl.isNullOrBlank()) {
                 Picasso.get().load(item.logoUrl).fit().centerInside().into(b.logoImage)
             } else {
@@ -37,13 +39,16 @@ class MediaAdapter(
 
             b.root.setOnClickListener {
                 val recycler = b.root.parent as? RecyclerView
+                val isMainLiveList = recycler?.id == R.id.contentRecycler && item.type == MediaType.LIVE
                 val isFullscreenOverlay = recycler?.id == R.id.overlayChannelRecycler
 
-                onClick(item)
+                if (isMainLiveList) {
+                    onClick(item)
+                    onClick(item)
+                } else {
+                    onClick(item)
+                }
 
-                // PlayerActivity currently hides its channel overlay after choosing a channel.
-                // While browsing fullscreen Live, restore it immediately so the user can
-                // continue moving between channels. Touching the right side closes it.
                 if (isFullscreenOverlay) {
                     b.root.post {
                         b.root.rootView.findViewById<View?>(R.id.liveBrowseOverlay)?.visibility = View.VISIBLE

@@ -15,8 +15,8 @@ class AppSettings(context: Context) {
         get() = prefs.getBoolean("auto_refresh", true)
         set(v) = prefs.edit().putBoolean("auto_refresh", v).apply()
     var backgroundPlayback: Boolean
-        get() = prefs.getBoolean("background_playback", true)
-        set(v) = prefs.edit().putBoolean("background_playback", v).apply()
+        get() = false
+        set(_) = prefs.edit().putBoolean("background_playback", false).apply()
     var pictureInPicture: Boolean
         get() = prefs.getBoolean("pip", true)
         set(v) = prefs.edit().putBoolean("pip", v).apply()
@@ -45,12 +45,11 @@ class AppSettings(context: Context) {
         get() = prefs.getString("decoder_mode", "auto") ?: "auto"
         set(v) = prefs.edit().putString("decoder_mode", v).apply()
     var playerControlsTimeoutMs: Int
-        get() = prefs.getInt("controls_timeout", 4000)
+        get() = prefs.getInt("controls_timeout", 3200)
         set(v) = prefs.edit().putInt("controls_timeout", v).apply()
     var parentalPin: String?
         get() = prefs.getString("parental_pin", null)
         set(v) = prefs.edit().putString("parental_pin", v).apply()
-
     var timeFormat: String
         get() = prefs.getString("time_format", "system") ?: "system"
         set(v) = prefs.edit().putString("time_format", v).apply()

@@ -1,11 +1,13 @@
 <resources>
-    <color name="adwio_bg">#050711</color>
-    <color name="adwio_surface">#0D1220</color>
-    <color name="adwio_surface_2">#151B2D</color>
-    <color name="adwio_text">#F7F9FF</color>
-    <color name="adwio_muted">#98A2B8</color>
-    <color name="adwio_purple">#7C3CFF</color>
-    <color name="adwio_magenta">#B74CFF</color>
-    <color name="adwio_cyan">#23C9FF</color>
+    <color name="adwio_bg">#070B17</color>
+    <color name="adwio_surface">#0E1526</color>
+    <color name="adwio_surface_2">#141D33</color>
+    <color name="adwio_text">#F4F7FF</color>
+    <color name="adwio_muted">#8E9AAF</color>
+    <color name="adwio_purple">#7B5CFF</color>
+    <color name="adwio_magenta">#9D6BFF</color>
+    <color name="adwio_cyan">#18C8FF</color>
     <color name="adwio_green">#45E49A</color>
+    <color name="adwio_error">#FF5E73</color>
+    <color name="adwio_focus">#18C8FF</color>
 </resources>

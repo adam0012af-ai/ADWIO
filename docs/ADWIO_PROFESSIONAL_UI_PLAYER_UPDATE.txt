@@ -1,0 +1,15 @@
+ADWIO PROFESSIONAL UI / PLAYER UPDATE
+
+- Premium dark navy + electric cyan + purple palette.
+- Fullscreen uses saved aspect mode for Live / Movies / Series.
+- Default aspect FIT avoids crop/overscan and respects device bounds.
+- Aspect changes are saved automatically.
+- Background playback disabled.
+- PiP is only for leaving ADWIO to Android/system home.
+- Internal Live mini-player is hidden/disabled from normal UI flow.
+- Selecting Live opens fullscreen directly through current Library behavior.
+- Fullscreen Live category/channel overlay stays open while switching channels.
+- Right side of fullscreen closes the overlay.
+- Compact modern Back control replaces oversized black Back appearance.
+- Wider category rail and cleaner channel/content area.
+- M3U/Xtream bridge is not changed by this package.
