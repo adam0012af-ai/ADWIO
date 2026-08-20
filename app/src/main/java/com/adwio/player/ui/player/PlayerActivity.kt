@@ -275,7 +275,7 @@ class PlayerActivity : BaseFullscreenActivity() {
     }
 
     override fun onUserLeaveHint() {
-        if (settings.pictureInPicture && PlaybackEngine.player?.isPlaying == true) {
+        if (PlaybackEngine.player?.isPlaying == true) {
             enteringPip = true
             maybeEnterPip()
         }
@@ -292,6 +292,13 @@ class PlayerActivity : BaseFullscreenActivity() {
             b.backControlButton.visibility = View.GONE
             b.liveBrowseOverlay.visibility = View.GONE
             b.statusText.visibility = View.GONE
+        } else {
+            PlaybackEngine.player?.let { activePlayer ->
+                b.playerView.player = activePlayer
+                b.playerView.resizeMode = resizeMode
+                activePlayer.playWhenReady = true
+            }
+            showControls()
         }
     }
 
@@ -323,15 +330,23 @@ class PlayerActivity : BaseFullscreenActivity() {
         handler.removeCallbacksAndMessages(null)
         savePosition()
 
+        val playbackActive =
+            PlaybackEngine.player != null &&
+            PlaybackEngine.currentUrl.isNotBlank() &&
+            PlaybackEngine.player?.playWhenReady == true
+
         val keepForPip = inPip || enteringPip ||
             (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && isInPictureInPictureMode)
 
-        if (!keepForPip) {
+        val keepForBackground = !isFinishing && playbackActive
+        val keepPlayer = keepForPip || keepForBackground
+
+        if (!keepPlayer) {
             PlaybackEngine.player?.removeListener(playerListener)
             b.playerView.player = null
         }
 
-        if (!returningToLivePreview && !keepForPip && !wasInPip) {
+        if (!returningToLivePreview && !keepPlayer && !wasInPip) {
             PlaybackEngine.stopAndRelease()
             stopService(Intent(this, PlaybackService::class.java))
         }
@@ -566,14 +581,20 @@ class PlayerActivity : BaseFullscreenActivity() {
     }
 
     private fun maybeEnterPip() {
-        if (!settings.pictureInPicture || Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             enteringPip = false
             return
         }
+
+        val format = PlaybackEngine.player?.videoFormat
+        val width = format?.width?.takeIf { it > 0 } ?: 16
+        val height = format?.height?.takeIf { it > 0 } ?: 9
+        val ratio = runCatching { Rational(width, height) }.getOrDefault(Rational(16, 9))
+
         runCatching {
             val entered = enterPictureInPictureMode(
                 PictureInPictureParams.Builder()
-                    .setAspectRatio(Rational(16, 9))
+                    .setAspectRatio(ratio)
                     .build()
             )
             inPip = entered

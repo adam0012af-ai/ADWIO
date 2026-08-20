@@ -13,6 +13,7 @@
         android:layout_height="match_parent"
         android:background="#000000"
         android:keepScreenOn="true"
+        app:surface_type="texture_view"
         app:use_controller="false"/>
 
     <ImageButton

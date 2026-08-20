@@ -134,4 +134,6 @@
     <string name="no_email_app">لم يتم العثور على تطبيق بريد</string>
     <string name="support_email_body">يرجى وصف المشكلة هنا:\n\n\n------------------------------\nمعلومات تشخيص آمنة\nرقم التشخيص: %1$s\nإصدار التطبيق: %2$s (%3$d)\nAndroid: %4$s / SDK %5$d\nالجهاز: %6$s %7$s\nاللغة: %8$s\n------------------------------\nالأمان: لا يتضمن التقرير اسم مستخدم أو كلمة مرور أو Host أو رابط قائمة.</string>
 
+    <string name="all_movies">كل الأفلام</string>
+    <string name="all_series">كل المسلسلات</string>
 </resources>

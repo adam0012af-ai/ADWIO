@@ -103,6 +103,7 @@
                     android:background="#000000"
                     android:clickable="true"
                     android:focusable="true"
+                    app:surface_type="texture_view"
                     app:use_controller="false"/>
             </FrameLayout>
 

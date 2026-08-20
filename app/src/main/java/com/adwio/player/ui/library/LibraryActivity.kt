@@ -224,12 +224,18 @@ class LibraryActivity : BaseFullscreenActivity() {
         allItems = items
 
         val totalLabel = java.text.NumberFormat.getIntegerInstance().format(items.size)
-        val named = (if (cats.isEmpty()) listOf(CategoryModel("", getString(R.string.all))) else cats).map {
-            if (it.id.isBlank()) it.copy(name = "${getString(R.string.all_channels)} ($totalLabel)") else it
+        val allSectionLabel = when (type) {
+            MediaType.LIVE -> getString(R.string.all_channels)
+            MediaType.MOVIE -> getString(R.string.all_movies)
+            MediaType.SERIES -> getString(R.string.all_series)
+        }
+
+        val named = (if (cats.isEmpty()) listOf(CategoryModel("", allSectionLabel)) else cats).map {
+            if (it.id.isBlank()) it.copy(name = "$allSectionLabel ($totalLabel)") else it
         }
 
         val allCategory = named.firstOrNull { it.id.isBlank() }
-            ?: CategoryModel("", "${getString(R.string.all_channels)} ($totalLabel)")
+            ?: CategoryModel("", "$allSectionLabel ($totalLabel)")
         val providerCategories = named.filterNot { it.id.isBlank() }
 
         val tools = mutableListOf(
@@ -441,7 +447,6 @@ class LibraryActivity : BaseFullscreenActivity() {
 
     override fun onUserLeaveHint() {
         if (type == MediaType.LIVE &&
-            AppSettings(this).pictureInPicture &&
             PlaybackEngine.player?.isPlaying == true &&
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
         ) {
@@ -562,8 +567,17 @@ class LibraryActivity : BaseFullscreenActivity() {
     override fun onStop() {
         previewJob?.cancel()
 
-        val keepPlayerAttached = inMiniPip || enteringMiniPip ||
+        val playbackActive =
+            PlaybackEngine.player != null &&
+            PlaybackEngine.currentType == MediaType.LIVE &&
+            PlaybackEngine.currentUrl.isNotBlank() &&
+            PlaybackEngine.player?.playWhenReady == true
+
+        val keepForPip = inMiniPip || enteringMiniPip ||
             (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && isInPictureInPictureMode)
+
+        val keepForBackground = !isFinishing && playbackActive
+        val keepPlayerAttached = keepForPip || keepForBackground
 
         if (!keepPlayerAttached) {
             b.previewPlayer.player = null

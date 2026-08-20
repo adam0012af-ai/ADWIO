@@ -97,6 +97,8 @@
     <string name="forward_15">Forward 15 seconds</string>
 
     <string name="all">ALL</string>
+    <string name="all_movies">ALL MOVIES</string>
+    <string name="all_series">ALL SERIES</string>
     <string name="updating_content">Updating content…</string>
     <string name="showing_saved_content">Showing saved content • update unavailable</string>
     <string name="load_failed_keep_cache">Unable to load content • try again later</string>
