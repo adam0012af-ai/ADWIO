@@ -32,16 +32,11 @@ jobs:
           ADWIO_KEYSTORE_BASE64: ${{ secrets.ADWIO_KEYSTORE_BASE64 }}
         run: |
           set -euo pipefail
-
-          printf '%s' "$ADWIO_KEYSTORE_BASE64" | base64 --decode \
-            > "$RUNNER_TEMP/ADWIO_release_FINAL.keystore"
-
+          printf '%s' "$ADWIO_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/ADWIO_release_FINAL.keystore"
           test -s "$RUNNER_TEMP/ADWIO_release_FINAL.keystore"
 
       - name: Build unsigned Release APK
         shell: bash
-        env:
-          FOOTBALL_DATA_TOKEN: ${{ secrets.FOOTBALL_DATA_TOKEN }}
         run: |
           set -euo pipefail
           gradle :app:assembleRelease --stacktrace
@@ -54,21 +49,16 @@ jobs:
           ADWIO_KEY_ALIAS: ${{ secrets.ADWIO_KEY_ALIAS }}
         run: |
           set -euo pipefail
-
           STORE_PASSWORD="$(printf '%s' "$RAW_STORE_PASSWORD" | tr -d '\r\n')"
           KEY_PASSWORD="$(printf '%s' "$RAW_KEY_PASSWORD" | tr -d '\r\n')"
-
           UNSIGNED_APK="app/build/outputs/apk/release/app-release-unsigned.apk"
           ALIGNED_APK="$RUNNER_TEMP/ADWIO-release-aligned.apk"
           SIGNED_APK="app/build/outputs/apk/release/ADWIO-release-signed.apk"
           KEYSTORE="$RUNNER_TEMP/ADWIO_release_FINAL.keystore"
-
           BUILD_TOOLS_VERSION="$(ls -1 "$ANDROID_HOME/build-tools" | sort -V | tail -n 1)"
           ZIPALIGN="$ANDROID_HOME/build-tools/$BUILD_TOOLS_VERSION/zipalign"
           APKSIGNER="$ANDROID_HOME/build-tools/$BUILD_TOOLS_VERSION/apksigner"
-
           "$ZIPALIGN" -f -v 4 "$UNSIGNED_APK" "$ALIGNED_APK"
-
           "$APKSIGNER" sign \
             --ks "$KEYSTORE" \
             --ks-key-alias "$ADWIO_KEY_ALIAS" \
@@ -81,17 +71,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-
           SIGNED_APK="app/build/outputs/apk/release/ADWIO-release-signed.apk"
-
           BUILD_TOOLS_VERSION="$(ls -1 "$ANDROID_HOME/build-tools" | sort -V | tail -n 1)"
           APKSIGNER="$ANDROID_HOME/build-tools/$BUILD_TOOLS_VERSION/apksigner"
-
-          "$APKSIGNER" verify \
-            --verbose \
-            --print-certs \
-            "$SIGNED_APK"
-
+          "$APKSIGNER" verify --verbose --print-certs "$SIGNED_APK"
           test -s "$SIGNED_APK"
 
       - name: Upload ADWIO Signed APK
