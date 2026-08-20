@@ -1,4 +1,4 @@
-name: Apply ADWIO 4.4 FINAL
+name: Apply ADWIO 4.5 FINAL
 
 on:
   workflow_dispatch:
@@ -17,28 +17,28 @@ jobs:
           fetch-depth: 0
 
       - name: Verify package
-        run: test -f ADWIO_4.4_FINAL_FIXES.zip
+        run: test -f ADWIO_4.5_FINAL_LIVE_SPORTS.zip
 
       - name: Extract safely
         shell: bash
         run: |
           set -euo pipefail
-          TMP_DIR="${RUNNER_TEMP}/adwio44"
+          TMP_DIR="${RUNNER_TEMP}/adwio45"
           rm -rf "$TMP_DIR"
           mkdir -p "$TMP_DIR"
-          unzip -q ADWIO_4.4_FINAL_FIXES.zip -d "$TMP_DIR"
+          unzip -q ADWIO_4.5_FINAL_LIVE_SPORTS.zip -d "$TMP_DIR"
           test -d "$TMP_DIR/ADWIO-main/app"
 
           rsync -a \
             --exclude='.git/' \
             --exclude='.github/workflows/' \
-            --exclude='ADWIO_4.4_FINAL_FIXES.zip' \
+            --exclude='ADWIO_4.5_FINAL_LIVE_SPORTS.zip' \
             "$TMP_DIR/ADWIO-main/" ./
 
       - name: Verify version
         run: |
-          grep -q 'versionCode = 21' app/build.gradle.kts
-          grep -q 'versionName = "4.4.0"' app/build.gradle.kts
+          grep -q 'versionCode = 22' app/build.gradle.kts
+          grep -q 'versionName = "4.5.0"' app/build.gradle.kts
 
       - name: Commit and push source
         shell: bash
@@ -51,5 +51,5 @@ jobs:
             echo "No changes to commit."
             exit 0
           fi
-          git commit -m "Apply ADWIO Final 4.4 fixes"
+          git commit -m "Apply ADWIO 4.5 Live and Sports fixes"
           git push
