@@ -1,0 +1,12 @@
+ADWIO 5.0.7 FIX1
+
+Build error fixed:
+- Added @drawable/bg_panel
+- Added @color/adwio_accent
+- Added @drawable/ic_eye
+
+The failure shown in GitHub Actions was:
+:app:processReleaseResources FAILED
+activity_login.xml referenced resources that were not present in the 5.0.7 recovery patch.
+
+No login business logic was changed in FIX1.
