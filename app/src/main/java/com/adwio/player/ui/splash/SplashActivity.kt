@@ -5,14 +5,11 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.animation.AccelerateDecelerateInterpolator
-import com.adwio.player.data.AppResumeState
 import com.adwio.player.data.SessionStore
 import com.adwio.player.databinding.ActivitySplashBinding
 import com.adwio.player.ui.BaseFullscreenActivity
 import com.adwio.player.ui.home.HomeActivity
-import com.adwio.player.ui.library.LibraryActivity
 import com.adwio.player.ui.login.LoginActivity
-import com.adwio.player.ui.player.PlayerActivity
 
 class SplashActivity : BaseFullscreenActivity() {
     private lateinit var b: ActivitySplashBinding
@@ -36,27 +33,19 @@ class SplashActivity : BaseFullscreenActivity() {
         b.loaderBar.translationX = -60f
         b.loaderBar.animate()
             .translationX(82f)
-            .setDuration(900L)
+            .setDuration(1100L)
             .setInterpolator(AccelerateDecelerateInterpolator())
             .start()
 
-        handler.postDelayed({ route() }, 3000L)
-    }
-
-    private fun route() {
-        val session = SessionStore(this).load()
-        if (session == null) {
-            startActivity(Intent(this, LoginActivity::class.java))
-            finish()
-            return
-        }
-
-        startActivity(
-            Intent(this, HomeActivity::class.java).apply {
-                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        handler.postDelayed({
+            val target = if (SessionStore(this).load() == null) {
+                Intent(this, LoginActivity::class.java)
+            } else {
+                Intent(this, HomeActivity::class.java)
             }
-        )
-        finish()
+            startActivity(target)
+            finish()
+        }, 3000L)
     }
 
     override fun onDestroy() {

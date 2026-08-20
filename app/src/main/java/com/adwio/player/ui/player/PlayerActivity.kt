@@ -22,9 +22,7 @@ import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.recyclerview.widget.LinearLayoutManager
-import org.json.JSONArray
 import com.adwio.player.R
-import com.adwio.player.data.AppResumeState
 import com.adwio.player.data.AppSettings
 import com.adwio.player.data.FavoritesStore
 import com.adwio.player.data.PlaybackHistory
@@ -36,7 +34,6 @@ import com.adwio.player.databinding.ActivityPlayerBinding
 import com.adwio.player.ui.BaseFullscreenActivity
 import com.adwio.player.ui.home.CategoryAdapter
 import com.adwio.player.ui.home.MediaAdapter
-import kotlin.math.ceil
 
 @UnstableApi
 class PlayerActivity : BaseFullscreenActivity() {
@@ -63,15 +60,6 @@ class PlayerActivity : BaseFullscreenActivity() {
     private var nextId = ""
     private var dragging = false
     private var resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
-    private var wasInPip = false
-    private var nextPromptCancelled = false
-    private var episodeQueue = mutableListOf<QueuedEpisode>()
-
-    private data class QueuedEpisode(
-        val id: String,
-        val title: String,
-        val url: String
-    )
 
     private val hideControls = Runnable { setControlsVisible(false) }
 
@@ -105,7 +93,7 @@ class PlayerActivity : BaseFullscreenActivity() {
                 retryCount = 0
                 b.statusText.visibility = View.GONE
                 updateQuality()
-            } else if (playbackState == Player.STATE_ENDED && type == MediaType.SERIES && settings.autoNextEpisode && !nextPromptCancelled) {
+            } else if (playbackState == Player.STATE_ENDED && type == MediaType.SERIES && settings.autoNextEpisode) {
                 playNextEpisodeIfAvailable()
             }
         }
@@ -135,12 +123,6 @@ class PlayerActivity : BaseFullscreenActivity() {
         nextUrl = intent.getStringExtra("next_url").orEmpty()
         nextTitle = intent.getStringExtra("next_title").orEmpty()
         nextId = intent.getStringExtra("next_id").orEmpty()
-        episodeQueue = parseEpisodeQueue(intent.getStringExtra("episode_queue"))
-        if (episodeQueue.isNotEmpty()) {
-            nextUrl = ""
-            nextTitle = ""
-            nextId = ""
-        }
 
         setupUi()
         setupLiveOverlay()
@@ -224,15 +206,6 @@ class PlayerActivity : BaseFullscreenActivity() {
 
         b.browseButton.setOnClickListener { showLiveOverlay() }
 
-        b.playNextNowButton.setOnClickListener {
-            nextPromptCancelled = false
-            playNextEpisodeIfAvailable()
-        }
-        b.cancelNextEpisodeButton.setOnClickListener {
-            nextPromptCancelled = true
-            b.nextEpisodePanel.visibility = View.GONE
-        }
-
         b.progressBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) = Unit
             override fun onStartTrackingTouch(seekBar: SeekBar?) { dragging = true }
@@ -268,14 +241,13 @@ class PlayerActivity : BaseFullscreenActivity() {
     override fun onStart() {
         super.onStart()
         if (url.isBlank()) return finish()
-        AppResumeState(this).savePlayer(type, mediaId, title, url)
         attachAndPlay()
         handler.post(progressUpdater)
         handler.postDelayed(progressSaver, 10_000L)
     }
 
     override fun onUserLeaveHint() {
-        if (PlaybackEngine.player?.isPlaying == true) {
+        if (settings.pictureInPicture && PlaybackEngine.player?.isPlaying == true) {
             enteringPip = true
             maybeEnterPip()
         }
@@ -287,7 +259,6 @@ class PlayerActivity : BaseFullscreenActivity() {
         inPip = isInPictureInPictureMode
         enteringPip = false
         if (inPip) {
-            wasInPip = true
             b.playerControls.visibility = View.GONE
             b.backControlButton.visibility = View.GONE
             b.liveBrowseOverlay.visibility = View.GONE
@@ -322,48 +293,25 @@ class PlayerActivity : BaseFullscreenActivity() {
     override fun onStop() {
         handler.removeCallbacksAndMessages(null)
         savePosition()
+        PlaybackEngine.player?.removeListener(playerListener)
+        b.playerView.player = null
 
         val keepForPip = inPip || enteringPip ||
             (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && isInPictureInPictureMode)
 
-        if (!keepForPip) {
-            PlaybackEngine.player?.removeListener(playerListener)
-            b.playerView.player = null
-        }
-
-        if (!returningToLivePreview && !keepForPip && !wasInPip) {
+        if (!returningToLivePreview && !keepForPip) {
             PlaybackEngine.stopAndRelease()
             stopService(Intent(this, PlaybackService::class.java))
         }
         super.onStop()
     }
 
-    override fun onDestroy() {
-        if (wasInPip && isFinishing && !returningToLivePreview) {
-            savePosition()
-            PlaybackEngine.stopAndRelease()
-            stopService(Intent(this, PlaybackService::class.java))
-            AppResumeState(this).clearPlayback()
-        }
-        super.onDestroy()
-    }
-
     private fun attachAndPlay() {
-        val existing = PlaybackEngine.player
-        val canReuse = existing != null &&
-            PlaybackEngine.currentUrl == url &&
-            PlaybackEngine.currentId == mediaId &&
-            PlaybackEngine.currentType == type
+        val saved = if (settings.rememberPosition && type != MediaType.LIVE && mediaId.isNotBlank()) {
+            history.positionFor(mediaId, type)
+        } else 0L
 
-        val p = if (canReuse) {
-            existing!!
-        } else {
-            val saved = if (settings.rememberPosition && type != MediaType.LIVE && mediaId.isNotBlank()) {
-                history.positionFor(mediaId, type)
-            } else 0L
-            PlaybackEngine.play(this, settings, url, title, mediaId, type, saved)
-        }
-
+        val p = PlaybackEngine.play(this, settings, url, title, mediaId, type, saved)
         p.removeListener(playerListener)
         p.addListener(playerListener)
         b.playerView.player = p
@@ -448,7 +396,6 @@ class PlayerActivity : BaseFullscreenActivity() {
     private fun updateProgress() {
         val p = PlaybackEngine.player ?: return
         if (type == MediaType.LIVE) return
-        updateNextEpisodePrompt(p)
         if (!dragging) {
             val duration = p.duration.takeIf { it > 0L } ?: 0L
             b.progressBar.progress = if (duration > 0L) ((p.currentPosition * 1000L) / duration).toInt().coerceIn(0, 1000) else 0
@@ -566,7 +513,7 @@ class PlayerActivity : BaseFullscreenActivity() {
     }
 
     private fun maybeEnterPip() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+        if (!settings.pictureInPicture || Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             enteringPip = false
             return
         }
@@ -621,70 +568,14 @@ class PlayerActivity : BaseFullscreenActivity() {
         return if (h > 0) "%d:%02d:%02d".format(h, m, s) else "%02d:%02d".format(m, s)
     }
 
-    private fun parseEpisodeQueue(raw: String?): MutableList<QueuedEpisode> {
-        if (raw.isNullOrBlank()) return mutableListOf()
-        return runCatching {
-            val arr = JSONArray(raw)
-            MutableList(arr.length()) { index ->
-                val o = arr.getJSONObject(index)
-                QueuedEpisode(
-                    id = o.optString("id"),
-                    title = o.optString("title"),
-                    url = o.optString("url")
-                )
-            }.filter { it.url.isNotBlank() }.toMutableList()
-        }.getOrDefault(mutableListOf())
-    }
-
-    private fun hasNextEpisode(): Boolean =
-        episodeQueue.isNotEmpty() || nextUrl.isNotBlank()
-
-    private fun peekNextEpisode(): QueuedEpisode? =
-        episodeQueue.firstOrNull() ?: nextUrl.takeIf { it.isNotBlank() }?.let {
-            QueuedEpisode(nextId, nextTitle.ifBlank { getString(R.string.next_episode) }, it)
-        }
-
-    private fun updateNextEpisodePrompt(p: Player) {
-        if (type != MediaType.SERIES || !settings.autoNextEpisode || nextPromptCancelled || !hasNextEpisode()) {
-            b.nextEpisodePanel.visibility = View.GONE
-            return
-        }
-
-        val duration = p.duration.takeIf { it > 0L } ?: return
-        val remaining = (duration - p.currentPosition).coerceAtLeast(0L)
-
-        if (remaining <= 15_000L && remaining > 0L) {
-            val next = peekNextEpisode() ?: return
-            val seconds = ceil(remaining / 1000.0).toInt().coerceAtLeast(1)
-            b.nextEpisodeTitle.text = next.title
-            b.nextEpisodeCountdown.text = getString(R.string.next_episode_starts, seconds)
-            b.nextEpisodePanel.visibility = View.VISIBLE
-        } else if (remaining > 15_000L) {
-            b.nextEpisodePanel.visibility = View.GONE
-        }
-    }
-
     private fun playNextEpisodeIfAvailable() {
-        if (nextPromptCancelled || !settings.autoNextEpisode) return
-
-        val next = if (episodeQueue.isNotEmpty()) {
-            episodeQueue.removeAt(0)
-        } else {
-            if (nextUrl.isBlank()) return
-            QueuedEpisode(nextId, nextTitle.ifBlank { getString(R.string.next_episode) }, nextUrl).also {
-                nextUrl = ""
-                nextTitle = ""
-                nextId = ""
-            }
-        }
-
-        mediaId = next.id
-        title = next.title
-        url = next.url
-        nextPromptCancelled = false
-        b.nextEpisodePanel.visibility = View.GONE
-
-        AppResumeState(this).savePlayer(MediaType.SERIES, mediaId, title, url)
+        if (nextUrl.isBlank()) return
+        mediaId = nextId
+        title = nextTitle.ifBlank { "Next episode" }
+        url = nextUrl
+        nextUrl = ""
+        nextTitle = ""
+        nextId = ""
 
         val p = PlaybackEngine.play(
             context = this,
@@ -694,11 +585,8 @@ class PlayerActivity : BaseFullscreenActivity() {
             id = mediaId,
             type = MediaType.SERIES
         )
-        p.removeListener(playerListener)
-        p.addListener(playerListener)
         b.playerView.player = p
         b.playerView.resizeMode = resizeMode
-        p.playWhenReady = true
     }
 
     private fun leavePlayer() {
@@ -706,12 +594,10 @@ class PlayerActivity : BaseFullscreenActivity() {
 
         if (type == MediaType.LIVE) {
             returningToLivePreview = true
-            AppResumeState(this).clearPlaybackKeepingLibrary()
             finish()
             return
         }
 
-        AppResumeState(this).clearPlayback()
         PlaybackEngine.stopAndRelease()
         stopService(Intent(this, PlaybackService::class.java))
         finish()
