@@ -1,0 +1,8 @@
+<resources>
+    <string name="premium_streaming_experience">PREMIUM STREAMING EXPERIENCE</string>
+    <string name="next_episode_starts">Next episode starts in %1$d seconds</string>
+    <string name="next_episode">Next episode</string>
+    <string name="play_now">Play now</string>
+    <string name="cancel_next_episode">Cancel</string>
+    <string name="next_season">Next season</string>
+</resources>

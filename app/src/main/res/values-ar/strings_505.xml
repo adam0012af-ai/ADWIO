@@ -1,0 +1,8 @@
+<resources>
+    <string name="premium_streaming_experience">تجربة مشاهدة بريميوم</string>
+    <string name="next_episode_starts">الحلقة التالية تبدأ خلال %1$d ثوانٍ</string>
+    <string name="next_episode">الحلقة التالية</string>
+    <string name="play_now">تشغيل الآن</string>
+    <string name="cancel_next_episode">إلغاء</string>
+    <string name="next_season">الموسم التالي</string>
+</resources>

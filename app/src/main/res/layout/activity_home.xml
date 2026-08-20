@@ -94,7 +94,8 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginTop="9dp"
+        android:layout_marginTop="14dp"
+        android:layout_marginBottom="18dp"
         android:layout_weight="1"
         android:gravity="center"
         android:orientation="horizontal"
@@ -192,47 +193,5 @@
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="3dp" android:text="@string/home_matches_hint" android:textColor="#C857E17A" android:textSize="7.5sp"/>
             </LinearLayout>
         </FrameLayout>
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:layout_marginTop="9dp"
-        android:background="@drawable/bg_home_quick"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingHorizontal="7dp">
-
-        <LinearLayout android:id="@+id/recentlyAddedQuick" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:background="@drawable/bg_home_quick" android:clickable="true" android:focusable="true" android:gravity="center_vertical" android:orientation="horizontal" android:paddingHorizontal="10dp">
-            <TextView android:layout_width="35dp" android:layout_height="35dp" android:gravity="center" android:text="◉" android:textColor="#B8624CFF" android:textSize="22sp"/>
-            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="7dp" android:layout_weight="1" android:orientation="vertical">
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/home_recently_added" android:textColor="@color/adwio_text" android:textSize="9sp" android:textStyle="bold"/>
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/home_recently_added_sub" android:textColor="@color/adwio_muted" android:textSize="6.5sp"/>
-            </LinearLayout>
-        </LinearLayout>
-
-        <LinearLayout android:id="@+id/favoritesQuick" android:layout_width="0dp" android:layout_height="48dp" android:layout_marginStart="5dp" android:layout_weight="1" android:background="@drawable/bg_home_quick" android:clickable="true" android:focusable="true" android:gravity="center_vertical" android:orientation="horizontal" android:paddingHorizontal="10dp">
-            <TextView android:layout_width="35dp" android:layout_height="35dp" android:gravity="center" android:text="☆" android:textColor="#FFFFAD35" android:textSize="24sp"/>
-            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="7dp" android:layout_weight="1" android:orientation="vertical">
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/home_favorites" android:textColor="@color/adwio_text" android:textSize="9sp" android:textStyle="bold"/>
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/home_favorites_sub" android:textColor="@color/adwio_muted" android:textSize="6.5sp"/>
-            </LinearLayout>
-        </LinearLayout>
-
-        <LinearLayout android:id="@+id/continueQuick" android:layout_width="0dp" android:layout_height="48dp" android:layout_marginStart="5dp" android:layout_weight="1" android:background="@drawable/bg_home_quick" android:clickable="true" android:focusable="true" android:gravity="center_vertical" android:orientation="horizontal" android:paddingHorizontal="10dp">
-            <TextView android:layout_width="35dp" android:layout_height="35dp" android:gravity="center" android:text="↻" android:textColor="#FF57E17A" android:textSize="23sp"/>
-            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="7dp" android:layout_weight="1" android:orientation="vertical">
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/home_continue" android:textColor="@color/adwio_text" android:textSize="9sp" android:textStyle="bold"/>
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/home_continue_sub" android:textColor="@color/adwio_muted" android:textSize="6.5sp"/>
-            </LinearLayout>
-        </LinearLayout>
-
-        <LinearLayout android:id="@+id/collectionQuick" android:layout_width="0dp" android:layout_height="48dp" android:layout_marginStart="5dp" android:layout_weight="1" android:background="@drawable/bg_home_quick" android:clickable="true" android:focusable="true" android:gravity="center_vertical" android:orientation="horizontal" android:paddingHorizontal="10dp">
-            <TextView android:layout_width="35dp" android:layout_height="35dp" android:gravity="center" android:text="♡" android:textColor="#FFFF3D9A" android:textSize="24sp"/>
-            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="7dp" android:layout_weight="1" android:orientation="vertical">
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/home_collection" android:textColor="@color/adwio_text" android:textSize="9sp" android:textStyle="bold"/>
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/home_collection_sub" android:textColor="@color/adwio_muted" android:textSize="6.5sp"/>
-            </LinearLayout>
-        </LinearLayout>
     </LinearLayout>
 </LinearLayout>

@@ -141,6 +141,78 @@
             android:contentDescription="Close channels"/>
     </LinearLayout>
 
+    <LinearLayout
+        android:id="@+id/nextEpisodePanel"
+        android:layout_width="310dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end|bottom"
+        android:layout_marginEnd="18dp"
+        android:layout_marginBottom="72dp"
+        android:background="@drawable/bg_next_episode_panel"
+        android:elevation="12dp"
+        android:orientation="vertical"
+        android:padding="13dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/nextEpisodeHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/next_episode"
+            android:textColor="#FF35D6FF"
+            android:textSize="9sp"
+            android:textStyle="bold"/>
+
+        <TextView
+            android:id="@+id/nextEpisodeTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/adwio_text"
+            android:textSize="11sp"
+            android:textStyle="bold"/>
+
+        <TextView
+            android:id="@+id/nextEpisodeCountdown"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:textColor="@color/adwio_muted"
+            android:textSize="8sp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="34dp"
+            android:layout_marginTop="9dp"
+            android:gravity="end|center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/cancelNextEpisodeButton"
+                android:layout_width="82dp"
+                android:layout_height="30dp"
+                android:background="@drawable/bg_next_episode_button_secondary"
+                android:gravity="center"
+                android:text="@string/cancel_next_episode"
+                android:textColor="@color/adwio_text"
+                android:textSize="8sp"/>
+
+            <TextView
+                android:id="@+id/playNextNowButton"
+                android:layout_width="100dp"
+                android:layout_height="30dp"
+                android:layout_marginStart="7dp"
+                android:background="@drawable/bg_next_episode_button_primary"
+                android:gravity="center"
+                android:text="@string/play_now"
+                android:textColor="#FFFFFFFF"
+                android:textSize="8sp"
+                android:textStyle="bold"/>
+        </LinearLayout>
+    </LinearLayout>
+
     <TextView
         android:id="@+id/statusText"
         android:layout_width="wrap_content"

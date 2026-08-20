@@ -58,34 +58,22 @@ class HomeActivity : BaseFullscreenActivity() {
         b.switchAccountButton.setOnClickListener { startActivity(Intent(this, UsersActivity::class.java)) }
         b.refreshButton.setOnClickListener { refreshContent() }
 
-        b.recentlyAddedQuick.setOnClickListener {
-            startActivity(Intent(this, LibraryActivity::class.java).apply {
-                putExtra(LibraryActivity.EXTRA_TYPE, MediaType.MOVIE.name)
-            })
-        }
 
-        b.favoritesQuick.setOnClickListener {
-            startActivity(Intent().setClassName(packageName, "com.adwio.player.ui.favorites.FavoritesActivity"))
-        }
 
-        b.continueQuick.setOnClickListener {
-            startActivity(Intent().setClassName(packageName, "com.adwio.player.ui.continuewatching.ContinueWatchingActivity"))
-        }
 
-        b.collectionQuick.setOnClickListener {
-            startActivity(Intent(this, GlobalSearchActivity::class.java))
-        }
 
-        installPremiumFocus(
-            b.liveCard, b.moviesCard, b.seriesCard, b.matchesCard,
-            b.recentlyAddedQuick, b.favoritesQuick, b.continueQuick, b.collectionQuick
-        )
+
+
+
+
+        installPremiumFocus(b.liveCard, b.moviesCard, b.seriesCard, b.matchesCard)
 
         b.liveCard.requestFocus()
     }
 
     override fun onStart() {
         super.onStart()
+        AppResumeState(this).saveHome()
         handler.removeCallbacks(clockTick)
         handler.post(clockTick)
     }

@@ -1,0 +1,38 @@
+ADWIO 5.0.5 — Premium Continuity Update
+
+Premium UI
+- New lightweight ADWIO splash screen using the app's cyan/purple identity.
+- Splash is smooth, minimal, and routes to the last valid state.
+- Home keeps only the four premium hero cards + top bar.
+- Removed the lower quick-access strip completely.
+
+Live / Mini Player
+- Removed the oversized Full Screen button from the middle of the video.
+- Full Screen is now a small professional icon beside the Mini Player channel title.
+- Live remembers category + list position.
+- Recently Watched is the default when available; All Channels remains directly under Search.
+- Mini Player enters PiP directly when Home is pressed.
+- Mini PiP keeps the same PlayerView attached so both video and audio continue.
+- Returning from PiP restores the same Mini Player screen and category.
+
+Full Screen / PiP
+- Full Screen PiP no longer detaches PlayerView during PiP.
+- Audio/video continue without restart when leaving to phone Home.
+- Returning from PiP restores Full Screen.
+- Closing PiP releases playback when the PiP activity is actually destroyed.
+
+App Restore
+- Added AppResumeState.
+- Opening ADWIO from the launcher restores Live Library or Full Screen playback instead of always forcing Home.
+- Library browsing state is persisted even when no content is playing.
+
+Series
+- Ordered episode queue across seasons.
+- Premium Next Episode panel appears near the end.
+- Countdown + Play Now + Cancel.
+- Auto Next respects the Auto Next Episode setting.
+- Normal 1.0x playback; no speed-up behavior.
+
+Version
+- versionCode 28
+- versionName 5.0.5

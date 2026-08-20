@@ -1,14 +1,21 @@
 package com.adwio.player.ui.library
 
+import android.app.PictureInPictureParams
 import android.content.Intent
+import android.content.res.Configuration
+import android.os.Build
 import android.os.Bundle
+import android.util.Rational
 import android.view.View
+import android.view.ViewGroup
+import android.widget.LinearLayout
 import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.adwio.player.R
+import com.adwio.player.data.AppResumeState
 import com.adwio.player.data.AppSettings
 import com.adwio.player.data.FavoritesStore
 import com.adwio.player.data.LibrarySnapshotCache
@@ -69,6 +76,10 @@ class LibraryActivity : BaseFullscreenActivity() {
     private var hasVisibleContent = false
     private val liveUiState by lazy { getSharedPreferences("adwio_live_ui_state", MODE_PRIVATE) }
     private var restoreLiveOnResume = false
+    private var enteringMiniPip = false
+    private var inMiniPip = false
+    private var wasMiniPip = false
+    private var previewOriginalParams: LinearLayout.LayoutParams? = null
 
     private val type: MediaType by lazy {
         runCatching { MediaType.valueOf(intent.getStringExtra(EXTRA_TYPE) ?: "LIVE") }
@@ -248,7 +259,9 @@ class LibraryActivity : BaseFullscreenActivity() {
     private fun restoreLiveStateOrDefault() {
         if (type != MediaType.LIVE) return
 
+        val resume = AppResumeState(this).load()
         val savedCategory = liveUiState.getString("category", null)
+            ?: resume.categoryId.takeIf { resume.screen == AppResumeState.SCREEN_LIBRARY && resume.mediaType == MediaType.LIVE }
         val recent = recentWatchedItems()
 
         selectedCategory = when {
@@ -401,6 +414,11 @@ class LibraryActivity : BaseFullscreenActivity() {
 
     override fun onResume() {
         super.onResume()
+        if (type == MediaType.LIVE && !inMiniPip &&
+            PlaybackEngine.player != null && PlaybackEngine.currentType == MediaType.LIVE
+        ) {
+            b.previewPlayer.player = PlaybackEngine.player
+        }
         if (type == MediaType.LIVE && restoreLiveOnResume && allItems.isNotEmpty()) {
             restoreLiveOnResume = false
             restoreLiveStateOrDefault()
@@ -408,8 +426,95 @@ class LibraryActivity : BaseFullscreenActivity() {
     }
 
     override fun onPause() {
-        if (type == MediaType.LIVE) persistLiveUiState()
+        if (type == MediaType.LIVE) {
+            persistLiveUiState()
+        } else {
+            AppResumeState(this).saveLibrary(
+                type = type,
+                categoryId = selectedCategory,
+                scrollPosition = (b.contentRecycler.layoutManager as? LinearLayoutManager)
+                    ?.findFirstVisibleItemPosition()?.coerceAtLeast(0) ?: 0
+            )
+        }
         super.onPause()
+    }
+
+    override fun onUserLeaveHint() {
+        if (type == MediaType.LIVE &&
+            AppSettings(this).pictureInPicture &&
+            PlaybackEngine.player?.isPlaying == true &&
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+        ) {
+            enterMiniPictureInPicture()
+        }
+        super.onUserLeaveHint()
+    }
+
+    override fun onPictureInPictureModeChanged(
+        isInPictureInPictureMode: Boolean,
+        newConfig: Configuration
+    ) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
+        inMiniPip = isInPictureInPictureMode
+        enteringMiniPip = false
+
+        if (isInPictureInPictureMode) {
+            wasMiniPip = true
+            prepareMiniPipUi()
+        } else {
+            restoreMiniUi()
+        }
+    }
+
+    private fun enterMiniPictureInPicture() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        enteringMiniPip = true
+        prepareMiniPipUi()
+        val entered = runCatching {
+            enterPictureInPictureMode(
+                PictureInPictureParams.Builder()
+                    .setAspectRatio(Rational(16, 9))
+                    .build()
+            )
+        }.getOrDefault(false)
+        inMiniPip = entered
+        if (!entered) {
+            enteringMiniPip = false
+            restoreMiniUi()
+        }
+    }
+
+    private fun prepareMiniPipUi() {
+        if (type != MediaType.LIVE) return
+        b.topBar.visibility = View.GONE
+        b.categoryPanel.visibility = View.GONE
+        b.contentRecycler.visibility = View.GONE
+        b.previewFooter.visibility = View.GONE
+
+        if (previewOriginalParams == null) {
+            previewOriginalParams = LinearLayout.LayoutParams(b.livePreviewPanel.layoutParams as LinearLayout.LayoutParams)
+        }
+
+        b.livePreviewPanel.layoutParams = LinearLayout.LayoutParams(
+            0,
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            1f
+        ).apply { marginStart = 0 }
+        b.livePreviewPanel.setPadding(0, 0, 0, 0)
+    }
+
+    private fun restoreMiniUi() {
+        if (type != MediaType.LIVE) return
+        b.topBar.visibility = View.VISIBLE
+        b.categoryPanel.visibility = View.VISIBLE
+        b.contentRecycler.visibility = View.VISIBLE
+        b.previewFooter.visibility = View.VISIBLE
+
+        previewOriginalParams?.let {
+            b.livePreviewPanel.layoutParams = LinearLayout.LayoutParams(it)
+        }
+        val pad = (5 * resources.displayMetrics.density).toInt()
+        b.livePreviewPanel.setPadding(pad, pad, pad, pad)
     }
 
     private fun persistLiveUiState() {
@@ -423,6 +528,18 @@ class LibraryActivity : BaseFullscreenActivity() {
             .putInt("scroll_position", position)
             .putString("channel_id", activePreviewLiveId)
             .apply()
+
+        val active = PlaybackEngine.currentType == MediaType.LIVE &&
+            PlaybackEngine.currentUrl.isNotBlank()
+        AppResumeState(this).saveLibrary(
+            type = MediaType.LIVE,
+            categoryId = selectedCategory,
+            scrollPosition = position,
+            playbackActive = active,
+            mediaId = if (active) PlaybackEngine.currentId else "",
+            title = if (active) PlaybackEngine.currentTitle else "",
+            url = if (active) PlaybackEngine.currentUrl else ""
+        )
     }
 
     private fun openCurrentLiveFullscreen() {
@@ -444,8 +561,22 @@ class LibraryActivity : BaseFullscreenActivity() {
 
     override fun onStop() {
         previewJob?.cancel()
-        b.previewPlayer.player = null
+
+        val keepPlayerAttached = inMiniPip || enteringMiniPip ||
+            (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && isInPictureInPictureMode)
+
+        if (!keepPlayerAttached) {
+            b.previewPlayer.player = null
+        }
         super.onStop()
+    }
+
+    override fun onDestroy() {
+        if (wasMiniPip && isFinishing) {
+            PlaybackEngine.stopAndRelease()
+            AppResumeState(this).clearPlaybackKeepingLibrary()
+        }
+        super.onDestroy()
     }
 
     private fun openItem(item: MediaItemModel) {

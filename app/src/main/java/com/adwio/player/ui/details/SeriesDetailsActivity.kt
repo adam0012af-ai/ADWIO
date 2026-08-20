@@ -18,6 +18,8 @@ import com.squareup.picasso.Picasso
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.json.JSONArray
+import org.json.JSONObject
 
 class SeriesDetailsActivity : BaseFullscreenActivity() {
     companion object {
@@ -123,15 +125,26 @@ class SeriesDetailsActivity : BaseFullscreenActivity() {
 
                 setOnClickListener {
                     val currentIndex = episodes.indexOfFirst { it.id == ep.id }
-                    val next = episodes.getOrNull(currentIndex + 1)
+                    val remaining = episodes.drop(currentIndex + 1)
+
+                    val queue = JSONArray().apply {
+                        remaining.forEach { n ->
+                            put(JSONObject().apply {
+                                put("id", "$seriesId:${n.id}")
+                                put("title", "$title • S${n.season}E${n.episodeNumber}")
+                                put("url", n.streamUrl)
+                            })
+                        }
+                    }
 
                     startActivity(Intent(this@SeriesDetailsActivity, PlayerActivity::class.java).apply {
                         putExtra("url", ep.streamUrl)
                         putExtra("title", "$title • S${ep.season}E${ep.episodeNumber}")
                         putExtra("id", "$seriesId:${ep.id}")
                         putExtra("type", MediaType.SERIES.name)
+                        putExtra("episode_queue", queue.toString())
 
-                        next?.let { n ->
+                        remaining.firstOrNull()?.let { n ->
                             putExtra("next_url", n.streamUrl)
                             putExtra("next_title", "$title • S${n.season}E${n.episodeNumber}")
                             putExtra("next_id", "$seriesId:${n.id}")
