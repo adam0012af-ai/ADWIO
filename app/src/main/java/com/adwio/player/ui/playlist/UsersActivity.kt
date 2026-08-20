@@ -4,6 +4,8 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.adwio.player.data.M3uCache
+import com.adwio.player.data.M3uWarmup
 import com.adwio.player.data.PlaylistStore
 import com.adwio.player.data.SessionStore
 import com.adwio.player.databinding.ActivityUsersBinding
@@ -24,11 +26,33 @@ class UsersActivity : BaseFullscreenActivity() {
         store = PlaylistStore(this)
         adapter = PlaylistAdapter(
             onOpen = { profile ->
-                SessionStore(this).save(store.toSession(profile).copy(displayName = profile.name))
+                val session = store.toSession(profile).copy(
+                    displayName = profile.name,
+                    status = if (profile.serverId == "m3u") "Active" else null
+                )
+
+                SessionStore(this).save(session)
                 store.put(profile)
-                startActivity(Intent(this, HomeActivity::class.java).addFlags(
-                    Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                ))
+
+                if (profile.serverId == "m3u" && profile.serverUrl.isNotBlank()) {
+                    getSharedPreferences("adwio_m3u", MODE_PRIVATE)
+                        .edit()
+                        .putString("active_url", profile.serverUrl.trim())
+                        .apply()
+
+                    /*
+                     * Warm through the same single-flight cache used by Library.
+                     * It cannot race a second M3U network request anymore.
+                     */
+                    M3uWarmup.start(this, profile.serverUrl.trim())
+                }
+
+                startActivity(
+                    Intent(this, HomeActivity::class.java).addFlags(
+                        Intent.FLAG_ACTIVITY_NEW_TASK or
+                            Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    )
+                )
             },
             onManage = { profile ->
                 AlertDialog.Builder(this)
