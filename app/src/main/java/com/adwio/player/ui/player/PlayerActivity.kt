@@ -140,9 +140,9 @@ class PlayerActivity : BaseFullscreenActivity() {
 
     private fun setupUi() {
         b.playerView.useController = false
-        b.playPauseButton.visibility = if (type == MediaType.LIVE) View.GONE else View.VISIBLE
-        b.browseButton.visibility = if (type == MediaType.LIVE) View.VISIBLE else View.GONE
-        b.progressBar.visibility = if (type == MediaType.LIVE) View.GONE else View.VISIBLE
+        b.playPauseButton.visibility = if (type == MediaType.LIVE) View.INVISIBLE else View.VISIBLE
+        b.browseButton.visibility = if (type == MediaType.LIVE) View.VISIBLE else View.INVISIBLE
+        b.progressBar.visibility = if (type == MediaType.LIVE) View.INVISIBLE else View.VISIBLE
         b.progressBar.isEnabled = type != MediaType.LIVE
 
         resizeMode = when (settings.aspectMode) {
@@ -160,8 +160,8 @@ class PlayerActivity : BaseFullscreenActivity() {
             showControls()
         }
 
-        b.rewind15Button.visibility = if (type == MediaType.LIVE) View.GONE else View.VISIBLE
-        b.forward15Button.visibility = if (type == MediaType.LIVE) View.GONE else View.VISIBLE
+        b.rewind15Button.visibility = if (type == MediaType.LIVE) View.INVISIBLE else View.VISIBLE
+        b.forward15Button.visibility = if (type == MediaType.LIVE) View.INVISIBLE else View.VISIBLE
 
         b.rewind15Button.setOnClickListener { seekBy(-15_000L) }
         b.forward15Button.setOnClickListener { seekBy(15_000L) }

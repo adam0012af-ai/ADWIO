@@ -95,4 +95,43 @@
     <string name="cast">الطاقم</string>
     <string name="rewind_15">رجوع 15 ثانية</string>
     <string name="forward_15">تقديم 15 ثانية</string>
+
+    <string name="all">الكل</string>
+    <string name="updating_content">جاري تحديث المحتوى…</string>
+    <string name="showing_saved_content">يتم عرض المحتوى المحفوظ • تعذر التحديث</string>
+    <string name="load_failed_keep_cache">تعذر تحميل المحتوى • حاول مرة أخرى لاحقًا</string>
+    <string name="general_settings">الإعدادات العامة</string>
+    <string name="time_format">تنسيق الوقت</string>
+    <string name="parental_control">الرقابة الأبوية</string>
+    <string name="player_settings">إعدادات المشغل</string>
+    <string name="speed_test">اختبار السرعة</string>
+    <string name="storage_cache">التخزين والكاش</string>
+    <string name="help_support">المساعدة والدعم</string>
+    <string name="about">حول التطبيق</string>
+    <string name="playback_general_options">خيارات التشغيل والإعدادات العامة</string>
+    <string name="auto">تلقائي</string>
+    <string name="system_default">النظام</string>
+    <string name="hour_12">12 ساعة</string>
+    <string name="hour_24">24 ساعة</string>
+    <string name="save">حفظ</string>
+    <string name="reset">إعادة ضبط</string>
+    <string name="reset_settings_message">إعادة إعدادات ADWIO إلى القيم الافتراضية.</string>
+    <string name="settings_reset_done">تمت إعادة ضبط الإعدادات</string>
+    <string name="hardware_preferred">تفضيل فك الترميز العتادي</string>
+    <string name="software_fallback">فك ترميز برمجي احتياطي</string>
+    <string name="controls_timeout">مدة ظهور أزرار المشغل</string>
+    <string name="controls_timeout_value">مدة ظهور الأزرار  •  %1$d ث</string>
+    <string name="pin_hint">رمز PIN من 4 أرقام</string>
+    <string name="set_parental_pin">تعيين رمز الرقابة الأبوية</string>
+    <string name="change_parental_pin">تغيير رمز الرقابة الأبوية</string>
+    <string name="parental_pin_saved">تم حفظ رمز الرقابة الأبوية</string>
+    <string name="pin_four_digits">يجب أن يتكون الرمز من 4 أرقام</string>
+    <string name="disable">تعطيل</string>
+    <string name="parental_disabled">تم تعطيل الرقابة الأبوية</string>
+    <string name="checking_connection">جاري فحص الاتصال…</string>
+    <string name="connection_response">استجابة الاتصال: %1$d مللي ثانية</string>
+    <string name="connection_test_failed">فشل اختبار الاتصال</string>
+    <string name="no_email_app">لم يتم العثور على تطبيق بريد</string>
+    <string name="support_email_body">يرجى وصف المشكلة هنا:\n\n\n------------------------------\nمعلومات تشخيص آمنة\nرقم التشخيص: %1$s\nإصدار التطبيق: %2$s (%3$d)\nAndroid: %4$s / SDK %5$d\nالجهاز: %6$s %7$s\nاللغة: %8$s\n------------------------------\nالأمان: لا يتضمن التقرير اسم مستخدم أو كلمة مرور أو Host أو رابط قائمة.</string>
+
 </resources>

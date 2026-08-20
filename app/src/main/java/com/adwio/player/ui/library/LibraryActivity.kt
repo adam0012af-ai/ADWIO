@@ -2,39 +2,42 @@ package com.adwio.player.ui.library
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.Job
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.adwio.player.data.FavoritesStore
+import com.adwio.player.R
 import com.adwio.player.data.AppSettings
-import com.adwio.player.data.SessionStore
-import com.adwio.player.data.RecentChannelsStore
-import com.adwio.player.data.XtreamClient
-import com.adwio.player.data.M3uClient
+import com.adwio.player.data.FavoritesStore
+import com.adwio.player.data.LibrarySnapshotCache
 import com.adwio.player.data.M3uCache
+import com.adwio.player.data.M3uClient
+import com.adwio.player.data.RecentChannelsStore
+import com.adwio.player.data.SessionStore
+import com.adwio.player.data.XtreamClient
 import com.adwio.player.data.model.CategoryModel
 import com.adwio.player.data.model.MediaItemModel
 import com.adwio.player.data.model.MediaType
 import com.adwio.player.databinding.ActivityLibraryBinding
 import com.adwio.player.ui.BaseFullscreenActivity
+import com.adwio.player.ui.details.MovieDetailsActivity
+import com.adwio.player.ui.details.SeriesDetailsActivity
 import com.adwio.player.ui.home.CategoryAdapter
 import com.adwio.player.ui.home.MediaAdapter
 import com.adwio.player.ui.home.PosterAdapter
-import com.adwio.player.ui.player.PlayerActivity
-import com.adwio.player.ui.player.PlaybackEngine
 import com.adwio.player.ui.player.ChannelNavigator
 import com.adwio.player.ui.player.LiveCatalog
-import com.adwio.player.ui.details.MovieDetailsActivity
-import com.adwio.player.ui.details.SeriesDetailsActivity
+import com.adwio.player.ui.player.PlaybackEngine
+import com.adwio.player.ui.player.PlayerActivity
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 
 class LibraryActivity : BaseFullscreenActivity() {
     companion object {
@@ -46,10 +49,12 @@ class LibraryActivity : BaseFullscreenActivity() {
         const val EXTRA_SEARCH = "search"
         const val EXTRA_FAVORITES = "favorites"
     }
+
     private lateinit var b: ActivityLibraryBinding
     private val api = XtreamClient()
     private val m3u = M3uClient()
     private val m3uCache by lazy { M3uCache(this) }
+    private val snapshotCache by lazy { LibrarySnapshotCache(this) }
     private lateinit var store: SessionStore
     private lateinit var favorites: FavoritesStore
     private lateinit var recentChannels: RecentChannelsStore
@@ -60,27 +65,34 @@ class LibraryActivity : BaseFullscreenActivity() {
     private var selectedCategory = ""
     private var previewJob: Job? = null
     private var activePreviewLiveId: String? = null
-    private val type: MediaType by lazy { runCatching { MediaType.valueOf(intent.getStringExtra(EXTRA_TYPE) ?: "LIVE") }.getOrDefault(MediaType.LIVE) }
-    private val categoryPrefs by lazy { getSharedPreferences("adwio_library_state", MODE_PRIVATE) }
+    private var hasVisibleContent = false
+
+    private val type: MediaType by lazy {
+        runCatching { MediaType.valueOf(intent.getStringExtra(EXTRA_TYPE) ?: "LIVE") }
+            .getOrDefault(MediaType.LIVE)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         b = ActivityLibraryBinding.inflate(layoutInflater)
         setContentView(b.root)
+
         store = SessionStore(this)
         favorites = FavoritesStore(this)
         recentChannels = RecentChannelsStore(this)
         liveAdapter = MediaAdapter(favorites, ::openItem, ::previewLive)
         posterAdapter = PosterAdapter(favorites, ::openItem)
-        categoryAdapter = CategoryAdapter { applyCategory(it) }
+        categoryAdapter = CategoryAdapter(::applyCategory)
+
         b.categoryRecycler.layoutManager = LinearLayoutManager(this)
         b.categoryRecycler.adapter = categoryAdapter
         b.backButton.setOnClickListener { finish() }
-        b.searchButton.visibility = android.view.View.GONE
-        b.favoritesButton.visibility = android.view.View.GONE
-        b.recentButton.visibility = if (type == MediaType.LIVE) android.view.View.VISIBLE else android.view.View.GONE
+        b.searchButton.visibility = View.GONE
+        b.favoritesButton.visibility = View.GONE
+        b.recentButton.visibility = if (type == MediaType.LIVE) View.VISIBLE else View.GONE
         b.recentButton.setOnClickListener { showRecentChannels() }
-        b.livePreviewPanel.visibility = if (type == MediaType.LIVE) android.view.View.VISIBLE else android.view.View.GONE
+        b.livePreviewPanel.visibility = if (type == MediaType.LIVE) View.VISIBLE else View.GONE
+
         configureGrid()
         load()
     }
@@ -108,117 +120,122 @@ class LibraryActivity : BaseFullscreenActivity() {
 
     private fun load() {
         val session = store.load() ?: return finish()
-        b.titleText.text = when(type) { MediaType.LIVE -> getString(com.adwio.player.R.string.live_title); MediaType.MOVIE -> getString(com.adwio.player.R.string.movies_title); MediaType.SERIES -> getString(com.adwio.player.R.string.series_title) }
-        b.subtitleText.text = "جاري تحميل المحتوى…"
-        b.contentRecycler.alpha = 0.35f
-        b.categoryRecycler.alpha = 0.35f
+        val sourceKey = "${session.server.id}|${session.server.baseUrl}"
+
+        b.titleText.text = when (type) {
+            MediaType.LIVE -> getString(R.string.live_title)
+            MediaType.MOVIE -> getString(R.string.movies_title)
+            MediaType.SERIES -> getString(R.string.series_title)
+        }
+        b.subtitleText.text = getString(R.string.loading_content)
+
         lifecycleScope.launch {
-            val result = withContext(Dispatchers.IO) { runCatching {
-                if (session.server.id == "m3u") {
-                    val items = m3uCache.loadForType(session.server.baseUrl, type, 700)
-                    m3u.categories(items, type) to items
+            val cached = withContext(Dispatchers.IO) { snapshotCache.load(sourceKey, type) }
+            if (cached != null && cached.items.isNotEmpty()) {
+                renderLibrary(cached.categories, cached.items)
+                hasVisibleContent = true
+                if (snapshotCache.isFresh(cached)) {
+                    applyLaunchIntent()
+                    return@launch
+                }
+                b.subtitleText.text = getString(R.string.updating_content)
+            } else {
+                b.contentRecycler.alpha = 0.45f
+                b.categoryRecycler.alpha = 0.45f
+            }
+
+            val remote = withContext(Dispatchers.IO) {
+                withTimeoutOrNull(45_000L) { loadRemote(session) }
+            }
+
+            b.contentRecycler.alpha = 1f
+            b.categoryRecycler.alpha = 1f
+
+            if (remote != null && remote.second.isNotEmpty()) {
+                val (cats, items) = remote
+                snapshotCache.save(sourceKey, type, cats, items)
+                renderLibrary(cats, items)
+                hasVisibleContent = true
+                b.subtitleText.text = if (type == MediaType.LIVE) {
+                    getString(R.string.recently_added)
                 } else {
-                    coroutineScope {
-                        val catsDeferred = async { api.loadCategories(session, type) }
-                        val itemsDeferred = async {
-                            when(type) {
-                                MediaType.LIVE -> api.loadLive(session)
-                                MediaType.MOVIE -> api.loadMovies(session)
-                                MediaType.SERIES -> api.loadSeries(session)
-                            }
-                        }
-                        var cats = catsDeferred.await()
-                        var items = itemsDeferred.await()
-
-                        if (items.isEmpty()) {
-                            items = when(type) {
-                                MediaType.LIVE -> api.loadLive(session)
-                                MediaType.MOVIE -> api.loadMovies(session)
-                                MediaType.SERIES -> api.loadSeries(session)
-                            }
-                        }
-                        cats to items
-                    }
+                    getString(R.string.recently_added)
                 }
-            }}
-            result.onSuccess { (cats, items) ->
-                b.contentRecycler.alpha = 1f
-                b.categoryRecycler.alpha = 1f
-
-                if (items.isEmpty()) {
-                    allItems = emptyList()
-                    categoryAdapter.submit(cats)
-                    submit(emptyList())
-                    b.subtitleText.text = "لم يتم تحميل المحتوى • استخدم تحديث المحتوى ثم حاول مرة أخرى"
-                    return@onSuccess
-                }
-
-                allItems = items
-                val accurateTotal = session.server.id != "m3u" || m3uCache.hasCache(session.server.baseUrl)
-                val totalLabel = java.text.NumberFormat.getIntegerInstance().format(items.size)
-                val allNamed = cats.map {
-                    if (it.id.isBlank()) {
-                        it.copy(name = if (accurateTotal) "ALL ($totalLabel)" else "ALL")
-                    } else it
-                }
-                val tools = mutableListOf(CategoryModel(SEARCH_ID, getString(com.adwio.player.R.string.search)))
-                if (type == MediaType.LIVE) {
-                    tools += CategoryModel(RECENT_LIVE_ID, "أضيف حديثًا")
-                } else {
-                    tools += CategoryModel(RECENTLY_ADDED_ID, getString(com.adwio.player.R.string.recently_added_30))
-                }
-                tools += CategoryModel(FAVORITES_ID, getString(com.adwio.player.R.string.favorites))
-                val displayCategories = tools + allNamed
-
-                if (type == MediaType.LIVE) {
-                    selectedCategory = RECENT_LIVE_ID
-                    LiveCatalog.setData(allNamed, items, "")
-                    categoryAdapter.submit(displayCategories)
-                    val latest = recentlyAdded(items).take(40)
-                    val initial = if (latest.isNotEmpty()) latest else {
-                        val firstReal = allNamed.firstOrNull { it.id.isNotBlank() }
-                        if (firstReal == null) items.take(40) else items.filter { it.categoryId == firstReal.id }.take(40)
-                    }
-                    submit(initial)
-                    b.subtitleText.text = "أضيف حديثًا"
-                } else {
-                    categoryAdapter.submit(displayCategories)
-                    selectedCategory = RECENTLY_ADDED_ID
-                    val recent = recentlyAdded(items)
-                    submit(recent)
-                    b.subtitleText.text = getString(com.adwio.player.R.string.recently_added)
-                }
-                if (session.server.id == "m3u" && !m3uCache.hasCache(session.server.baseUrl)) {
-                    lifecycleScope.launch {
-                        val full = withContext(Dispatchers.IO) {
-                            runCatching { m3uCache.warm(session.server.baseUrl) }.getOrDefault(emptyList())
-                        }
-                        val fullType = full.filter { it.type == type }
-                        if (fullType.isNotEmpty() && fullType.size != allItems.size) {
-                            allItems = fullType
-                            val fullCats = m3u.categories(fullType, type)
-                            val totalLabel = java.text.NumberFormat.getIntegerInstance().format(fullType.size)
-                            val named = fullCats.map {
-                                if (it.id.isBlank()) it.copy(name = "ALL ($totalLabel)") else it
-                            }
-                            val tools = mutableListOf(CategoryModel(SEARCH_ID, getString(com.adwio.player.R.string.search)))
-                            if (type == MediaType.LIVE) tools += CategoryModel(RECENT_LIVE_ID, "أضيف حديثًا")
-                            else tools += CategoryModel(RECENTLY_ADDED_ID, getString(com.adwio.player.R.string.recently_added_30))
-                            tools += CategoryModel(FAVORITES_ID, getString(com.adwio.player.R.string.favorites))
-                            categoryAdapter.submit(tools + named)
-                            if (selectedCategory.isBlank()) submit(fullType)
-                        }
-                    }
-                }
-
-                if (intent.getBooleanExtra(EXTRA_FAVORITES, false)) showFavorites()
-                else if (intent.getBooleanExtra(EXTRA_SEARCH, false)) showSearch()
-            }.onFailure {
-                b.contentRecycler.alpha = 1f
-                b.categoryRecycler.alpha = 1f
-                b.subtitleText.text = "تعذر تحميل المحتوى • حاول مرة أخرى"
+                applyLaunchIntent()
+            } else if (hasVisibleContent) {
+                b.subtitleText.text = getString(R.string.showing_saved_content)
+                applyLaunchIntent()
+            } else {
+                allItems = emptyList()
+                submit(emptyList())
+                b.subtitleText.text = getString(R.string.load_failed_keep_cache)
             }
         }
+    }
+
+    private suspend fun loadRemote(session: com.adwio.player.data.model.Session): Pair<List<CategoryModel>, List<MediaItemModel>>? {
+        return if (session.server.id == "m3u") {
+            val fast = m3uCache.loadFast(session.server.baseUrl, 1800).filter { it.type == type }
+            if (fast.isNotEmpty()) {
+                val cats = m3u.categories(fast, type)
+                // Full refresh is still requested once, but only after we have usable local/partial content.
+                val full = m3uCache.loadForType(session.server.baseUrl, type)
+                val finalItems = if (full.isNotEmpty()) full else fast
+                m3u.categories(finalItems, type) to finalItems
+            } else {
+                val full = m3uCache.loadForType(session.server.baseUrl, type)
+                if (full.isEmpty()) null else m3u.categories(full, type) to full
+            }
+        } else {
+            coroutineScope {
+                val catsDeferred = async { api.loadCategories(session, type) }
+                val itemsDeferred = async {
+                    when (type) {
+                        MediaType.LIVE -> api.loadLive(session)
+                        MediaType.MOVIE -> api.loadMovies(session)
+                        MediaType.SERIES -> api.loadSeries(session)
+                    }
+                }
+                val cats = catsDeferred.await()
+                val items = itemsDeferred.await()
+                if (items.isEmpty()) null else cats to items
+            }
+        }
+    }
+
+    private fun renderLibrary(cats: List<CategoryModel>, items: List<MediaItemModel>) {
+        if (items.isEmpty()) return
+        allItems = items
+
+        val totalLabel = java.text.NumberFormat.getIntegerInstance().format(items.size)
+        val named = (if (cats.isEmpty()) listOf(CategoryModel("", getString(R.string.all))) else cats).map {
+            if (it.id.isBlank()) it.copy(name = "${getString(R.string.all)} ($totalLabel)") else it
+        }
+
+        val tools = mutableListOf(CategoryModel(SEARCH_ID, getString(R.string.search)))
+        if (type == MediaType.LIVE) {
+            tools += CategoryModel(RECENT_LIVE_ID, getString(R.string.recently_added))
+        } else {
+            tools += CategoryModel(RECENTLY_ADDED_ID, getString(R.string.recently_added_30))
+        }
+        tools += CategoryModel(FAVORITES_ID, getString(R.string.favorites))
+        categoryAdapter.submit(tools + named)
+
+        if (type == MediaType.LIVE) {
+            selectedCategory = RECENT_LIVE_ID
+            LiveCatalog.setData(named, items, "")
+            val latest = recentlyAdded(items).take(40)
+            val first = if (latest.isNotEmpty()) latest else items.take(40)
+            submit(first)
+        } else {
+            selectedCategory = RECENTLY_ADDED_ID
+            submit(recentlyAdded(items))
+        }
+    }
+
+    private fun applyLaunchIntent() {
+        if (intent.getBooleanExtra(EXTRA_FAVORITES, false)) showFavorites()
+        else if (intent.getBooleanExtra(EXTRA_SEARCH, false)) showSearch()
     }
 
     private fun submit(items: List<MediaItemModel>) {
@@ -227,12 +244,10 @@ class LibraryActivity : BaseFullscreenActivity() {
 
     private fun applyCategory(c: CategoryModel) {
         selectedCategory = c.id
-        if (type == MediaType.LIVE) {
-            LiveCatalog.selectCategory(c.id)
-            if (c.id.isNotBlank()) categoryPrefs.edit().putString("last_category_${type.name}", c.id).apply()
-        }
-        if (c.id == SEARCH_ID) { showSearch(); return }
-        if (c.id == FAVORITES_ID) { showFavorites(); return }
+        if (type == MediaType.LIVE) LiveCatalog.selectCategory(c.id)
+        if (c.id == SEARCH_ID) return showSearch()
+        if (c.id == FAVORITES_ID) return showFavorites()
+
         val list = when {
             c.id == RECENTLY_ADDED_ID -> recentlyAdded(allItems)
             c.id == RECENT_LIVE_ID -> recentlyAdded(allItems).take(40)
@@ -244,50 +259,55 @@ class LibraryActivity : BaseFullscreenActivity() {
     }
 
     private fun recentlyAdded(items: List<MediaItemModel>): List<MediaItemModel> {
-        val withDates = items.filter { it.addedAt > 0L }
-        return if (withDates.isNotEmpty()) {
-            withDates.sortedByDescending { it.addedAt }.take(30)
-        } else {
-            items.takeLast(30).asReversed()
-        }
+        val dated = items.filter { it.addedAt > 0L }
+        return if (dated.isNotEmpty()) dated.sortedByDescending { it.addedAt }.take(30)
+        else items.takeLast(30).asReversed()
     }
 
     private fun showSearch() {
-        val input = EditText(this).apply { hint = getString(com.adwio.player.R.string.search_hint); setSingleLine() }
-        AlertDialog.Builder(this).setTitle(com.adwio.player.R.string.search).setView(input)
-            .setPositiveButton(com.adwio.player.R.string.search) { _, _ ->
+        val input = EditText(this).apply {
+            hint = getString(R.string.search_hint)
+            setSingleLine()
+        }
+        AlertDialog.Builder(this)
+            .setTitle(R.string.search)
+            .setView(input)
+            .setPositiveButton(R.string.search) { _, _ ->
                 val q = input.text.toString().trim()
-                val base = if (selectedCategory.isBlank()) allItems else allItems.filter { it.categoryId == selectedCategory }
+                val base = when {
+                    selectedCategory.isBlank() || selectedCategory.startsWith("__") -> allItems
+                    else -> allItems.filter { it.categoryId == selectedCategory }
+                }
                 val list = if (q.isBlank()) base else base.filter { it.name.contains(q, true) }
-                submit(list); b.subtitleText.text = getString(com.adwio.player.R.string.results_count, list.size)
-            }.setNegativeButton(android.R.string.cancel, null).show()
+                submit(list)
+                b.subtitleText.text = getString(R.string.results_count, list.size)
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
 
     private fun showFavorites() {
         val list = allItems.filter { favorites.isFavorite(it.id, it.type) }
         submit(list)
-        b.subtitleText.text = getString(com.adwio.player.R.string.favorites_count, list.size)
+        b.subtitleText.text = getString(R.string.favorites_count, list.size)
     }
 
     private fun showRecentChannels() {
         if (type != MediaType.LIVE) return
-        val recentIds = recentChannels.list().map { it.id }.toSet()
         val byId = allItems.associateBy { it.id }
         val list = recentChannels.list().mapNotNull { recent -> byId[recent.id] ?: recent }
         submit(list)
-        b.subtitleText.text = getString(com.adwio.player.R.string.recent_channels_count, list.size)
+        b.subtitleText.text = getString(R.string.recent_channels_count, list.size)
     }
 
     private fun previewLive(item: MediaItemModel) {
-        if (type != MediaType.LIVE) return
-        b.previewChannelName.text = item.name
+        if (type == MediaType.LIVE) b.previewChannelName.text = item.name
     }
 
     private fun activateLivePreview(item: MediaItemModel) {
         previewJob?.cancel()
         activePreviewLiveId = item.id
         b.previewChannelName.text = item.name
-
         val player = PlaybackEngine.play(
             context = this,
             settings = AppSettings(this),
@@ -303,10 +323,8 @@ class LibraryActivity : BaseFullscreenActivity() {
 
     override fun onStart() {
         super.onStart()
-        if (type == MediaType.LIVE &&
-            PlaybackEngine.player != null &&
-            PlaybackEngine.currentType == MediaType.LIVE &&
-            PlaybackEngine.currentUrl.isNotBlank()
+        if (type == MediaType.LIVE && PlaybackEngine.player != null &&
+            PlaybackEngine.currentType == MediaType.LIVE && PlaybackEngine.currentUrl.isNotBlank()
         ) {
             b.previewPlayer.player = PlaybackEngine.player
             b.previewChannelName.text = PlaybackEngine.currentTitle
@@ -326,14 +344,26 @@ class LibraryActivity : BaseFullscreenActivity() {
                 val session = store.load()
                 if (session?.server?.id == "m3u" && item.streamUrl.isNotBlank()) {
                     startActivity(Intent(this, PlayerActivity::class.java).apply {
-                        putExtra("url", item.streamUrl); putExtra("title", item.name); putExtra("id", "SERIES:${item.id}"); putExtra("type", MediaType.SERIES.name)
+                        putExtra("url", item.streamUrl)
+                        putExtra("title", item.name)
+                        putExtra("id", "SERIES:${item.id}")
+                        putExtra("type", MediaType.SERIES.name)
                     })
-                } else startActivity(Intent(this, SeriesDetailsActivity::class.java).apply {
-                    putExtra(SeriesDetailsActivity.EXTRA_ID, item.id); putExtra(SeriesDetailsActivity.EXTRA_TITLE, item.name); putExtra(SeriesDetailsActivity.EXTRA_IMAGE, item.logoUrl); putExtra(SeriesDetailsActivity.EXTRA_META, item.meta)
-                })
+                } else {
+                    startActivity(Intent(this, SeriesDetailsActivity::class.java).apply {
+                        putExtra(SeriesDetailsActivity.EXTRA_ID, item.id)
+                        putExtra(SeriesDetailsActivity.EXTRA_TITLE, item.name)
+                        putExtra(SeriesDetailsActivity.EXTRA_IMAGE, item.logoUrl)
+                        putExtra(SeriesDetailsActivity.EXTRA_META, item.meta)
+                    })
+                }
             }
             MediaType.MOVIE -> startActivity(Intent(this, MovieDetailsActivity::class.java).apply {
-                putExtra(MovieDetailsActivity.EXTRA_ID, item.id); putExtra(MovieDetailsActivity.EXTRA_TITLE, item.name); putExtra(MovieDetailsActivity.EXTRA_URL, item.streamUrl); putExtra(MovieDetailsActivity.EXTRA_IMAGE, item.logoUrl); putExtra(MovieDetailsActivity.EXTRA_META, item.meta)
+                putExtra(MovieDetailsActivity.EXTRA_ID, item.id)
+                putExtra(MovieDetailsActivity.EXTRA_TITLE, item.name)
+                putExtra(MovieDetailsActivity.EXTRA_URL, item.streamUrl)
+                putExtra(MovieDetailsActivity.EXTRA_IMAGE, item.logoUrl)
+                putExtra(MovieDetailsActivity.EXTRA_META, item.meta)
             })
             MediaType.LIVE -> {
                 recentChannels.add(item)
@@ -342,8 +372,14 @@ class LibraryActivity : BaseFullscreenActivity() {
                     b.subtitleText.text = item.name
                     return
                 }
-                LiveCatalog.setData(LiveCatalog.categories().ifEmpty { listOf(CategoryModel("", "All")) }, allItems, selectedCategory)
-                val visible = if (selectedCategory.isBlank()) allItems else allItems.filter { it.categoryId == selectedCategory }
+                LiveCatalog.setData(
+                    LiveCatalog.categories().ifEmpty { listOf(CategoryModel("", getString(R.string.all))) },
+                    allItems,
+                    selectedCategory
+                )
+                val visible = if (selectedCategory.isBlank() || selectedCategory.startsWith("__")) {
+                    allItems
+                } else allItems.filter { it.categoryId == selectedCategory }
                 ChannelNavigator.setQueue(visible, item.id)
                 startActivity(Intent(this, PlayerActivity::class.java).apply {
                     putExtra("url", item.streamUrl)
@@ -352,28 +388,6 @@ class LibraryActivity : BaseFullscreenActivity() {
                     putExtra("type", MediaType.LIVE.name)
                 })
             }
-        }
-    }
-
-    private fun showSeriesEpisodes(series: MediaItemModel) {
-        val session = store.load() ?: return
-        b.subtitleText.text = "Loading ${series.name}…"
-        lifecycleScope.launch {
-            val eps = withContext(Dispatchers.IO) { runCatching { api.loadSeriesEpisodes(session, series.id) }.getOrDefault(emptyList()) }
-            if (eps.isEmpty()) { b.subtitleText.text = getString(com.adwio.player.R.string.no_episodes); return@launch }
-            val seasons = eps.map { it.season }.distinct().sorted()
-            AlertDialog.Builder(this@LibraryActivity).setTitle(series.name)
-                .setItems(seasons.map { "Season $it" }.toTypedArray()) { _, which ->
-                    val season = seasons[which]
-                    val seasonEps = eps.filter { it.season == season }
-                    AlertDialog.Builder(this@LibraryActivity).setTitle("${series.name} • Season $season")
-                        .setItems(seasonEps.map { "E${it.episodeNumber}  ${it.title}" }.toTypedArray()) { _, i ->
-                            val ep = seasonEps[i]
-                            startActivity(Intent(this@LibraryActivity, PlayerActivity::class.java).apply {
-                                putExtra("url", ep.streamUrl); putExtra("title", "${series.name} • S${season}E${ep.episodeNumber}"); putExtra("id", "SERIES:${series.id}:${ep.id}")
-                            })
-                        }.show()
-                }.show()
         }
     }
 }

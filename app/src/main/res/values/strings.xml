@@ -95,4 +95,43 @@
     <string name="cast">Cast</string>
     <string name="rewind_15">Back 15 seconds</string>
     <string name="forward_15">Forward 15 seconds</string>
+
+    <string name="all">ALL</string>
+    <string name="updating_content">Updating content…</string>
+    <string name="showing_saved_content">Showing saved content • update unavailable</string>
+    <string name="load_failed_keep_cache">Unable to load content • try again later</string>
+    <string name="general_settings">General Settings</string>
+    <string name="time_format">Time Format</string>
+    <string name="parental_control">Parental Control</string>
+    <string name="player_settings">Player Settings</string>
+    <string name="speed_test">Speed Test</string>
+    <string name="storage_cache">Storage &amp; Cache</string>
+    <string name="help_support">Help &amp; Support</string>
+    <string name="about">About</string>
+    <string name="playback_general_options">Playback &amp; General Options</string>
+    <string name="auto">Auto</string>
+    <string name="system_default">System</string>
+    <string name="hour_12">12-hour</string>
+    <string name="hour_24">24-hour</string>
+    <string name="save">Save</string>
+    <string name="reset">Reset</string>
+    <string name="reset_settings_message">Restore ADWIO settings to defaults.</string>
+    <string name="settings_reset_done">Settings reset</string>
+    <string name="hardware_preferred">Hardware preferred</string>
+    <string name="software_fallback">Software fallback</string>
+    <string name="controls_timeout">Controls timeout</string>
+    <string name="controls_timeout_value">Controls timeout  •  %1$ds</string>
+    <string name="pin_hint">4-digit PIN</string>
+    <string name="set_parental_pin">Set Parental PIN</string>
+    <string name="change_parental_pin">Change Parental PIN</string>
+    <string name="parental_pin_saved">Parental PIN saved</string>
+    <string name="pin_four_digits">PIN must be 4 digits</string>
+    <string name="disable">Disable</string>
+    <string name="parental_disabled">Parental control disabled</string>
+    <string name="checking_connection">Checking connection…</string>
+    <string name="connection_response">Connection response: %1$d ms</string>
+    <string name="connection_test_failed">Connection test failed</string>
+    <string name="no_email_app">No email app found</string>
+    <string name="support_email_body">Please describe the problem here:\n\n\n------------------------------\nSafe diagnostic information\nDiagnostic ID: %1$s\nApp version: %2$s (%3$d)\nAndroid: %4$s / SDK %5$d\nDevice: %6$s %7$s\nLocale: %8$s\n------------------------------\nSecurity: no username, password, host or playlist URL is included.</string>
+
 </resources>
