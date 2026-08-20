@@ -22,8 +22,8 @@ class M3uClient {
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(10, TimeUnit.SECONDS)
-        .readTimeout(90, TimeUnit.SECONDS)
-        .callTimeout(120, TimeUnit.SECONDS)
+        .readTimeout(120, TimeUnit.SECONDS)
+        .callTimeout(150, TimeUnit.SECONDS)
         .followRedirects(true)
         .followSslRedirects(true)
         .build()
@@ -83,30 +83,28 @@ class M3uClient {
         }.getOrDefault(emptyList())
     }
 
-
+    /**
+     * Full type scan.
+     * The old implementation stopped at 700 matching items / 160k lines.
+     * That made large M3U playlists show Live while Movies/Series appeared incomplete.
+     *
+     * maxItems is kept for binary/source compatibility but intentionally not used as a hard cap.
+     * We stream the playlist to EOF and only retain items of the requested type.
+     */
     fun loadForType(url: String, type: MediaType, maxItems: Int = 700): List<MediaItemModel> {
-        val scanClient = OkHttpClient.Builder()
-            .connectTimeout(7, TimeUnit.SECONDS)
-            .readTimeout(35, TimeUnit.SECONDS)
-            .callTimeout(45, TimeUnit.SECONDS)
-            .followRedirects(true)
-            .followSslRedirects(true)
-            .build()
-
         val request = Request.Builder()
             .url(url)
             .header("User-Agent", "ADWIO-Player/4.2")
             .build()
 
         return runCatching {
-            scanClient.newCall(request).execute().use { response ->
+            client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) return@use emptyList()
                 val source = response.body?.source() ?: return@use emptyList()
-                val out = ArrayList<MediaItemModel>(maxItems.coerceAtMost(800))
+                val out = ArrayList<MediaItemModel>(4096)
                 var info: String? = null
-                var lines = 0
 
-                while (out.size < maxItems && lines++ < 160000) {
+                while (true) {
                     val raw = source.readUtf8Line() ?: break
                     val line = raw.trim()
                     if (line.isEmpty()) continue
@@ -169,7 +167,7 @@ class M3uClient {
     }
 
     private fun parseLines(lines: Sequence<String>): List<MediaItemModel> {
-        val out = ArrayList<MediaItemModel>(2048)
+        val out = ArrayList<MediaItemModel>(4096)
         var info: String? = null
 
         lines.forEach { raw ->
@@ -192,26 +190,42 @@ class M3uClient {
         val name = meta.substringAfterLast(',', "Untitled").trim().ifBlank { "Untitled" }
         val group = attr(meta, "group-title").ifBlank { "General" }
         val logo = attr(meta, "tvg-logo").ifBlank { null }
-        val lower = "$group $name $line".lowercase()
+        val declaredType = listOf(
+            attr(meta, "tvg-type"),
+            attr(meta, "type"),
+            attr(meta, "content-type")
+        ).joinToString(" ")
+
+        val lower = "$declaredType $group $name $line".lowercase()
+
+        val looksSeries =
+            "/series/" in lower ||
+            " series " in " $lower " ||
+            "series:" in lower ||
+            "episode" in lower ||
+            "episodes" in lower ||
+            "season" in lower ||
+            "مسلسل" in lower ||
+            "مسلسلات" in lower ||
+            Regex("""\bs\d{1,2}\s*e\d{1,3}\b""", RegexOption.IGNORE_CASE).containsMatchIn(lower) ||
+            Regex("""\b\d{1,2}x\d{1,3}\b""").containsMatchIn(lower)
+
+        val looksMovie =
+            "/movie/" in lower ||
+            " movie " in " $lower " ||
+            " movies " in " $lower " ||
+            " film " in " $lower " ||
+            " vod " in " $lower " ||
+            "video on demand" in lower ||
+            "افلام" in lower ||
+            "أفلام" in lower ||
+            "فيلم" in lower ||
+            Regex("""\.(mp4|mkv|avi|mov|m4v|wmv|flv|webm|mpg|mpeg)(\?|$)""", RegexOption.IGNORE_CASE)
+                .containsMatchIn(line)
 
         val type = when {
-            "/series/" in lower ||
-                "series" in lower ||
-                "مسلسل" in lower ||
-                "مسلسلات" in lower ||
-                "episode" in lower ||
-                Regex("s\\d{1,2}e\\d{1,3}").containsMatchIn(lower) -> MediaType.SERIES
-
-            "/movie/" in lower ||
-                "movie" in lower ||
-                "movies" in lower ||
-                "film" in lower ||
-                "vod" in lower ||
-                "افلام" in lower ||
-                "أفلام" in lower ||
-                "فيلم" in lower ||
-                Regex("\\.(mp4|mkv|avi|mov|m4v)(\\?|$)").containsMatchIn(lower) -> MediaType.MOVIE
-
+            looksSeries -> MediaType.SERIES
+            looksMovie -> MediaType.MOVIE
             else -> MediaType.LIVE
         }
 
