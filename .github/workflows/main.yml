@@ -1,4 +1,4 @@
-name: Apply ADWIO 5.0 OFFICIAL
+name: Apply ADWIO 5.0.1 Final RC
 
 on:
   workflow_dispatch:
@@ -14,27 +14,32 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - name: Verify package
-        run: test -f ADWIO_5.0_OFFICIAL_FINAL.zip
-      - name: Extract safely
+        run: test -f ADWIO_5.0.1_FINAL_COMPLETION.zip
+
+      - name: Extract update
         shell: bash
         run: |
           set -euo pipefail
-          TMP_DIR="${RUNNER_TEMP}/adwio50"
+          TMP_DIR="${RUNNER_TEMP}/adwio501"
           rm -rf "$TMP_DIR"
           mkdir -p "$TMP_DIR"
-          unzip -q ADWIO_5.0_OFFICIAL_FINAL.zip -d "$TMP_DIR"
+          unzip -q ADWIO_5.0.1_FINAL_COMPLETION.zip -d "$TMP_DIR"
           test -d "$TMP_DIR/ADWIO-main/app"
+
           rsync -a \
             --exclude='.git/' \
             --exclude='.github/workflows/' \
-            --exclude='ADWIO_5.0_OFFICIAL_FINAL.zip' \
+            --exclude='ADWIO_5.0.1_FINAL_COMPLETION.zip' \
             "$TMP_DIR/ADWIO-main/" ./
+
       - name: Verify version
         run: |
-          grep -q 'versionCode = 23' app/build.gradle.kts
-          grep -q 'versionName = "5.0.0"' app/build.gradle.kts
-      - name: Commit and push source
+          grep -q 'versionCode = 24' app/build.gradle.kts
+          grep -q 'versionName = "5.0.1"' app/build.gradle.kts
+
+      - name: Commit and push
         shell: bash
         run: |
           set -euo pipefail
@@ -45,5 +50,5 @@ jobs:
             echo "No changes to commit."
             exit 0
           fi
-          git commit -m "Apply ADWIO 5.0 Official Final"
+          git commit -m "Apply ADWIO 5.0.1 final completion"
           git push
