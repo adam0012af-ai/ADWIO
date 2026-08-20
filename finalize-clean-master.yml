@@ -1,0 +1,99 @@
+name: Finalize ADWIO Clean Master
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  finalize-clean-master:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Final cleanup
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Android application repository only.
+          rm -rf control-panel
+          rm -rf docs
+
+          # Remove any historical packages if any were reintroduced.
+          find . -maxdepth 1 -type f \
+            \( -iname '*.zip' -o -iname '*.rar' -o -iname '*.7z' \) \
+            -print -delete
+
+          # Keep only the production APK build workflow.
+          mkdir -p .github/workflows
+          find .github/workflows -maxdepth 1 -type f \
+            ! -name 'build-apk.yml' \
+            -print -delete
+
+          # Replace stale README with Clean Master information.
+          cat > README.md <<'EOF'
+          # ADWIO Player — Clean Master
+
+          Clean Android source baseline for ADWIO Player.
+
+          ## Baseline
+          - Version: 5.0.5
+          - Package: `com.adwio.player`
+          - Source baseline: original ADWIO 5.0.5 Premium Continuity snapshot
+          - Cleaned from historical update ZIPs, patch packages, recovery files, and obsolete workflows.
+
+          ## Repository structure
+          - `app/` — Android application source
+          - `build.gradle.kts` — root Gradle configuration
+          - `settings.gradle.kts` — Gradle settings
+          - `gradle.properties` — Gradle properties
+          - `.github/workflows/build-apk.yml` — APK build workflow
+
+          ## Build
+          Open **Actions → Build Signed APK** to build the application.
+
+          This repository is the official clean baseline for future ADWIO development.
+          New changes should be applied directly to the source and validated with a build before the next change.
+          EOF
+
+          # Hard validation
+          test -d app
+          test -f app/build.gradle.kts
+          test -f app/src/main/AndroidManifest.xml
+          test -d app/src/main/java
+          test -d app/src/main/res
+          test -f build.gradle.kts
+          test -f settings.gradle.kts
+          test -f gradle.properties
+          test -f .github/workflows/build-apk.yml
+          test ! -d control-panel
+          test ! -d docs
+
+          COUNT="$(find .github/workflows -maxdepth 1 -type f | wc -l)"
+          test "$COUNT" -eq 1
+
+          echo "ADWIO Clean Master validation passed."
+
+      - name: Commit final Clean Master
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add -A
+
+          if git diff --cached --quiet; then
+            echo "Already clean."
+            exit 0
+          fi
+
+          git commit -m "Finalize ADWIO 5.0.5 Clean Master"
+          git push origin HEAD:main
+          
