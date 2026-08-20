@@ -148,7 +148,7 @@
                     android:background="@android:color/transparent"
                     android:contentDescription="@string/aspect_ratio"
                     android:padding="7dp"
-                    android:src="@drawable/ic_zoom"
+                    android:src="@drawable/ic_aspect_ratio_live"
                     android:visibility="gone"/>
 
                 <ImageButton
