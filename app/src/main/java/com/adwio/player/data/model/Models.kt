@@ -20,10 +20,7 @@ data class Session(
     val maxConnections: String? = null
 )
 
-data class CategoryModel(
-    val id: String,
-    val name: String
-)
+data class CategoryModel(val id: String, val name: String)
 
 data class MediaItemModel(
     val id: String,
@@ -44,7 +41,8 @@ data class ContentInfoModel(
     val rating: String = "",
     val director: String = "",
     val cast: String = "",
-    val backdropUrl: String? = null
+    val backdropUrl: String? = null,
+    val trailerUrl: String? = null
 )
 
 data class EpgItemModel(

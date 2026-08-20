@@ -20,7 +20,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class SeriesDetailsActivity : BaseFullscreenActivity() {
-    companion object { const val EXTRA_ID="id"; const val EXTRA_TITLE="title"; const val EXTRA_IMAGE="image"; const val EXTRA_META="meta" }
+    companion object {
+        const val EXTRA_ID = "id"
+        const val EXTRA_TITLE = "title"
+        const val EXTRA_IMAGE = "image"
+        const val EXTRA_META = "meta"
+    }
+
     private lateinit var b: ActivitySeriesDetailsBinding
     private val api = XtreamClient()
     private var episodes: List<EpisodeModel> = emptyList()
@@ -31,54 +37,100 @@ class SeriesDetailsActivity : BaseFullscreenActivity() {
         super.onCreate(savedInstanceState)
         b = ActivitySeriesDetailsBinding.inflate(layoutInflater)
         setContentView(b.root)
-        seriesId = intent.getStringExtra(EXTRA_ID).orEmpty(); title = intent.getStringExtra(EXTRA_TITLE).orEmpty()
-        b.titleText.text = title; b.metaText.text = intent.getStringExtra(EXTRA_META).orEmpty(); b.infoText.text = "جاري تحميل المعلومات…"; b.backButton.setOnClickListener { finish() }
-        intent.getStringExtra(EXTRA_IMAGE)?.takeIf { it.isNotBlank() }?.let { Picasso.get().load(it).placeholder(R.drawable.ic_adwio).error(R.drawable.ic_adwio).fit().centerInside().into(b.posterImage) }
+
+        seriesId = intent.getStringExtra(EXTRA_ID).orEmpty()
+        title = intent.getStringExtra(EXTRA_TITLE).orEmpty()
+
+        b.titleText.text = title
+        b.metaText.text = intent.getStringExtra(EXTRA_META).orEmpty()
+        b.infoText.text = getString(R.string.loading_info)
+        b.backButton.setOnClickListener { finish() }
+
+        intent.getStringExtra(EXTRA_IMAGE)
+            ?.takeIf { it.isNotBlank() }
+            ?.let {
+                Picasso.get().load(it)
+                    .placeholder(R.drawable.ic_adwio)
+                    .error(R.drawable.ic_adwio)
+                    .fit().centerInside().into(b.posterImage)
+            }
+
         val session = SessionStore(this).load()
         if (session != null) lifecycleScope.launch {
             val info = withContext(Dispatchers.IO) { api.loadSeriesInfo(session, seriesId) }
-            b.metaText.text = listOf(info.rating.takeIf { it.isNotBlank() }?.let { "★ $it" }, info.genre.takeIf { it.isNotBlank() }, info.releaseDate.takeIf { it.isNotBlank() }).filterNotNull().joinToString("  •  ")
-            b.infoText.text = info.plot.ifBlank { "لا توجد معلومات إضافية" }
+            b.metaText.text = listOf(
+                info.rating.takeIf { it.isNotBlank() }?.let { "★ $it" },
+                info.genre.takeIf { it.isNotBlank() },
+                info.releaseDate.takeIf { it.isNotBlank() }
+            ).filterNotNull().joinToString("  •  ")
+            b.infoText.text = info.plot.ifBlank { getString(R.string.no_extra_info) }
         }
+
         loadEpisodes()
     }
 
     private fun loadEpisodes() {
         val session = SessionStore(this).load() ?: return finish()
         b.loading.visibility = View.VISIBLE
+
         lifecycleScope.launch {
-            episodes = withContext(Dispatchers.IO) { runCatching { api.loadSeriesEpisodes(session, seriesId) }.getOrDefault(emptyList()) }
+            episodes = withContext(Dispatchers.IO) {
+                runCatching { api.loadSeriesEpisodes(session, seriesId) }
+                    .getOrDefault(emptyList())
+            }.sortedWith(compareBy<EpisodeModel> { it.season }.thenBy { it.episodeNumber })
+
             b.loading.visibility = View.GONE
-            if (episodes.isEmpty()) { b.statusText.text = getString(R.string.no_episodes); return@launch }
-            val seasons = episodes.map { it.season }.distinct().sorted()
-            b.seasonSpinner.adapter = ArrayAdapter(this@SeriesDetailsActivity, android.R.layout.simple_spinner_dropdown_item, seasons.map { getString(R.string.season_number, it) })
-            b.seasonSpinner.setSelection(0)
-            b.seasonSpinner.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
-                override fun onNothingSelected(parent: android.widget.AdapterView<*>?) = Unit
-                override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) { renderSeason(seasons[position]) }
+
+            if (episodes.isEmpty()) {
+                b.statusText.text = getString(R.string.no_episodes)
+                return@launch
             }
+
+            val seasons = episodes.map { it.season }.distinct().sorted()
+            b.seasonSpinner.adapter = ArrayAdapter(
+                this@SeriesDetailsActivity,
+                android.R.layout.simple_spinner_dropdown_item,
+                seasons.map { getString(R.string.season_number, it) }
+            )
+
+            b.seasonSpinner.onItemSelectedListener =
+                object : android.widget.AdapterView.OnItemSelectedListener {
+                    override fun onNothingSelected(parent: android.widget.AdapterView<*>?) = Unit
+                    override fun onItemSelected(
+                        parent: android.widget.AdapterView<*>?,
+                        view: View?,
+                        position: Int,
+                        id: Long
+                    ) {
+                        renderSeason(seasons[position])
+                    }
+                }
         }
     }
 
     private fun renderSeason(season: Int) {
         b.episodesContainer.removeAllViews()
-        val list = episodes.filter { it.season == season }
+        val list = episodes.filter { it.season == season }.sortedBy { it.episodeNumber }
+
         list.forEach { ep ->
             val btn = Button(this).apply {
-                text = "E${ep.episodeNumber.toString().padStart(2,'0')}  ${ep.title}"
+                text = "E${ep.episodeNumber.toString().padStart(2, '0')}  ${ep.title}"
                 textSize = 10f
                 isAllCaps = false
                 setTextColor(getColor(R.color.adwio_text))
                 setBackgroundResource(R.drawable.bg_focus)
-                setPadding(10,0,10,0)
+                setPadding(10, 0, 10, 0)
+
                 setOnClickListener {
                     val currentIndex = episodes.indexOfFirst { it.id == ep.id }
                     val next = episodes.getOrNull(currentIndex + 1)
+
                     startActivity(Intent(this@SeriesDetailsActivity, PlayerActivity::class.java).apply {
                         putExtra("url", ep.streamUrl)
                         putExtra("title", "$title • S${ep.season}E${ep.episodeNumber}")
                         putExtra("id", "$seriesId:${ep.id}")
                         putExtra("type", MediaType.SERIES.name)
+
                         next?.let { n ->
                             putExtra("next_url", n.streamUrl)
                             putExtra("next_title", "$title • S${n.season}E${n.episodeNumber}")
@@ -87,10 +139,20 @@ class SeriesDetailsActivity : BaseFullscreenActivity() {
                     })
                 }
             }
-            b.episodesContainer.addView(btn, android.widget.LinearLayout.LayoutParams(android.widget.LinearLayout.LayoutParams.MATCH_PARENT, 42.dp()).apply { bottomMargin = 4.dp() })
+
+            b.episodesContainer.addView(
+                btn,
+                android.widget.LinearLayout.LayoutParams(
+                    android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                    42.dp()
+                ).apply { bottomMargin = 4.dp() }
+            )
         }
-        list.firstOrNull()?.let { if (b.episodesContainer.childCount > 0) b.episodesContainer.getChildAt(0).requestFocus() }
+
+        if (b.episodesContainer.childCount > 0) {
+            b.episodesContainer.getChildAt(0).requestFocus()
+        }
     }
 
-    private fun Int.dp(): Int = (this * resources.displayMetrics.density).toInt()
+    private fun Int.dp() = (this * resources.displayMetrics.density).toInt()
 }

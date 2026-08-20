@@ -33,7 +33,6 @@
     <string name="epg_loading">Loading guide…</string>
     <string name="epg_unavailable">Guide unavailable</string>
     <string name="recent">Recent</string>
-
     <string name="home_discover_title">Discover</string>
     <string name="home_discover_subtitle">Choose a section and start instantly</string>
     <string name="live_title">LIVE TV</string>
@@ -76,7 +75,6 @@
     <string name="language_value">Language  •  %1$s</string>
     <string name="grid_value">Grid  •  %1$s</string>
     <string name="startup_value">Startup  •  %1$s</string>
-
     <string name="stream_format">Stream format</string>
     <string name="decoder">Decoder</string>
     <string name="buffer_mode">Buffer mode</string>
@@ -89,4 +87,12 @@
     <string name="recently_added_30">Recently added • 30</string>
     <string name="favorites_count">%1$d favorites</string>
     <string name="recent_channels_count">%1$d recent channels</string>
+    <string name="watch_trailer">WATCH TRAILER</string>
+    <string name="trailer">Trailer</string>
+    <string name="loading_info">Loading information…</string>
+    <string name="no_extra_info">No additional information</string>
+    <string name="director">Director</string>
+    <string name="cast">Cast</string>
+    <string name="rewind_15">Back 15 seconds</string>
+    <string name="forward_15">Forward 15 seconds</string>
 </resources>

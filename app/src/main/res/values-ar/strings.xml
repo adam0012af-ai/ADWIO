@@ -33,7 +33,6 @@
     <string name="epg_loading">جارٍ تحميل دليل البرامج…</string>
     <string name="epg_unavailable">دليل البرامج غير متاح</string>
     <string name="recent">الأخيرة</string>
-
     <string name="home_discover_title">اكتشف المحتوى</string>
     <string name="home_discover_subtitle">اختر القسم وابدأ مباشرة</string>
     <string name="live_title">القنوات</string>
@@ -76,7 +75,6 @@
     <string name="language_value">اللغة  •  %1$s</string>
     <string name="grid_value">كثافة العرض  •  %1$s</string>
     <string name="startup_value">شاشة البدء  •  %1$s</string>
-
     <string name="stream_format">صيغة البث</string>
     <string name="decoder">فك الترميز</string>
     <string name="buffer_mode">التخزين المؤقت</string>
@@ -89,4 +87,12 @@
     <string name="recently_added_30">أضيف حديثًا • 30</string>
     <string name="favorites_count">%1$d في المفضلة</string>
     <string name="recent_channels_count">%1$d قناة أخيرة</string>
+    <string name="watch_trailer">مشاهدة الإعلان</string>
+    <string name="trailer">إعلان الفيلم</string>
+    <string name="loading_info">جاري تحميل المعلومات…</string>
+    <string name="no_extra_info">لا توجد معلومات إضافية</string>
+    <string name="director">المخرج</string>
+    <string name="cast">الطاقم</string>
+    <string name="rewind_15">رجوع 15 ثانية</string>
+    <string name="forward_15">تقديم 15 ثانية</string>
 </resources>

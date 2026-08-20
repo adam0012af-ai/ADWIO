@@ -31,7 +31,7 @@
     <LinearLayout
         android:id="@+id/playerControls"
         android:layout_width="match_parent"
-        android:layout_height="46dp"
+        android:layout_height="48dp"
         android:layout_gravity="bottom"
         android:layout_margin="9dp"
         android:background="@drawable/bg_control_bar"
@@ -39,9 +39,56 @@
         android:orientation="horizontal"
         android:paddingHorizontal="8dp">
 
-        <ImageButton android:id="@+id/playPauseButton" android:layout_width="32dp" android:layout_height="32dp" android:background="@android:color/transparent" android:contentDescription="Play pause" android:padding="7dp" android:src="@drawable/ic_pause"/>
-        <SeekBar android:id="@+id/progressBar" android:layout_width="0dp" android:layout_height="26dp" android:layout_marginHorizontal="7dp" android:layout_weight="1" android:max="1000"/>
-        <TextView android:id="@+id/qualityText" android:layout_width="48dp" android:layout_height="30dp" android:clickable="true" android:focusable="true" android:gravity="center" android:text="—" android:textColor="@color/adwio_text" android:textSize="9sp"/>
+        <ImageButton
+            android:id="@+id/playPauseButton"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="@android:color/transparent"
+            android:contentDescription="Play pause"
+            android:padding="7dp"
+            android:src="@drawable/ic_pause"/>
+
+        <TextView
+            android:id="@+id/rewind15Button"
+            android:layout_width="45dp"
+            android:layout_height="32dp"
+            android:gravity="center"
+            android:text="−15"
+            android:contentDescription="@string/rewind_15"
+            android:textColor="@color/adwio_text"
+            android:textSize="10sp"
+            android:textStyle="bold"/>
+
+        <SeekBar
+            android:id="@+id/progressBar"
+            android:layout_width="0dp"
+            android:layout_height="26dp"
+            android:layout_marginHorizontal="5dp"
+            android:layout_weight="1"
+            android:max="1000"/>
+
+        <TextView
+            android:id="@+id/forward15Button"
+            android:layout_width="45dp"
+            android:layout_height="32dp"
+            android:gravity="center"
+            android:text="+15"
+            android:contentDescription="@string/forward_15"
+            android:textColor="@color/adwio_text"
+            android:textSize="10sp"
+            android:textStyle="bold"/>
+
+        <TextView
+            android:id="@+id/qualityText"
+            android:layout_width="48dp"
+            android:layout_height="30dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:text="—"
+            android:textColor="@color/adwio_text"
+            android:textSize="9sp"/>
+
         <ImageButton android:id="@+id/audioButton" android:layout_width="32dp" android:layout_height="32dp" android:background="@android:color/transparent" android:contentDescription="Audio" android:padding="7dp" android:src="@drawable/ic_audio"/>
         <ImageButton android:id="@+id/subtitleButton" android:layout_width="32dp" android:layout_height="32dp" android:background="@android:color/transparent" android:contentDescription="Subtitles" android:padding="7dp" android:src="@drawable/ic_subtitles"/>
         <ImageButton android:id="@+id/browseButton" android:layout_width="32dp" android:layout_height="32dp" android:background="@android:color/transparent" android:contentDescription="Channels" android:padding="7dp" android:src="@drawable/ic_list"/>

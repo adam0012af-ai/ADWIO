@@ -52,6 +52,8 @@ class PlayerActivity : BaseFullscreenActivity() {
     private var type = MediaType.MOVIE
     private var retryCount = 0
     private var inPip = false
+    private var enteringPip = false
+    private var seekRepeatDirection = 0
     private var returningToLivePreview = false
     private var nextUrl = ""
     private var nextTitle = ""
@@ -158,6 +160,30 @@ class PlayerActivity : BaseFullscreenActivity() {
             showControls()
         }
 
+        b.rewind15Button.visibility = if (type == MediaType.LIVE) View.GONE else View.VISIBLE
+        b.forward15Button.visibility = if (type == MediaType.LIVE) View.GONE else View.VISIBLE
+
+        b.rewind15Button.setOnClickListener { seekBy(-15_000L) }
+        b.forward15Button.setOnClickListener { seekBy(15_000L) }
+
+        b.rewind15Button.setOnLongClickListener {
+            startRepeatedSeek(-1)
+            true
+        }
+        b.forward15Button.setOnLongClickListener {
+            startRepeatedSeek(1)
+            true
+        }
+
+        val stopRepeat = View.OnTouchListener { _, event ->
+            if (event.action == MotionEvent.ACTION_UP || event.action == MotionEvent.ACTION_CANCEL) {
+                stopRepeatedSeek()
+            }
+            false
+        }
+        b.rewind15Button.setOnTouchListener(stopRepeat)
+        b.forward15Button.setOnTouchListener(stopRepeat)
+
         b.qualityText.setOnClickListener { showVideoQualityMenu() }
         b.audioButton.setOnClickListener { showTrackMenu(C.TRACK_TYPE_AUDIO) }
         b.subtitleButton.setOnClickListener { showTrackMenu(C.TRACK_TYPE_TEXT) }
@@ -221,15 +247,17 @@ class PlayerActivity : BaseFullscreenActivity() {
     }
 
     override fun onUserLeaveHint() {
-        super.onUserLeaveHint()
         if (settings.pictureInPicture && PlaybackEngine.player?.isPlaying == true) {
+            enteringPip = true
             maybeEnterPip()
         }
+        super.onUserLeaveHint()
     }
 
     override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
         inPip = isInPictureInPictureMode
+        enteringPip = false
         if (inPip) {
             b.playerControls.visibility = View.GONE
             b.backControlButton.visibility = View.GONE
@@ -268,7 +296,10 @@ class PlayerActivity : BaseFullscreenActivity() {
         PlaybackEngine.player?.removeListener(playerListener)
         b.playerView.player = null
 
-        if (!returningToLivePreview && !inPip) {
+        val keepForPip = inPip || enteringPip ||
+            (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && isInPictureInPictureMode)
+
+        if (!returningToLivePreview && !keepForPip) {
             PlaybackEngine.stopAndRelease()
             stopService(Intent(this, PlaybackService::class.java))
         }
@@ -482,12 +513,59 @@ class PlayerActivity : BaseFullscreenActivity() {
     }
 
     private fun maybeEnterPip() {
-        if (!settings.pictureInPicture || Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
-        runCatching {
-            inPip = enterPictureInPictureMode(
-                PictureInPictureParams.Builder().setAspectRatio(Rational(16, 9)).build()
-            )
+        if (!settings.pictureInPicture || Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            enteringPip = false
+            return
         }
+        runCatching {
+            val entered = enterPictureInPictureMode(
+                PictureInPictureParams.Builder()
+                    .setAspectRatio(Rational(16, 9))
+                    .build()
+            )
+            inPip = entered
+            if (!entered) enteringPip = false
+        }.onFailure {
+            enteringPip = false
+        }
+    }
+
+    private fun seekBy(deltaMs: Long) {
+        if (type == MediaType.LIVE) return
+        val p = PlaybackEngine.player ?: return
+        val duration = p.duration.takeIf { it > 0L } ?: Long.MAX_VALUE
+        val target = (p.currentPosition + deltaMs).coerceIn(0L, duration)
+        p.seekTo(target)
+        showStatus(formatPosition(target))
+        showControls()
+    }
+
+    private fun startRepeatedSeek(direction: Int) {
+        if (type == MediaType.LIVE) return
+        seekRepeatDirection = direction
+        handler.removeCallbacks(repeatedSeekRunnable)
+        handler.post(repeatedSeekRunnable)
+    }
+
+    private val repeatedSeekRunnable = object : Runnable {
+        override fun run() {
+            if (seekRepeatDirection == 0) return
+            seekBy(15_000L * seekRepeatDirection)
+            handler.postDelayed(this, 260L)
+        }
+    }
+
+    private fun stopRepeatedSeek() {
+        seekRepeatDirection = 0
+        handler.removeCallbacks(repeatedSeekRunnable)
+    }
+
+    private fun formatPosition(ms: Long): String {
+        val total = (ms / 1000L).coerceAtLeast(0L)
+        val h = total / 3600
+        val m = (total % 3600) / 60
+        val s = total % 60
+        return if (h > 0) "%d:%02d:%02d".format(h, m, s) else "%02d:%02d".format(m, s)
     }
 
     private fun playNextEpisodeIfAvailable() {
