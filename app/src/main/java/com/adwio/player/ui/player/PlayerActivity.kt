@@ -275,7 +275,7 @@ class PlayerActivity : BaseFullscreenActivity() {
     }
 
     override fun onUserLeaveHint() {
-        if (settings.pictureInPicture && PlaybackEngine.player?.isPlaying == true) {
+        if (PlaybackEngine.player?.isPlaying == true) {
             enteringPip = true
             maybeEnterPip()
         }
@@ -566,7 +566,7 @@ class PlayerActivity : BaseFullscreenActivity() {
     }
 
     private fun maybeEnterPip() {
-        if (!settings.pictureInPicture || Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             enteringPip = false
             return
         }

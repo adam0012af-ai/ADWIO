@@ -40,7 +40,7 @@ class SplashActivity : BaseFullscreenActivity() {
             .setInterpolator(AccelerateDecelerateInterpolator())
             .start()
 
-        handler.postDelayed({ route() }, 1050L)
+        handler.postDelayed({ route() }, 3000L)
     }
 
     private fun route() {
@@ -51,33 +51,11 @@ class SplashActivity : BaseFullscreenActivity() {
             return
         }
 
-        val state = AppResumeState(this).load()
-        val target = when {
-            state.screen == AppResumeState.SCREEN_PLAYER &&
-                state.playbackActive &&
-                state.url.isNotBlank() -> {
-                Intent(this, PlayerActivity::class.java).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-                    putExtra("url", state.url)
-                    putExtra("title", state.title)
-                    putExtra("id", state.mediaId)
-                    putExtra("type", state.mediaType.name)
-                }
+        startActivity(
+            Intent(this, HomeActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
             }
-
-            state.screen == AppResumeState.SCREEN_LIBRARY -> {
-                Intent(this, LibraryActivity::class.java).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-                    putExtra(LibraryActivity.EXTRA_TYPE, state.mediaType.name)
-                }
-            }
-
-            else -> Intent(this, HomeActivity::class.java).apply {
-                addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-            }
-        }
-
-        startActivity(target)
+        )
         finish()
     }
 

@@ -1,0 +1,14 @@
+<resources>
+    <string name="all_movies">All Movies</string>
+    <string name="all_series">All Series</string>
+    <string name="add_playlist_premium">Add Playlist • Premium Access</string>
+    <string name="server_url">Server URL</string>
+    <string name="save_playlist">Save playlist</string>
+    <string name="connect">CONNECT</string>
+    <string name="user_information">User Information</string>
+    <string name="account_type">Account type</string>
+    <string name="expiry_date">Expiry date</string>
+    <string name="active_connections">Active connections</string>
+    <string name="max_connections">Maximum connections</string>
+    <string name="created_date">Created</string>
+</resources>

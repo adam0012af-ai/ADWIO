@@ -100,7 +100,13 @@ class LibraryActivity : BaseFullscreenActivity() {
 
         b.categoryRecycler.layoutManager = LinearLayoutManager(this)
         b.categoryRecycler.adapter = categoryAdapter
-        b.backButton.setOnClickListener { finish() }
+        b.backButton.setOnClickListener {
+            val home = Intent(this, com.adwio.player.ui.home.HomeActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            }
+            startActivity(home)
+            finish()
+        }
         b.searchButton.visibility = View.GONE
         b.favoritesButton.visibility = View.GONE
         b.recentButton.visibility = if (type == MediaType.LIVE) View.VISIBLE else View.GONE
@@ -224,8 +230,13 @@ class LibraryActivity : BaseFullscreenActivity() {
         allItems = items
 
         val totalLabel = java.text.NumberFormat.getIntegerInstance().format(items.size)
-        val named = (if (cats.isEmpty()) listOf(CategoryModel("", getString(R.string.all))) else cats).map {
-            if (it.id.isBlank()) it.copy(name = "${getString(R.string.all_channels)} ($totalLabel)") else it
+        val allLabel = when (type) {
+            MediaType.LIVE -> getString(R.string.all_channels)
+            MediaType.MOVIE -> getString(R.string.all_movies)
+            MediaType.SERIES -> getString(R.string.all_series)
+        }
+        val named = (if (cats.isEmpty()) listOf(CategoryModel("", allLabel)) else cats).map {
+            if (it.id.isBlank()) it.copy(name = "$allLabel ($totalLabel)") else it
         }
 
         val allCategory = named.firstOrNull { it.id.isBlank() }
@@ -270,7 +281,6 @@ class LibraryActivity : BaseFullscreenActivity() {
                  savedCategory == RECENT_LIVE_ID ||
                  savedCategory == FAVORITES_ID ||
                  allItems.any { it.categoryId == savedCategory }) -> savedCategory
-
             recent.isNotEmpty() -> RECENT_WATCHED_ID
             else -> ""
         }
@@ -441,7 +451,6 @@ class LibraryActivity : BaseFullscreenActivity() {
 
     override fun onUserLeaveHint() {
         if (type == MediaType.LIVE &&
-            AppSettings(this).pictureInPicture &&
             PlaybackEngine.player?.isPlaying == true &&
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
         ) {

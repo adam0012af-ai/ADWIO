@@ -113,14 +113,12 @@ class SettingsActivity : BaseFullscreenActivity() {
             getString(R.string.setting_autoplay_last),
             getString(R.string.setting_remember_position),
             getString(R.string.setting_auto_refresh),
-            getString(R.string.setting_pip),
             getString(R.string.setting_auto_next)
         )
         val checked = booleanArrayOf(
             settings.autoplayLastChannel,
             settings.rememberPosition,
             settings.autoRefresh,
-            settings.pictureInPicture,
             settings.autoNextEpisode
         )
         AlertDialog.Builder(this)
@@ -130,8 +128,8 @@ class SettingsActivity : BaseFullscreenActivity() {
                 settings.autoplayLastChannel = checked[0]
                 settings.rememberPosition = checked[1]
                 settings.autoRefresh = checked[2]
-                settings.pictureInPicture = checked[3]
-                settings.autoNextEpisode = checked[4]
+                settings.autoNextEpisode = checked[3]
+                settings.pictureInPicture = true
                 settings.backgroundPlayback = false
             }
             .setNegativeButton(android.R.string.cancel, null)

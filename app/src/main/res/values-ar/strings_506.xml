@@ -1,0 +1,14 @@
+<resources>
+    <string name="all_movies">كل الأفلام</string>
+    <string name="all_series">كل المسلسلات</string>
+    <string name="add_playlist_premium">إضافة مستخدم • دخول بريميوم</string>
+    <string name="server_url">رابط السيرفر</string>
+    <string name="save_playlist">حفظ القائمة</string>
+    <string name="connect">اتصال</string>
+    <string name="user_information">معلومات المستخدم</string>
+    <string name="account_type">نوع الحساب</string>
+    <string name="expiry_date">تاريخ الانتهاء</string>
+    <string name="active_connections">الاتصالات الحالية</string>
+    <string name="max_connections">الحد الأقصى للاتصالات</string>
+    <string name="created_date">تاريخ الإنشاء</string>
+</resources>
