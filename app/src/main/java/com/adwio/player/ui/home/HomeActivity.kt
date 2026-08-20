@@ -16,6 +16,7 @@ import com.adwio.player.ui.library.LibraryActivity
 import com.adwio.player.ui.profile.ProfileActivity
 import com.adwio.player.ui.playlist.UsersActivity
 import com.adwio.player.ui.settings.SettingsActivity
+import com.adwio.player.ui.sports.SportsActivity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -48,6 +49,7 @@ class HomeActivity : BaseFullscreenActivity() {
         b.liveCard.setOnClickListener { open(MediaType.LIVE) }
         b.moviesCard.setOnClickListener { open(MediaType.MOVIE) }
         b.seriesCard.setOnClickListener { open(MediaType.SERIES) }
+        b.matchesCard.setOnClickListener { startActivity(Intent(this, SportsActivity::class.java)) }
         b.settingsButton.setOnClickListener { startActivity(Intent(this, SettingsActivity::class.java)) }
         b.searchButton.setOnClickListener { startActivity(Intent(this, GlobalSearchActivity::class.java)) }
         b.userInfoButton.setOnClickListener { startActivity(Intent(this, ProfileActivity::class.java)) }

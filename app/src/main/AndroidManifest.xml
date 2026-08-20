@@ -4,6 +4,7 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-feature android:name="android.software.leanback" android:required="false" />
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
 
@@ -26,11 +27,14 @@
             android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
             android:enabled="false"
             android:exported="false">
-            <meta-data
-                android:name="autoStoreLocales"
-                android:value="true" />
+            <meta-data android:name="autoStoreLocales" android:value="true" />
         </service>
 
+        <receiver
+            android:name=".ui.sports.MatchReminderReceiver"
+            android:exported="false" />
+
+        <activity android:name=".ui.sports.SportsActivity" android:screenOrientation="landscape" android:exported="false" />
         <activity android:name=".ui.crash.CrashActivity" android:screenOrientation="landscape" android:exported="false" />
         <activity android:name=".ui.favorites.FavoritesActivity" android:screenOrientation="landscape" android:exported="false" />
         <activity android:name=".ui.continuewatching.ContinueWatchingActivity" android:screenOrientation="landscape" android:exported="false" />

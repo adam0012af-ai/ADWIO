@@ -1,0 +1,7 @@
+<resources>
+    <string name="sports_title">MATCHES</string>
+    <string name="today">TODAY</string>
+    <string name="tomorrow">TOMORROW</string>
+    <string name="all_matches">ALL</string>
+    <string name="match_reminders">Match reminders</string>
+</resources>

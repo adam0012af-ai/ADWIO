@@ -1,0 +1,7 @@
+<resources>
+    <string name="sports_title">مواعيد المباريات</string>
+    <string name="today">اليوم</string>
+    <string name="tomorrow">غدًا</string>
+    <string name="all_matches">الكل</string>
+    <string name="match_reminders">تنبيهات المباريات</string>
+</resources>

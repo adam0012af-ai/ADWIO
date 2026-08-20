@@ -1,0 +1,83 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_gradient"
+    android:orientation="vertical"
+    android:padding="10dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="42dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageButton
+            android:id="@+id/backButton"
+            android:layout_width="34dp"
+            android:layout_height="34dp"
+            android:background="@drawable/bg_top_icon"
+            android:contentDescription="@string/back"
+            android:padding="8dp"
+            android:src="@drawable/ic_back"/>
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginStart="9dp"
+            android:layout_weight="1"
+            android:gravity="center_vertical"
+            android:text="@string/sports_title"
+            android:textColor="@color/adwio_text"
+            android:textSize="17sp"
+            android:textStyle="bold"/>
+
+        <Button
+            android:id="@+id/todayButton"
+            android:layout_width="wrap_content"
+            android:layout_height="34dp"
+            android:text="@string/today"
+            android:textSize="9sp"/>
+        <Button
+            android:id="@+id/tomorrowButton"
+            android:layout_width="wrap_content"
+            android:layout_height="34dp"
+            android:layout_marginStart="4dp"
+            android:text="@string/tomorrow"
+            android:textSize="9sp"/>
+        <Button
+            android:id="@+id/allButton"
+            android:layout_width="wrap_content"
+            android:layout_height="34dp"
+            android:layout_marginStart="4dp"
+            android:text="@string/all_matches"
+            android:textSize="9sp"/>
+
+        <ImageButton
+            android:id="@+id/refreshButton"
+            android:layout_width="34dp"
+            android:layout_height="34dp"
+            android:layout_marginStart="6dp"
+            android:background="@drawable/bg_top_icon"
+            android:contentDescription="Refresh"
+            android:padding="8dp"
+            android:src="@drawable/ic_refresh_modern"/>
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/statusText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:gravity="center"
+        android:textColor="@color/adwio_muted"
+        android:textSize="9sp"
+        android:visibility="gone"/>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/matchesRecycler"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="6dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"/>
+</LinearLayout>
