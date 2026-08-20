@@ -1,17 +1,22 @@
-# ADWIO Professional 3.0.0
+# ADWIO Player — Clean Master
 
-Clean consolidated Android project for ADWIO Player.
+Clean Android source baseline for ADWIO Player.
 
-## GitHub build
-Push the project to the repository root, then open **Actions → Build ADWIO Professional → Run workflow**.
+## Baseline
+- Version: 5.0.5
+- Package: `com.adwio.player`
+- Source baseline: original ADWIO 5.0.5 Premium Continuity snapshot
+- Cleaned from historical update ZIPs, patch packages, recovery files, and obsolete workflows.
 
-The workflow always produces a Debug APK artifact. It can also produce a signed Release APK when these repository secrets are configured:
+## Repository structure
+- `app/` — Android application source
+- `build.gradle.kts` — root Gradle configuration
+- `settings.gradle.kts` — Gradle settings
+- `gradle.properties` — Gradle properties
+- `.github/workflows/build-apk.yml` — APK build workflow
 
-- `ADWIO_KEYSTORE_BASE64`
-- `ADWIO_KEYSTORE_PASSWORD`
-- `ADWIO_KEY_ALIAS`
-- `ADWIO_KEY_PASSWORD`
+## Build
+Open **Actions → Build Signed APK** to build the application.
 
-To install the new APK over an existing ADWIO installation without uninstalling it, the release APK must use the same `applicationId` and the same signing key as the currently installed APK. This project keeps `applicationId = com.adwio.player`.
-
-See `docs/IMPLEMENTATION_STATUS.md` for implemented features and validation status.
+This repository is the official clean baseline for future ADWIO development.
+New changes should be applied directly to the source and validated with a build before the next change.
