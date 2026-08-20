@@ -16,27 +16,43 @@ class AdwioPreviewPlayerView @JvmOverloads constructor(
 
     private var lastOpenAt = 0L
 
+    /**
+     * LibraryActivity installs this callback for LIVE so fullscreen is only a
+     * layout transition. This keeps the exact same PlayerView/ExoPlayer/surface.
+     */
+    var onFullscreenRequested: (() -> Unit)? = null
+
     init {
         isClickable = true
         isFocusable = true
-        setOnClickListener { openFullscreenOnce() }
+        setOnClickListener { requestFullscreenOnce() }
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (event.action == KeyEvent.ACTION_DOWN &&
-            event.keyCode in setOf(KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER)
+            event.keyCode in setOf(
+                KeyEvent.KEYCODE_DPAD_CENTER,
+                KeyEvent.KEYCODE_ENTER,
+                KeyEvent.KEYCODE_NUMPAD_ENTER
+            )
         ) {
-            openFullscreenOnce()
+            requestFullscreenOnce()
             return true
         }
         return super.dispatchKeyEvent(event)
     }
 
-    private fun openFullscreenOnce() {
+    private fun requestFullscreenOnce() {
         val now = SystemClock.elapsedRealtime()
         if (now - lastOpenAt < 700L) return
         lastOpenAt = now
 
+        onFullscreenRequested?.let {
+            it.invoke()
+            return
+        }
+
+        // Safe legacy fallback for any screen that does not install the callback.
         if (PlaybackEngine.currentType != MediaType.LIVE || PlaybackEngine.currentUrl.isBlank()) return
         context.startActivity(Intent(context, PlayerActivity::class.java).apply {
             putExtra("url", PlaybackEngine.currentUrl)

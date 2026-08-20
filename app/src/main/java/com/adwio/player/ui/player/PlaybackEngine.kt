@@ -1,9 +1,6 @@
 package com.adwio.player.ui.player
 
 import android.content.Context
-import android.content.Intent
-import android.os.Build
-import androidx.core.content.ContextCompat
 import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.DefaultLoadControl
@@ -59,13 +56,6 @@ object PlaybackEngine {
         currentId = id
         currentType = type
 
-        // LIVE playback must survive Activity -> Home / PiP transitions.
-        // Start the MediaSessionService while the app is foregrounded, before
-        // playback starts, so Android keeps the same ExoPlayer session alive.
-        if (type == MediaType.LIVE) {
-            ensurePlaybackService(context)
-        }
-
         if (currentUrl != url) {
             currentUrl = url
             p.setMediaItem(MediaItem.fromUri(url))
@@ -75,19 +65,6 @@ object PlaybackEngine {
         p.playWhenReady = true
         p.volume = 1f
         return p
-    }
-
-    private fun ensurePlaybackService(context: Context) {
-        val app = context.applicationContext
-        val intent = Intent(app, PlaybackService::class.java)
-
-        runCatching {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                ContextCompat.startForegroundService(app, intent)
-            } else {
-                app.startService(intent)
-            }
-        }
     }
 
     fun updateMetadata(title: String, id: String, type: MediaType?) {

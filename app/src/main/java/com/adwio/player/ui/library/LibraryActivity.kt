@@ -3,6 +3,7 @@ package com.adwio.player.ui.library
 import android.app.PictureInPictureParams
 import android.content.Intent
 import android.content.res.Configuration
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.util.Rational
@@ -10,7 +11,9 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.EditText
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
+import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -80,6 +83,7 @@ class LibraryActivity : BaseFullscreenActivity() {
     private var inMiniPip = false
     private var wasMiniPip = false
     private var previewOriginalParams: LinearLayout.LayoutParams? = null
+    private var liveFullscreenMode = false
 
     private val type: MediaType by lazy {
         runCatching { MediaType.valueOf(intent.getStringExtra(EXTRA_TYPE) ?: "LIVE") }
@@ -107,7 +111,29 @@ class LibraryActivity : BaseFullscreenActivity() {
         b.recentButton.setOnClickListener { showRecentChannels() }
         b.livePreviewPanel.visibility = if (type == MediaType.LIVE) View.VISIBLE else View.GONE
         b.previewFullscreenButton.visibility = if (type == MediaType.LIVE) View.VISIBLE else View.GONE
-        b.previewFullscreenButton.setOnClickListener { openCurrentLiveFullscreen() }
+
+        if (type == MediaType.LIVE) {
+            // Reference architecture: the same live PlayerView/ExoPlayer stays alive
+            // for preview, fullscreen and PiP. Fullscreen is a UI mode, not a new Activity.
+            b.previewPlayer.setKeepContentOnPlayerReset(true)
+            b.previewPlayer.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
+            b.previewPlayer.onFullscreenRequested = { enterLiveFullscreenInPlace() }
+            b.previewFullscreenButton.setOnClickListener { enterLiveFullscreenInPlace() }
+
+            onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    if (liveFullscreenMode) {
+                        exitLiveFullscreenInPlace()
+                    } else {
+                        PlaybackEngine.stopAndRelease()
+                        AppResumeState(this@LibraryActivity).clearPlaybackKeepingLibrary()
+                        finish()
+                    }
+                }
+            })
+        } else {
+            b.previewFullscreenButton.setOnClickListener { openCurrentLiveFullscreen() }
+        }
 
         configureGrid()
         load()
@@ -516,13 +542,58 @@ class LibraryActivity : BaseFullscreenActivity() {
 
     private fun prepareMiniPipUi() {
         if (type != MediaType.LIVE) return
+        applyExpandedLiveUi()
+    }
+
+    private fun restoreMiniUi() {
+        if (type != MediaType.LIVE) return
+        if (liveFullscreenMode) {
+            applyExpandedLiveUi()
+        } else {
+            restoreNormalLiveUi()
+        }
+    }
+
+    private fun enterLiveFullscreenInPlace() {
+        if (type != MediaType.LIVE ||
+            PlaybackEngine.currentType != MediaType.LIVE ||
+            PlaybackEngine.currentUrl.isBlank()
+        ) return
+
+        persistLiveUiState()
+        liveFullscreenMode = true
+        b.previewPlayer.player = PlaybackEngine.player
+        b.previewPlayer.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+        configureLiveAutoPip()
+        applyExpandedLiveUi()
+    }
+
+    private fun exitLiveFullscreenInPlace() {
+        if (type != MediaType.LIVE) return
+        liveFullscreenMode = false
+        restoreNormalLiveUi()
+        b.previewPlayer.player = PlaybackEngine.player
+        b.previewPlayer.requestFocus()
+    }
+
+    private fun applyExpandedLiveUi() {
+        if (type != MediaType.LIVE) return
+
+        if (previewOriginalParams == null) {
+            previewOriginalParams = LinearLayout.LayoutParams(
+                b.livePreviewPanel.layoutParams as LinearLayout.LayoutParams
+            )
+        }
+
         b.topBar.visibility = View.GONE
         b.categoryPanel.visibility = View.GONE
         b.contentRecycler.visibility = View.GONE
         b.previewFooter.visibility = View.GONE
 
-        if (previewOriginalParams == null) {
-            previewOriginalParams = LinearLayout.LayoutParams(b.livePreviewPanel.layoutParams as LinearLayout.LayoutParams)
+        b.libraryRoot.setPadding(0, 0, 0, 0)
+        (b.libraryContentRow.layoutParams as? LinearLayout.LayoutParams)?.let { row ->
+            row.topMargin = 0
+            b.libraryContentRow.layoutParams = row
         }
 
         b.livePreviewPanel.layoutParams = LinearLayout.LayoutParams(
@@ -530,21 +601,39 @@ class LibraryActivity : BaseFullscreenActivity() {
             ViewGroup.LayoutParams.MATCH_PARENT,
             1f
         ).apply { marginStart = 0 }
+
         b.livePreviewPanel.setPadding(0, 0, 0, 0)
+        b.livePreviewPanel.setBackgroundColor(Color.BLACK)
+        b.previewPlayer.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+        b.previewPlayer.player = PlaybackEngine.player
     }
 
-    private fun restoreMiniUi() {
+    private fun restoreNormalLiveUi() {
         if (type != MediaType.LIVE) return
+
         b.topBar.visibility = View.VISIBLE
         b.categoryPanel.visibility = View.VISIBLE
         b.contentRecycler.visibility = View.VISIBLE
         b.previewFooter.visibility = View.VISIBLE
 
+        val density = resources.displayMetrics.density
+        val rootPad = (7 * density).toInt()
+        val previewPad = (5 * density).toInt()
+        val rowTop = (5 * density).toInt()
+
+        b.libraryRoot.setPadding(rootPad, rootPad, rootPad, rootPad)
+        (b.libraryContentRow.layoutParams as? LinearLayout.LayoutParams)?.let { row ->
+            row.topMargin = rowTop
+            b.libraryContentRow.layoutParams = row
+        }
+
         previewOriginalParams?.let {
             b.livePreviewPanel.layoutParams = LinearLayout.LayoutParams(it)
         }
-        val pad = (5 * resources.displayMetrics.density).toInt()
-        b.livePreviewPanel.setPadding(pad, pad, pad, pad)
+
+        b.livePreviewPanel.setPadding(previewPad, previewPad, previewPad, previewPad)
+        b.livePreviewPanel.setBackgroundResource(R.drawable.bg_live_preview_premium)
+        b.previewPlayer.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
     }
 
     private fun persistLiveUiState() {
@@ -573,24 +662,7 @@ class LibraryActivity : BaseFullscreenActivity() {
     }
 
     private fun openCurrentLiveFullscreen() {
-        if (type != MediaType.LIVE ||
-            PlaybackEngine.currentType != MediaType.LIVE ||
-            PlaybackEngine.currentUrl.isBlank()
-        ) return
-
-        persistLiveUiState()
-        restoreLiveOnResume = true
-
-        // One ExoPlayer must own one video surface at a time. Detach the mini
-        // surface before PlayerActivity attaches the same live session.
-        b.previewPlayer.player = null
-
-        startActivity(Intent(this, PlayerActivity::class.java).apply {
-            putExtra("url", PlaybackEngine.currentUrl)
-            putExtra("title", PlaybackEngine.currentTitle)
-            putExtra("id", PlaybackEngine.currentId)
-            putExtra("type", MediaType.LIVE.name)
-        })
+        enterLiveFullscreenInPlace()
     }
 
     override fun onStop() {
@@ -666,17 +738,9 @@ class LibraryActivity : BaseFullscreenActivity() {
                 } else allItems.filter { it.categoryId == selectedCategory }
                 ChannelNavigator.setQueue(visible, item.id)
                 persistLiveUiState()
-                restoreLiveOnResume = true
 
-                // Transfer the existing live session cleanly to fullscreen.
-                b.previewPlayer.player = null
-
-                startActivity(Intent(this, PlayerActivity::class.java).apply {
-                    putExtra("url", item.streamUrl)
-                    putExtra("title", item.name)
-                    putExtra("id", "LIVE:${item.id}")
-                    putExtra("type", MediaType.LIVE.name)
-                })
+                // Second tap enlarges the SAME live preview/player in-place.
+                enterLiveFullscreenInPlace()
             }
         }
     }
