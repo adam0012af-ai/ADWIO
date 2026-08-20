@@ -10,5 +10,6 @@ data class SportsMatch(
     val utcDate: String,
     val status: String,
     val homeScore: Int?,
-    val awayScore: Int?
+    val awayScore: Int?,
+    val broadcaster: String? = null
 )

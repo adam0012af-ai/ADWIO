@@ -1,12 +1,16 @@
 package com.adwio.player.ui.settings
 
 import android.content.Intent
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
+import com.adwio.player.BuildConfig
 import com.adwio.player.R
 import com.adwio.player.data.AppSettings
 import com.adwio.player.data.M3uCache
@@ -14,6 +18,8 @@ import com.adwio.player.data.PlaybackHistory
 import com.adwio.player.databinding.ActivitySettingsBinding
 import com.adwio.player.ui.BaseFullscreenActivity
 import com.adwio.player.ui.about.AboutActivity
+import java.security.MessageDigest
+import java.util.Locale
 
 class SettingsActivity : BaseFullscreenActivity() {
     private lateinit var b: ActivitySettingsBinding
@@ -24,180 +30,45 @@ class SettingsActivity : BaseFullscreenActivity() {
         b = ActivitySettingsBinding.inflate(layoutInflater)
         setContentView(b.root)
         settings = AppSettings(this)
-
         b.backButton.setOnClickListener { finish() }
         b.generalCard.setOnClickListener { generalMenu() }
-        b.streamFormatCard.setOnClickListener {
-            choose(getString(R.string.stream_format), arrayOf("Auto","HLS","MPEG-TS"), arrayOf("auto","hls","ts"), settings.streamFormat) {
-                settings.streamFormat = it
-            }
-        }
-        b.timeFormatCard.setOnClickListener {
-            choose("Time Format", arrayOf("System","12-hour","24-hour"), arrayOf("system","12","24"), settings.timeFormat) {
-                settings.timeFormat = it
-            }
-        }
+        b.streamFormatCard.setOnClickListener { choose(getString(R.string.stream_format), arrayOf("Auto","HLS","MPEG-TS"), arrayOf("auto","hls","ts"), settings.streamFormat){ settings.streamFormat=it } }
+        b.timeFormatCard.setOnClickListener { choose("Time Format", arrayOf("System","12-hour","24-hour"), arrayOf("system","12","24"), settings.timeFormat){ settings.timeFormat=it } }
         b.parentalCard.setOnClickListener { parental() }
         b.playerSettingsCard.setOnClickListener { playerSettings() }
         b.speedTestCard.setOnClickListener { speedTest() }
         b.storageCard.setOnClickListener { storage() }
+        b.supportCard.setOnClickListener { sendSupportEmail() }
         b.aboutCard.setOnClickListener { startActivity(Intent(this, AboutActivity::class.java)) }
-        b.resetCard.setOnClickListener {
-            AlertDialog.Builder(this)
-                .setTitle(getString(R.string.reset_settings))
-                .setMessage("Restore ADWIO settings to defaults.")
-                .setPositiveButton("Reset") { _, _ ->
-                    settings.reset()
-                    AppCompatDelegate.setApplicationLocales(LocaleListCompat.getEmptyLocaleList())
-                    toast("Settings reset")
-                }
-                .setNegativeButton(android.R.string.cancel, null)
-                .show()
-        }
+        b.resetCard.setOnClickListener { AlertDialog.Builder(this).setTitle(getString(R.string.reset_settings)).setMessage("Restore ADWIO settings to defaults.").setPositiveButton("Reset"){_,_->settings.reset();AppCompatDelegate.setApplicationLocales(LocaleListCompat.getEmptyLocaleList());toast("Settings reset")}.setNegativeButton(android.R.string.cancel,null).show() }
         b.generalCard.requestFocus()
     }
 
     private fun generalMenu() {
-        val languageLabel = when (settings.language) {
-            "ar" -> "العربية"
-            "en" -> "English"
-            else -> getString(R.string.language_system)
-        }
-        val items = arrayOf(
-            "${getString(R.string.language)}  •  $languageLabel",
-            "Playback & General Options"
-        )
-        AlertDialog.Builder(this)
-            .setTitle("General Settings")
-            .setItems(items) { _, which ->
-                if (which == 0) chooseLanguage() else generalOptions()
-            }.show()
+        val languageLabel = when(settings.language){"ar"->"العربية";"en"->"English";else->getString(R.string.language_system)}
+        AlertDialog.Builder(this).setTitle("General Settings").setItems(arrayOf("${getString(R.string.language)}  •  $languageLabel","Playback & General Options")){_,which->if(which==0)chooseLanguage() else generalOptions()}.show()
     }
-
-    private fun chooseLanguage() {
-        val labels = arrayOf(getString(R.string.language_system), "العربية", "English")
-        val keys = arrayOf("system", "ar", "en")
-        val idx = keys.indexOf(settings.language).coerceAtLeast(0)
-
-        AlertDialog.Builder(this)
-            .setTitle(getString(R.string.language))
-            .setSingleChoiceItems(labels, idx) { d, which ->
-                val key = keys[which]
-                settings.language = key
-                d.dismiss()
-
-                val locales = when (key) {
-                    "ar" -> LocaleListCompat.forLanguageTags("ar")
-                    "en" -> LocaleListCompat.forLanguageTags("en")
-                    else -> LocaleListCompat.getEmptyLocaleList()
-                }
-                AppCompatDelegate.setApplicationLocales(locales)
-            }.show()
+    private fun chooseLanguage(){
+        val labels=arrayOf(getString(R.string.language_system),"العربية","English"); val keys=arrayOf("system","ar","en"); val idx=keys.indexOf(settings.language).coerceAtLeast(0)
+        AlertDialog.Builder(this).setTitle(getString(R.string.language)).setSingleChoiceItems(labels,idx){d,which-> val key=keys[which];settings.language=key;d.dismiss(); val locales=when(key){"ar"->LocaleListCompat.forLanguageTags("ar");"en"->LocaleListCompat.forLanguageTags("en");else->LocaleListCompat.getEmptyLocaleList()};AppCompatDelegate.setApplicationLocales(locales)}.show()
     }
-
-    private fun generalOptions() {
-        val labels = arrayOf(
-            "Auto-play last channel",
-            "Remember movie / episode position",
-            "Auto refresh playlists",
-            "Picture in Picture",
-            "Auto next episode"
-        )
-        val checked = booleanArrayOf(
-            settings.autoplayLastChannel,
-            settings.rememberPosition,
-            settings.autoRefresh,
-            settings.pictureInPicture,
-            settings.autoNextEpisode
-        )
-
-        AlertDialog.Builder(this)
-            .setTitle("Playback & General Options")
-            .setMultiChoiceItems(labels, checked) { _, i, v -> checked[i] = v }
-            .setPositiveButton("Save") { _, _ ->
-                settings.autoplayLastChannel = checked[0]
-                settings.rememberPosition = checked[1]
-                settings.autoRefresh = checked[2]
-                settings.pictureInPicture = checked[3]
-                settings.autoNextEpisode = checked[4]
-                settings.backgroundPlayback = false
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
+    private fun generalOptions(){
+        val labels=arrayOf("Auto-play last channel","Remember movie / episode position","Auto refresh playlists","Picture in Picture","Auto next episode")
+        val checked=booleanArrayOf(settings.autoplayLastChannel,settings.rememberPosition,settings.autoRefresh,settings.pictureInPicture,settings.autoNextEpisode)
+        AlertDialog.Builder(this).setTitle("Playback & General Options").setMultiChoiceItems(labels,checked){_,i,v->checked[i]=v}.setPositiveButton("Save"){_,_->settings.autoplayLastChannel=checked[0];settings.rememberPosition=checked[1];settings.autoRefresh=checked[2];settings.pictureInPicture=checked[3];settings.autoNextEpisode=checked[4];settings.backgroundPlayback=false}.setNegativeButton(android.R.string.cancel,null).show()
     }
+    private fun playerSettings(){ val items=arrayOf("Decoder: ${settings.decoderMode}","Buffer: ${settings.bufferMode}","Aspect: ${settings.aspectMode}","Controls timeout: ${settings.playerControlsTimeoutMs/1000}s"); AlertDialog.Builder(this).setTitle("Player Settings").setItems(items){_,i->when(i){0->choose("Decoder",arrayOf("Auto","Hardware preferred","Software fallback"),arrayOf("auto","hardware","software"),settings.decoderMode){settings.decoderMode=it};1->choose("Buffer",arrayOf("Small","Normal","Large"),arrayOf("small","normal","large"),settings.bufferMode){settings.bufferMode=it};2->choose(getString(R.string.aspect_ratio),arrayOf(getString(R.string.aspect_fit),getString(R.string.aspect_fill),getString(R.string.aspect_zoom)),arrayOf("fit","fill","zoom"),settings.aspectMode){settings.aspectMode=it};3->choose("Controls timeout",arrayOf("3 sec","4 sec","6 sec","8 sec"),arrayOf("3000","4000","6000","8000"),settings.playerControlsTimeoutMs.toString()){settings.playerControlsTimeoutMs=it.toInt()}}}.show() }
+    private fun parental(){ val input=EditText(this).apply{hint="4-digit PIN";inputType=2}; AlertDialog.Builder(this).setTitle(if(settings.parentalPin.isNullOrBlank())"Set Parental PIN" else "Change Parental PIN").setView(input).setPositiveButton("Save"){_,_->val x=input.text.toString().trim();if(x.length==4){settings.parentalPin=x;toast("Parental PIN saved")}else toast("PIN must be 4 digits")}.setNeutralButton("Disable"){_,_->settings.parentalPin=null;toast("Parental control disabled")}.setNegativeButton(android.R.string.cancel,null).show() }
+    private fun storage(){ AlertDialog.Builder(this).setTitle("Storage & Cache").setItems(arrayOf("Clear media cache","Clear watch history")){_,i->if(i==0){cacheDir.deleteRecursively();M3uCache(this).clear();toast(getString(R.string.cache_cleared))}else{PlaybackHistory(this).clearCurrentPlaylist();toast(getString(R.string.history_cleared))}}.show() }
+    private fun speedTest(){ toast("Checking connection…");Thread{val start=System.currentTimeMillis();val ok=runCatching{java.net.URL("https://www.google.com/generate_204").openConnection().apply{connectTimeout=4000;readTimeout=4000}.getInputStream().close();true}.getOrDefault(false);val ms=System.currentTimeMillis()-start;runOnUiThread{toast(if(ok)"Connection response: ${ms} ms" else "Connection test failed")}}.start() }
+    private fun choose(title:String,labels:Array<String>,keys:Array<String>,current:String,onPick:(String)->Unit){val idx=keys.indexOf(current).coerceAtLeast(0);AlertDialog.Builder(this).setTitle(title).setSingleChoiceItems(labels,idx){d,i->onPick(keys[i]);d.dismiss()}.show()}
 
-    private fun playerSettings() {
-        val items = arrayOf(
-            "Decoder: ${settings.decoderMode}",
-            "Buffer: ${settings.bufferMode}",
-            "Aspect: ${settings.aspectMode}",
-            "Controls timeout: ${settings.playerControlsTimeoutMs / 1000}s"
-        )
-        AlertDialog.Builder(this).setTitle("Player Settings").setItems(items) { _, i ->
-            when (i) {
-                0 -> choose("Decoder", arrayOf("Auto","Hardware preferred","Software fallback"), arrayOf("auto","hardware","software"), settings.decoderMode) { settings.decoderMode = it }
-                1 -> choose("Buffer", arrayOf("Small","Normal","Large"), arrayOf("small","normal","large"), settings.bufferMode) { settings.bufferMode = it }
-                2 -> choose(getString(R.string.aspect_ratio), arrayOf(getString(R.string.aspect_fit),getString(R.string.aspect_fill),getString(R.string.aspect_zoom)), arrayOf("fit","fill","zoom"), settings.aspectMode) { settings.aspectMode = it }
-                3 -> choose("Controls timeout", arrayOf("3 sec","4 sec","6 sec","8 sec"), arrayOf("3000","4000","6000","8000"), settings.playerControlsTimeoutMs.toString()) { settings.playerControlsTimeoutMs = it.toInt() }
-            }
-        }.show()
+    private fun sendSupportEmail(){
+        val id=diagnosticId(); val subject="ADWIO Support • $id"
+        val body="""Please describe the problem here:\n\n\n------------------------------\nSafe diagnostic information\nDiagnostic ID: $id\nApp version: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})\nAndroid: ${Build.VERSION.RELEASE} / SDK ${Build.VERSION.SDK_INT}\nDevice: ${Build.MANUFACTURER} ${Build.MODEL}\nLocale: ${Locale.getDefault()}\n------------------------------\nSecurity: no username, password, host or playlist URL is included."""
+        val uri=Uri.parse("mailto:adwio.support@gmail.com?subject=${Uri.encode(subject)}&body=${Uri.encode(body)}")
+        runCatching{startActivity(Intent(Intent.ACTION_SENDTO,uri))}.onFailure{toast("لم يتم العثور على تطبيق بريد")}
     }
-
-    private fun parental() {
-        val input = EditText(this).apply { hint = "4-digit PIN"; inputType = 2 }
-        AlertDialog.Builder(this)
-            .setTitle(if (settings.parentalPin.isNullOrBlank()) "Set Parental PIN" else "Change Parental PIN")
-            .setView(input)
-            .setPositiveButton("Save") { _, _ ->
-                val x = input.text.toString().trim()
-                if (x.length == 4) { settings.parentalPin = x; toast("Parental PIN saved") }
-                else toast("PIN must be 4 digits")
-            }
-            .setNeutralButton("Disable") { _, _ -> settings.parentalPin = null; toast("Parental control disabled") }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
-    }
-
-    private fun storage() {
-        AlertDialog.Builder(this)
-            .setTitle("Storage & Cache")
-            .setItems(arrayOf("Clear media cache","Clear watch history")) { _, i ->
-                if (i == 0) {
-                    cacheDir.deleteRecursively()
-                    M3uCache(this).clear()
-                    toast(getString(R.string.cache_cleared))
-                } else {
-                    PlaybackHistory(this).clearCurrentPlaylist()
-                    toast(getString(R.string.history_cleared))
-                }
-            }.show()
-    }
-
-    private fun speedTest() {
-        toast("Checking connection…")
-        Thread {
-            val start = System.currentTimeMillis()
-            val ok = runCatching {
-                java.net.URL("https://www.google.com/generate_204").openConnection().apply {
-                    connectTimeout = 4000
-                    readTimeout = 4000
-                }.getInputStream().close()
-                true
-            }.getOrDefault(false)
-            val ms = System.currentTimeMillis() - start
-            runOnUiThread { toast(if (ok) "Connection response: ${ms} ms" else "Connection test failed") }
-        }.start()
-    }
-
-    private fun choose(title: String, labels: Array<String>, keys: Array<String>, current: String, onPick: (String) -> Unit) {
-        val idx = keys.indexOf(current).coerceAtLeast(0)
-        AlertDialog.Builder(this)
-            .setTitle(title)
-            .setSingleChoiceItems(labels, idx) { d, i ->
-                onPick(keys[i])
-                d.dismiss()
-            }.show()
-    }
-
-    private fun toast(s: String) = Toast.makeText(this, s, Toast.LENGTH_SHORT).show()
+    private fun diagnosticId():String{val androidId=Settings.Secure.getString(contentResolver,Settings.Secure.ANDROID_ID).orEmpty();val raw="${BuildConfig.APPLICATION_ID}|${BuildConfig.VERSION_CODE}|$androidId";val digest=MessageDigest.getInstance("SHA-256").digest(raw.toByteArray());return "ADWIO-"+digest.take(4).joinToString(""){"%02X".format(it)}}
+    private fun toast(s:String)=Toast.makeText(this,s,Toast.LENGTH_SHORT).show()
 }

@@ -43,7 +43,7 @@ class SportsClient {
             .url(url)
             .header("Accept", "application/json")
             .header("Accept-Language", "ar,en;q=0.8")
-            .header("User-Agent", "Mozilla/5.0 (Linux; Android 14) ADWIO/4.5")
+            .header("User-Agent", "Mozilla/5.0 (Linux; Android 14) ADWIO/5.0")
             .build()
 
         client.newCall(req).execute().use { response ->
@@ -86,7 +86,8 @@ class SportsClient {
                     utcDate = isoUtc(start * 1000L),
                     status = statusObj?.optString("type").orEmpty().uppercase(Locale.US),
                     homeScore = homeScore?.takeIf { it.has("current") }?.optInt("current"),
-                    awayScore = awayScore?.takeIf { it.has("current") }?.optInt("current")
+                    awayScore = awayScore?.takeIf { it.has("current") }?.optInt("current"),
+                    broadcaster = null
                 )
             }
             out
@@ -123,6 +124,21 @@ class SportsClient {
                 val date = event.optString("date")
                 if (date.isBlank()) continue
 
+                val broadcasts = comp.optJSONArray("broadcasts")
+                val broadcaster = buildList {
+                    if (broadcasts != null) {
+                        for (j in 0 until broadcasts.length()) {
+                            val names = broadcasts.optJSONObject(j)?.optJSONArray("names")
+                            if (names != null) {
+                                for (k in 0 until names.length()) {
+                                    val n = names.optString(k).trim()
+                                    if (n.isNotBlank()) add(n)
+                                }
+                            }
+                        }
+                    }
+                }.distinct().joinToString(" • ").ifBlank { null }
+
                 out += SportsMatch(
                     id = event.optString("id").hashCode().toLong().let { if (it < 0) -it else it },
                     competition = league?.optString("name").orEmpty()
@@ -139,7 +155,8 @@ class SportsClient {
                         else -> "SCHEDULED"
                     },
                     homeScore = home!!.optString("score").toIntOrNull(),
-                    awayScore = away!!.optString("score").toIntOrNull()
+                    awayScore = away!!.optString("score").toIntOrNull(),
+                    broadcaster = broadcaster
                 )
             }
             out

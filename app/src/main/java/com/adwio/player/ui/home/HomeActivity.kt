@@ -27,6 +27,7 @@ import java.util.Locale
 class HomeActivity : BaseFullscreenActivity() {
     private lateinit var b: ActivityHomeBinding
     private val handler = Handler(Looper.getMainLooper())
+    private var refreshing = false
 
     private val clockTick = object : Runnable {
         override fun run() {
@@ -41,10 +42,8 @@ class HomeActivity : BaseFullscreenActivity() {
         super.onCreate(savedInstanceState)
         b = ActivityHomeBinding.inflate(layoutInflater)
         setContentView(b.root)
-
         val session = SessionStore(this).load()
         showExpiry(session?.expiresAt)
-
         RemoteConfigClient(this).check()
         b.liveCard.setOnClickListener { open(MediaType.LIVE) }
         b.moviesCard.setOnClickListener { open(MediaType.MOVIE) }
@@ -55,60 +54,49 @@ class HomeActivity : BaseFullscreenActivity() {
         b.userInfoButton.setOnClickListener { startActivity(Intent(this, ProfileActivity::class.java)) }
         b.switchAccountButton.setOnClickListener { startActivity(Intent(this, UsersActivity::class.java)) }
         b.refreshButton.setOnClickListener { refreshContent() }
-
         b.liveCard.requestFocus()
     }
 
-    override fun onStart() {
-        super.onStart()
-        handler.removeCallbacks(clockTick)
-        handler.post(clockTick)
-    }
-
-    override fun onStop() {
-        handler.removeCallbacks(clockTick)
-        super.onStop()
-    }
+    override fun onStart() { super.onStart(); handler.removeCallbacks(clockTick); handler.post(clockTick) }
+    override fun onStop() { handler.removeCallbacks(clockTick); super.onStop() }
 
     private fun showExpiry(raw: String?) {
         val epoch = raw?.trim()?.toLongOrNull()
-        if (epoch == null || epoch <= 0L) {
-            b.expiryText.visibility = View.GONE
-            return
-        }
+        if (epoch == null || epoch <= 0L) { b.expiryText.visibility = View.GONE; return }
         val millis = if (epoch < 10_000_000_000L) epoch * 1000L else epoch
-        val formatted = SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(Date(millis))
-        b.expiryText.text = "Expires: $formatted"
+        b.expiryText.text = "Expires: " + SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(Date(millis))
         b.expiryText.visibility = View.VISIBLE
     }
 
-    private fun open(type: MediaType) =
-        startActivity(Intent(this, LibraryActivity::class.java).putExtra(LibraryActivity.EXTRA_TYPE, type.name))
+    private fun open(type: MediaType) = startActivity(Intent(this, LibraryActivity::class.java).putExtra(LibraryActivity.EXTRA_TYPE, type.name))
 
     private fun refreshContent() {
+        if (refreshing) return
+        refreshing = true
         b.refreshButton.isEnabled = false
-        Toast.makeText(this, "Refreshing content…", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "جاري تحديث المحتوى…", Toast.LENGTH_SHORT).show()
         val session = SessionStore(this).load() ?: run {
-            b.refreshButton.isEnabled = true
-            return
+            refreshing = false; b.refreshButton.isEnabled = true
+            Toast.makeText(this, "تعذر تحديث المحتوى", Toast.LENGTH_SHORT).show(); return
         }
-
         lifecycleScope.launch {
-            withContext(Dispatchers.IO) {
-                if (session.server.id == "m3u") {
-                    M3uCache(this@HomeActivity).clear()
-                    runCatching { M3uCache(this@HomeActivity).warm(session.server.baseUrl) }
-                } else {
-                    runCatching {
+            val success = withContext(Dispatchers.IO) {
+                runCatching {
+                    if (session.server.id == "m3u") {
+                        val cache = M3uCache(this@HomeActivity); cache.clear(); cache.warm(session.server.baseUrl)
+                    } else {
                         val api = XtreamClient()
                         api.loadCategories(session, MediaType.LIVE)
                         api.loadCategories(session, MediaType.MOVIE)
                         api.loadCategories(session, MediaType.SERIES)
                     }
-                }
+                    true
+                }.getOrDefault(false)
             }
+            refreshing = false
             b.refreshButton.isEnabled = true
-            Toast.makeText(this@HomeActivity, "Content updated", Toast.LENGTH_SHORT).show()
+            getSharedPreferences("adwio_refresh_state", MODE_PRIVATE).edit().putLong("last_refresh", System.currentTimeMillis()).apply()
+            Toast.makeText(this@HomeActivity, if (success) "تم تحديث المحتوى بنجاح" else "تعذر تحديث المحتوى — حاول مرة أخرى", Toast.LENGTH_SHORT).show()
         }
     }
 }
