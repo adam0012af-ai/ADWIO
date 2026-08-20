@@ -1,0 +1,12 @@
+ADWIO 4.4.0 FINAL FIXES
+- Restored the normal Live side preview player.
+- Fullscreen Live returns to the same active Live preview.
+- Back button now shows/hides with player controls.
+- Live fullscreen overlay keeps compact channels + slightly wider categories.
+- Sports schedule no longer requires FOOTBALL_DATA_TOKEN or any GitHub secret.
+- No GitHub/API developer message is shown to end users.
+- Sports loads automatically from a public schedule endpoint.
+- Language moved inside General Settings: System / Arabic / English.
+- Removed Multi-Screen, External Player, and Player Selection UI cards.
+- Kept M3U/Xtream loading paths untouched.
+- versionCode 21 / versionName 4.4.0.

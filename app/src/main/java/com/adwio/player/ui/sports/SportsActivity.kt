@@ -9,7 +9,6 @@ import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.adwio.player.BuildConfig
 import com.adwio.player.databinding.ActivitySportsBinding
 import com.adwio.player.ui.BaseFullscreenActivity
 import kotlinx.coroutines.Dispatchers
@@ -45,33 +44,39 @@ class SportsActivity : BaseFullscreenActivity() {
     }
 
     private fun load() {
-        if (BuildConfig.FOOTBALL_DATA_TOKEN.isBlank()) {
-            b.statusText.visibility = View.VISIBLE
-            b.statusText.text = "يلزم إضافة FOOTBALL_DATA_TOKEN إلى GitHub Secrets"
-            adapter.submit(emptyList())
-            return
-        }
-
         b.statusText.visibility = View.VISIBLE
         b.statusText.text = "جاري تحديث مواعيد المباريات…"
         b.refreshButton.isEnabled = false
 
-        val from = dateOffset(0)
-        val to = dateOffset(7)
-
         lifecycleScope.launch {
-            val result = withContext(Dispatchers.IO) { api.loadMatches(from, to) }
+            val result = withContext(Dispatchers.IO) {
+                api.loadMatches(dateOffset(0), dateOffset(7))
+            }
+
             allMatches = result
             b.refreshButton.isEnabled = true
-            b.statusText.text = if (result.isEmpty()) "لا توجد مباريات متاحة أو تعذر التحديث" else ""
-            b.statusText.visibility = if (result.isEmpty()) View.VISIBLE else View.GONE
-            showDay(0)
+
+            if (result.isEmpty()) {
+                b.statusText.visibility = View.VISIBLE
+                b.statusText.text = "تعذر تحميل المباريات الآن • حاول مرة أخرى"
+                adapter.submit(emptyList())
+            } else {
+                b.statusText.visibility = View.GONE
+                showDay(0)
+            }
         }
     }
 
     private fun showDay(offset: Int) {
         val wanted = dateOffset(offset)
-        adapter.submit(allMatches.filter { it.utcDate.startsWith(wanted) })
+        val list = allMatches.filter { it.utcDate.startsWith(wanted) }
+        adapter.submit(list)
+        if (list.isEmpty()) {
+            b.statusText.visibility = View.VISIBLE
+            b.statusText.text = "لا توجد مباريات في هذا اليوم"
+        } else {
+            b.statusText.visibility = View.GONE
+        }
     }
 
     private fun remind(match: SportsMatch) {

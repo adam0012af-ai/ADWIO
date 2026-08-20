@@ -13,7 +13,7 @@
         android:layout_height="match_parent"
         android:background="#000000"
         android:keepScreenOn="true"
-        app:use_controller="false" />
+        app:use_controller="false"/>
 
     <ImageButton
         android:id="@+id/backControlButton"
@@ -22,10 +22,11 @@
         android:layout_gravity="start|top"
         android:layout_margin="10dp"
         android:background="@drawable/bg_player_back"
-        android:contentDescription="Back"
+        android:contentDescription="@string/back"
         android:elevation="4dp"
         android:padding="9dp"
-        android:src="@drawable/ic_back" />
+        android:src="@drawable/ic_back"
+        android:visibility="gone"/>
 
     <LinearLayout
         android:id="@+id/playerControls"
@@ -37,28 +38,70 @@
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingHorizontal="8dp">
-        <ImageButton android:id="@+id/playPauseButton" android:layout_width="32dp" android:layout_height="32dp" android:background="@android:color/transparent" android:contentDescription="Play pause" android:padding="7dp" android:src="@drawable/ic_pause" />
-        <SeekBar android:id="@+id/progressBar" android:layout_width="0dp" android:layout_height="26dp" android:layout_marginHorizontal="7dp" android:layout_weight="1" android:max="1000" />
-        <TextView android:id="@+id/qualityText" android:layout_width="48dp" android:layout_height="30dp" android:clickable="true" android:focusable="true" android:gravity="center" android:text="—" android:textColor="@color/adwio_text" android:textSize="9sp" />
-        <ImageButton android:id="@+id/audioButton" android:layout_width="32dp" android:layout_height="32dp" android:background="@android:color/transparent" android:contentDescription="Audio" android:padding="7dp" android:src="@drawable/ic_audio" />
-        <ImageButton android:id="@+id/subtitleButton" android:layout_width="32dp" android:layout_height="32dp" android:background="@android:color/transparent" android:contentDescription="Subtitles" android:padding="7dp" android:src="@drawable/ic_subtitles" />
-        <ImageButton android:id="@+id/browseButton" android:layout_width="32dp" android:layout_height="32dp" android:background="@android:color/transparent" android:contentDescription="Channels" android:padding="7dp" android:src="@drawable/ic_list" />
-        <ImageButton android:id="@+id/zoomButton" android:layout_width="32dp" android:layout_height="32dp" android:background="@android:color/transparent" android:contentDescription="Aspect ratio" android:padding="7dp" android:src="@drawable/ic_zoom" />
+
+        <ImageButton android:id="@+id/playPauseButton" android:layout_width="32dp" android:layout_height="32dp" android:background="@android:color/transparent" android:contentDescription="Play pause" android:padding="7dp" android:src="@drawable/ic_pause"/>
+        <SeekBar android:id="@+id/progressBar" android:layout_width="0dp" android:layout_height="26dp" android:layout_marginHorizontal="7dp" android:layout_weight="1" android:max="1000"/>
+        <TextView android:id="@+id/qualityText" android:layout_width="48dp" android:layout_height="30dp" android:clickable="true" android:focusable="true" android:gravity="center" android:text="—" android:textColor="@color/adwio_text" android:textSize="9sp"/>
+        <ImageButton android:id="@+id/audioButton" android:layout_width="32dp" android:layout_height="32dp" android:background="@android:color/transparent" android:contentDescription="Audio" android:padding="7dp" android:src="@drawable/ic_audio"/>
+        <ImageButton android:id="@+id/subtitleButton" android:layout_width="32dp" android:layout_height="32dp" android:background="@android:color/transparent" android:contentDescription="Subtitles" android:padding="7dp" android:src="@drawable/ic_subtitles"/>
+        <ImageButton android:id="@+id/browseButton" android:layout_width="32dp" android:layout_height="32dp" android:background="@android:color/transparent" android:contentDescription="Channels" android:padding="7dp" android:src="@drawable/ic_list"/>
+        <ImageButton android:id="@+id/zoomButton" android:layout_width="32dp" android:layout_height="32dp" android:background="@android:color/transparent" android:contentDescription="@string/aspect_ratio" android:padding="7dp" android:src="@drawable/ic_zoom"/>
     </LinearLayout>
 
-    <LinearLayout android:id="@+id/liveBrowseOverlay" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="horizontal" android:visibility="gone">
-        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="0.42" android:background="#DE070B17" android:orientation="horizontal" android:padding="6dp">
-            <LinearLayout android:layout_width="118dp" android:layout_height="match_parent" android:background="@drawable/bg_overlay_panel" android:orientation="vertical" android:padding="5dp">
-                <TextView android:layout_width="match_parent" android:layout_height="26dp" android:gravity="center_vertical" android:text="التصنيفات" android:textColor="@color/adwio_muted" android:textSize="9sp" android:textStyle="bold" />
-                <androidx.recyclerview.widget.RecyclerView android:id="@+id/overlayCategoryRecycler" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" />
+    <LinearLayout
+        android:id="@+id/liveBrowseOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="0.35"
+            android:background="#B8070B17"
+            android:orientation="horizontal"
+            android:padding="6dp">
+
+            <LinearLayout
+                android:layout_width="126dp"
+                android:layout_height="match_parent"
+                android:background="@drawable/bg_overlay_panel"
+                android:orientation="vertical"
+                android:padding="5dp">
+                <TextView android:layout_width="match_parent" android:layout_height="26dp" android:gravity="center_vertical" android:text="@string/categories" android:textColor="@color/adwio_muted" android:textSize="9sp" android:textStyle="bold"/>
+                <androidx.recyclerview.widget.RecyclerView android:id="@+id/overlayCategoryRecycler" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"/>
             </LinearLayout>
-            <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_marginStart="5dp" android:layout_weight="1" android:background="@drawable/bg_overlay_panel" android:orientation="vertical" android:padding="5dp">
-                <TextView android:id="@+id/overlayChannelHeader" android:layout_width="match_parent" android:layout_height="26dp" android:gravity="center_vertical" android:text="القنوات" android:textColor="@color/adwio_muted" android:textSize="9sp" android:textStyle="bold" />
-                <androidx.recyclerview.widget.RecyclerView android:id="@+id/overlayChannelRecycler" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_marginStart="5dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_overlay_panel"
+                android:orientation="vertical"
+                android:padding="5dp">
+                <TextView android:id="@+id/overlayChannelHeader" android:layout_width="match_parent" android:layout_height="26dp" android:gravity="center_vertical" android:text="@string/live_title" android:textColor="@color/adwio_muted" android:textSize="9sp" android:textStyle="bold"/>
+                <androidx.recyclerview.widget.RecyclerView android:id="@+id/overlayChannelRecycler" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"/>
             </LinearLayout>
         </LinearLayout>
-        <com.adwio.player.ui.player.LiveOverlayDismissView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="0.58" android:contentDescription="Close channels" />
+
+        <com.adwio.player.ui.player.LiveOverlayDismissView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="0.65"
+            android:contentDescription="Close channels"/>
     </LinearLayout>
 
-    <TextView android:id="@+id/statusText" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:background="@drawable/bg_status_pill" android:paddingHorizontal="14dp" android:paddingVertical="7dp" android:textColor="@color/adwio_text" android:textSize="10sp" android:visibility="gone" />
+    <TextView
+        android:id="@+id/statusText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:background="@drawable/bg_status_pill"
+        android:paddingHorizontal="14dp"
+        android:paddingVertical="7dp"
+        android:textColor="@color/adwio_text"
+        android:textSize="10sp"
+        android:visibility="gone"/>
 </FrameLayout>
