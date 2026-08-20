@@ -1,4 +1,4 @@
-name: Apply ADWIO 5.0.4 Premium Home
+name: Apply ADWIO 5.0.5 Premium Continuity
 
 on:
   workflow_dispatch:
@@ -17,32 +17,34 @@ jobs:
           fetch-depth: 0
 
       - name: Verify package
-        run: test -f ADWIO_5.0.4_PREMIUM_HOME_LIVE_STATE.zip
+        run: test -f ADWIO_5.0.5_PREMIUM_CONTINUITY_FINAL.zip
 
       - name: Extract update
         shell: bash
         run: |
           set -euo pipefail
-          TMP_DIR="${RUNNER_TEMP}/adwio504"
+          TMP_DIR="${RUNNER_TEMP}/adwio505"
           rm -rf "$TMP_DIR"
           mkdir -p "$TMP_DIR"
 
-          unzip -q ADWIO_5.0.4_PREMIUM_HOME_LIVE_STATE.zip -d "$TMP_DIR"
+          unzip -q ADWIO_5.0.5_PREMIUM_CONTINUITY_FINAL.zip -d "$TMP_DIR"
           test -d "$TMP_DIR/ADWIO-main/app"
 
           rsync -a \
             --exclude='.git/' \
             --exclude='.github/workflows/' \
-            --exclude='ADWIO_5.0.4_PREMIUM_HOME_LIVE_STATE.zip' \
+            --exclude='ADWIO_5.0.5_PREMIUM_CONTINUITY_FINAL.zip' \
             "$TMP_DIR/ADWIO-main/" ./
 
       - name: Verify update
         run: |
-          grep -q 'versionCode = 27' app/build.gradle.kts
-          grep -q 'versionName = "5.0.4"' app/build.gradle.kts
-          test -f app/src/main/res/layout/activity_home.xml
-          test -f app/src/main/res/drawable-nodpi/home_live_art.webp
-          grep -q 'RECENT_WATCHED_ID' app/src/main/java/com/adwio/player/ui/library/LibraryActivity.kt
+          grep -q 'versionCode = 28' app/build.gradle.kts
+          grep -q 'versionName = "5.0.5"' app/build.gradle.kts
+          test -f app/src/main/java/com/adwio/player/data/AppResumeState.kt
+          test -f app/src/main/java/com/adwio/player/ui/splash/SplashActivity.kt
+          test -f app/src/main/res/drawable-nodpi/splash_premium_bg.webp
+          grep -q 'enterMiniPictureInPicture' app/src/main/java/com/adwio/player/ui/library/LibraryActivity.kt
+          grep -q 'nextEpisodePanel' app/src/main/res/layout/activity_player.xml
 
       - name: Commit and push
         shell: bash
@@ -50,6 +52,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
           git add -A
 
           if git diff --cached --quiet; then
@@ -57,5 +60,5 @@ jobs:
             exit 0
           fi
 
-          git commit -m "Apply ADWIO 5.0.4 premium home and live state"
+          git commit -m "Apply ADWIO 5.0.5 premium continuity"
           git push
