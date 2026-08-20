@@ -763,6 +763,11 @@ class PlayerActivity : BaseFullscreenActivity() {
 
         if (type == MediaType.LIVE) {
             returningToLivePreview = true
+
+            // Release only PlayerActivity's video surface, not the ExoPlayer.
+            // LibraryActivity will attach this exact live session again.
+            b.playerView.player = null
+
             AppResumeState(this).clearPlaybackKeepingLibrary()
             finish()
             return

@@ -581,6 +581,10 @@ class LibraryActivity : BaseFullscreenActivity() {
         persistLiveUiState()
         restoreLiveOnResume = true
 
+        // One ExoPlayer must own one video surface at a time. Detach the mini
+        // surface before PlayerActivity attaches the same live session.
+        b.previewPlayer.player = null
+
         startActivity(Intent(this, PlayerActivity::class.java).apply {
             putExtra("url", PlaybackEngine.currentUrl)
             putExtra("title", PlaybackEngine.currentTitle)
@@ -663,6 +667,10 @@ class LibraryActivity : BaseFullscreenActivity() {
                 ChannelNavigator.setQueue(visible, item.id)
                 persistLiveUiState()
                 restoreLiveOnResume = true
+
+                // Transfer the existing live session cleanly to fullscreen.
+                b.previewPlayer.player = null
+
                 startActivity(Intent(this, PlayerActivity::class.java).apply {
                     putExtra("url", item.streamUrl)
                     putExtra("title", item.name)
