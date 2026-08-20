@@ -36,8 +36,12 @@ class SportsActivity : BaseFullscreenActivity() {
         b.backButton.setOnClickListener { finish() }
         b.todayButton.setOnClickListener { showDay(0) }
         b.tomorrowButton.setOnClickListener { showDay(1) }
-        b.allButton.setOnClickListener { adapter.submit(allMatches) }
+        b.allButton.setOnClickListener {
+            adapter.submit(allMatches)
+            showStatus(if (allMatches.isEmpty()) "لا توجد مباريات متاحة الآن" else null)
+        }
         b.refreshButton.setOnClickListener { load() }
+        b.statusText.setOnClickListener { load() }
 
         b.todayButton.requestFocus()
         load()
@@ -45,8 +49,11 @@ class SportsActivity : BaseFullscreenActivity() {
 
     private fun load() {
         b.statusText.visibility = View.VISIBLE
-        b.statusText.text = "جاري تحديث مواعيد المباريات…"
+        b.statusText.text = "جاري تحديث المباريات…"
         b.refreshButton.isEnabled = false
+        b.todayButton.isEnabled = false
+        b.tomorrowButton.isEnabled = false
+        b.allButton.isEnabled = false
 
         lifecycleScope.launch {
             val result = withContext(Dispatchers.IO) {
@@ -55,13 +62,14 @@ class SportsActivity : BaseFullscreenActivity() {
 
             allMatches = result
             b.refreshButton.isEnabled = true
+            b.todayButton.isEnabled = true
+            b.tomorrowButton.isEnabled = true
+            b.allButton.isEnabled = true
 
             if (result.isEmpty()) {
-                b.statusText.visibility = View.VISIBLE
-                b.statusText.text = "تعذر تحميل المباريات الآن • حاول مرة أخرى"
                 adapter.submit(emptyList())
+                showStatus("تعذر تحميل المباريات • اضغط هنا للمحاولة مرة أخرى")
             } else {
-                b.statusText.visibility = View.GONE
                 showDay(0)
             }
         }
@@ -71,11 +79,15 @@ class SportsActivity : BaseFullscreenActivity() {
         val wanted = dateOffset(offset)
         val list = allMatches.filter { it.utcDate.startsWith(wanted) }
         adapter.submit(list)
-        if (list.isEmpty()) {
-            b.statusText.visibility = View.VISIBLE
-            b.statusText.text = "لا توجد مباريات في هذا اليوم"
-        } else {
+        showStatus(if (list.isEmpty()) "لا توجد مباريات في هذا اليوم" else null)
+    }
+
+    private fun showStatus(message: String?) {
+        if (message.isNullOrBlank()) {
             b.statusText.visibility = View.GONE
+        } else {
+            b.statusText.text = message
+            b.statusText.visibility = View.VISIBLE
         }
     }
 

@@ -7,7 +7,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.adwio.player.R
 import com.adwio.player.data.FavoritesStore
 import com.adwio.player.data.model.MediaItemModel
-import com.adwio.player.data.model.MediaType
 import com.adwio.player.databinding.ItemMediaBinding
 import com.squareup.picasso.Picasso
 
@@ -38,18 +37,15 @@ class MediaAdapter(
             }
 
             b.root.setOnClickListener {
+                // IMPORTANT:
+                // Live semantics are intentionally handled by LibraryActivity:
+                // first physical tap -> side preview
+                // second physical tap on the active channel -> fullscreen.
+                // Never invoke onClick twice from one Android click.
+                onClick(item)
+
                 val recycler = b.root.parent as? RecyclerView
-                val isMainLiveList = recycler?.id == R.id.contentRecycler && item.type == MediaType.LIVE
-                val isFullscreenOverlay = recycler?.id == R.id.overlayChannelRecycler
-
-                if (isMainLiveList) {
-                    onClick(item)
-                    onClick(item)
-                } else {
-                    onClick(item)
-                }
-
-                if (isFullscreenOverlay) {
+                if (recycler?.id == R.id.overlayChannelRecycler) {
                     b.root.post {
                         b.root.rootView.findViewById<View?>(R.id.liveBrowseOverlay)?.visibility = View.VISIBLE
                         b.root.rootView.findViewById<View?>(R.id.playerControls)?.visibility = View.GONE

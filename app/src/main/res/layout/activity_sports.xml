@@ -3,7 +3,7 @@
     android:layout_height="match_parent"
     android:background="@drawable/bg_gradient"
     android:orientation="vertical"
-    android:padding="10dp">
+    android:padding="9dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -23,7 +23,7 @@
         <TextView
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_marginStart="9dp"
+            android:layout_marginStart="8dp"
             android:layout_weight="1"
             android:gravity="center_vertical"
             android:text="@string/sports_title"
@@ -33,22 +33,33 @@
 
         <Button
             android:id="@+id/todayButton"
-            android:layout_width="wrap_content"
-            android:layout_height="34dp"
+            android:layout_width="92dp"
+            android:layout_height="32dp"
+            android:minHeight="0dp"
+            android:minWidth="0dp"
+            android:padding="0dp"
             android:text="@string/today"
             android:textSize="9sp"/>
+
         <Button
             android:id="@+id/tomorrowButton"
-            android:layout_width="wrap_content"
-            android:layout_height="34dp"
+            android:layout_width="92dp"
+            android:layout_height="32dp"
             android:layout_marginStart="4dp"
+            android:minHeight="0dp"
+            android:minWidth="0dp"
+            android:padding="0dp"
             android:text="@string/tomorrow"
             android:textSize="9sp"/>
+
         <Button
             android:id="@+id/allButton"
-            android:layout_width="wrap_content"
-            android:layout_height="34dp"
+            android:layout_width="92dp"
+            android:layout_height="32dp"
             android:layout_marginStart="4dp"
+            android:minHeight="0dp"
+            android:minWidth="0dp"
+            android:padding="0dp"
             android:text="@string/all_matches"
             android:textSize="9sp"/>
 
@@ -63,21 +74,35 @@
             android:src="@drawable/ic_refresh_modern"/>
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/statusText"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="5dp"
-        android:gravity="center"
-        android:textColor="@color/adwio_muted"
-        android:textSize="9sp"
-        android:visibility="gone"/>
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/matchesRecycler"
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_marginTop="6dp"
-        android:layout_weight="1"
-        android:clipToPadding="false"/>
+        android:layout_weight="1">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/matchesRecycler"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingBottom="6dp"/>
+
+        <TextView
+            android:id="@+id/statusText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:background="@drawable/bg_status_pill"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:maxWidth="420dp"
+            android:paddingStart="18dp"
+            android:paddingTop="11dp"
+            android:paddingEnd="18dp"
+            android:paddingBottom="11dp"
+            android:textColor="@color/adwio_text"
+            android:textSize="10sp"
+            android:visibility="gone"/>
+    </FrameLayout>
 </LinearLayout>
