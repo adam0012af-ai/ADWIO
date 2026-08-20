@@ -32,11 +32,16 @@ jobs:
           ADWIO_KEYSTORE_BASE64: ${{ secrets.ADWIO_KEYSTORE_BASE64 }}
         run: |
           set -euo pipefail
-          printf '%s' "$ADWIO_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/ADWIO_release_FINAL.keystore"
+
+          printf '%s' "$ADWIO_KEYSTORE_BASE64" | base64 --decode \
+            > "$RUNNER_TEMP/ADWIO_release_FINAL.keystore"
+
           test -s "$RUNNER_TEMP/ADWIO_release_FINAL.keystore"
 
       - name: Build unsigned Release APK
         shell: bash
+        env:
+          FOOTBALL_DATA_TOKEN: ${{ secrets.FOOTBALL_DATA_TOKEN }}
         run: |
           set -euo pipefail
           gradle :app:assembleRelease --stacktrace
