@@ -1,4 +1,4 @@
-name: Apply ADWIO 4.3 FINAL
+name: Apply ADWIO 4.4 FINAL
 
 on:
   workflow_dispatch:
@@ -17,47 +17,39 @@ jobs:
           fetch-depth: 0
 
       - name: Verify package
-        run: test -f ADWIO_4.3_FINAL_WITH_MATCHES.zip
+        run: test -f ADWIO_4.4_FINAL_FIXES.zip
 
       - name: Extract safely
         shell: bash
         run: |
           set -euo pipefail
-
-          TMP_DIR="${RUNNER_TEMP}/adwio43"
-
+          TMP_DIR="${RUNNER_TEMP}/adwio44"
           rm -rf "$TMP_DIR"
           mkdir -p "$TMP_DIR"
-
-          unzip -q ADWIO_4.3_FINAL_WITH_MATCHES.zip -d "$TMP_DIR"
-
+          unzip -q ADWIO_4.4_FINAL_FIXES.zip -d "$TMP_DIR"
           test -d "$TMP_DIR/ADWIO-main/app"
 
           rsync -a \
             --exclude='.git/' \
             --exclude='.github/workflows/' \
-            --exclude='ADWIO_4.3_FINAL_WITH_MATCHES.zip' \
+            --exclude='ADWIO_4.4_FINAL_FIXES.zip' \
             "$TMP_DIR/ADWIO-main/" ./
 
       - name: Verify version
         run: |
-          grep -q 'versionCode = 20' app/build.gradle.kts
-          grep -q 'versionName = "4.3.0"' app/build.gradle.kts
+          grep -q 'versionCode = 21' app/build.gradle.kts
+          grep -q 'versionName = "4.4.0"' app/build.gradle.kts
 
       - name: Commit and push source
         shell: bash
         run: |
           set -euo pipefail
-
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
           git add -A
-
           if git diff --cached --quiet; then
             echo "No changes to commit."
             exit 0
           fi
-
-          git commit -m "Apply ADWIO Final 4.3"
+          git commit -m "Apply ADWIO Final 4.4 fixes"
           git push
