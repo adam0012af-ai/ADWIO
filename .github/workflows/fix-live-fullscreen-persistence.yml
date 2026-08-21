@@ -1,0 +1,60 @@
+name: Fix ADWIO Live Fullscreen Persistence
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix-live-fullscreen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply fullscreen persistence fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo 'CmZyb20gcGF0aGxpYiBpbXBvcnQgUGF0aAoKa3QgPSBQYXRoKCJhcHAvc3JjL21haW4vamF2YS9jb20vYWR3aW8vcGxheWVyL3VpL2xpYnJhcnkvTGlicmFyeUFjdGl2aXR5Lmt0IikKZ3JhZGxlID0gUGF0aCgiYXBwL2J1aWxkLmdyYWRsZS5rdHMiKQpzID0ga3QucmVhZF90ZXh0KGVuY29kaW5nPSJ1dGYtOCIpCgptYXJrZXIgPSAiICAgIHByaXZhdGUgdmFyIGxpdmVGdWxsc2NyZWVuTW9kZSA9IGZhbHNlXG4iCnJlcGxhY2VtZW50ID0gIiIiICAgIHByaXZhdGUgdmFyIGxpdmVGdWxsc2NyZWVuTW9kZSA9IGZhbHNlCiAgICBwcml2YXRlIHZhciBsaXZlRnVsbHNjcmVlblJlc2l6ZU1vZGUgPSBBc3BlY3RSYXRpb0ZyYW1lTGF5b3V0LlJFU0laRV9NT0RFX0ZJTEwKIiIiCmlmIHJlcGxhY2VtZW50IG5vdCBpbiBzOgogICAgaWYgbWFya2VyIG5vdCBpbiBzOgogICAgICAgIHJhaXNlIFN5c3RlbUV4aXQoImZ1bGxzY3JlZW4gc3RhdGUgbWFya2VyIG1pc3NpbmciKQogICAgcyA9IHMucmVwbGFjZShtYXJrZXIsIHJlcGxhY2VtZW50LCAxKQoKb2xkID0gIiIiICAgICAgICBsaXZlRnVsbHNjcmVlbk1vZGUgPSB0cnVlCiAgICAgICAgYi5wcmV2aWV3UGxheWVyLnBsYXllciA9IFBsYXliYWNrRW5naW5lLnBsYXllcgogICAgICAgIGIucHJldmlld1BsYXllci5yZXNpemVNb2RlID0gQXNwZWN0UmF0aW9GcmFtZUxheW91dC5SRVNJWkVfTU9ERV9GSVQKICAgICAgICBhcHBseUV4cGFuZGVkTGl2ZVVpKCkKIiIiCm5ldyA9ICIiIiAgICAgICAgbGl2ZUZ1bGxzY3JlZW5Nb2RlID0gdHJ1ZQogICAgICAgIGIucHJldmlld1BsYXllci5wbGF5ZXIgPSBQbGF5YmFja0VuZ2luZS5wbGF5ZXIKICAgICAgICBiLnByZXZpZXdQbGF5ZXIucmVzaXplTW9kZSA9IGxpdmVGdWxsc2NyZWVuUmVzaXplTW9kZQogICAgICAgIGFwcGx5RXhwYW5kZWRMaXZlVWkoKQoiIiIKaWYgb2xkIG5vdCBpbiBzOgogICAgcmFpc2UgU3lzdGVtRXhpdCgiZnVsbHNjcmVlbiBjaGFubmVsIHJlc2l6ZSBibG9jayBtaXNzaW5nIikKcyA9IHMucmVwbGFjZShvbGQsIG5ldywgMSkKCm9sZCA9ICIiIiAgICAgICAgLy8gRnVsbHNjcmVlbiBtZWFucyB0aGUgcGxheWVyIG9jY3VwaWVzIHRoZSBjb21wbGV0ZSBkZXZpY2UgYXJlYS4KICAgICAgICAvLyBLZWVwIHRoZSB2aWRlbyBhc3BlY3QgcmF0aW8gYnkgZGVmYXVsdDsgZG8gbm90IGNyb3Avb3Zlci16b29tLgogICAgICAgIGIucHJldmlld1BsYXllci5yZXNpemVNb2RlID0gQXNwZWN0UmF0aW9GcmFtZUxheW91dC5SRVNJWkVfTU9ERV9GSVQKIiIiCm5ldyA9ICIiIiAgICAgICAgLy8gRnVsbHNjcmVlbiB1c2VzIHRoZSBzYXZlZCBMaXZlIGRpc3BsYXkgbW9kZS4gRGVmYXVsdCBpcyBGSUxMIHNvIHRoZQogICAgICAgIC8vIHZpZGVvIG9jY3VwaWVzIHRoZSBjb21wbGV0ZSBwaHlzaWNhbCBwbGF5ZXIgYXJlYSB3aXRob3V0IGZvcmNlZCBaT09NLgogICAgICAgIGIucHJldmlld1BsYXllci5yZXNpemVNb2RlID0gbGl2ZUZ1bGxzY3JlZW5SZXNpemVNb2RlCiIiIgppZiBvbGQgbm90IGluIHM6CiAgICByYWlzZSBTeXN0ZW1FeGl0KCJlbnRlciBmdWxsc2NyZWVuIHJlc2l6ZSBibG9jayBtaXNzaW5nIikKcyA9IHMucmVwbGFjZShvbGQsIG5ldywgMSkKCm9sZCA9ICIiIiAgICAgICAgYi5wcmV2aWV3UGxheWVyLnJlc2l6ZU1vZGUgPSB3aGVuIChiLnByZXZpZXdQbGF5ZXIucmVzaXplTW9kZSkgewogICAgICAgICAgICBBc3BlY3RSYXRpb0ZyYW1lTGF5b3V0LlJFU0laRV9NT0RFX0ZJVCAtPgogICAgICAgICAgICAgICAgQXNwZWN0UmF0aW9GcmFtZUxheW91dC5SRVNJWkVfTU9ERV9GSUxMCiAgICAgICAgICAgIEFzcGVjdFJhdGlvRnJhbWVMYXlvdXQuUkVTSVpFX01PREVfRklMTCAtPgogICAgICAgICAgICAgICAgQXNwZWN0UmF0aW9GcmFtZUxheW91dC5SRVNJWkVfTU9ERV9aT09NCiAgICAgICAgICAgIGVsc2UgLT4KICAgICAgICAgICAgICAgIEFzcGVjdFJhdGlvRnJhbWVMYXlvdXQuUkVTSVpFX01PREVfRklUCiAgICAgICAgfQoiIiIKbmV3ID0gIiIiICAgICAgICBsaXZlRnVsbHNjcmVlblJlc2l6ZU1vZGUgPSB3aGVuIChsaXZlRnVsbHNjcmVlblJlc2l6ZU1vZGUpIHsKICAgICAgICAgICAgQXNwZWN0UmF0aW9GcmFtZUxheW91dC5SRVNJWkVfTU9ERV9GSUxMIC0+CiAgICAgICAgICAgICAgICBBc3BlY3RSYXRpb0ZyYW1lTGF5b3V0LlJFU0laRV9NT0RFX1pPT00KICAgICAgICAgICAgQXNwZWN0UmF0aW9GcmFtZUxheW91dC5SRVNJWkVfTU9ERV9aT09NIC0+CiAgICAgICAgICAgICAgICBBc3BlY3RSYXRpb0ZyYW1lTGF5b3V0LlJFU0laRV9NT0RFX0ZJVAogICAgICAgICAgICBlbHNlIC0+CiAgICAgICAgICAgICAgICBBc3BlY3RSYXRpb0ZyYW1lTGF5b3V0LlJFU0laRV9NT0RFX0ZJTEwKICAgICAgICB9CiAgICAgICAgYi5wcmV2aWV3UGxheWVyLnJlc2l6ZU1vZGUgPSBsaXZlRnVsbHNjcmVlblJlc2l6ZU1vZGUKIiIiCmlmIG9sZCBub3QgaW4gczoKICAgIHJhaXNlIFN5c3RlbUV4aXQoImFzcGVjdCBjeWNsZSBibG9jayBtaXNzaW5nIikKcyA9IHMucmVwbGFjZShvbGQsIG5ldywgMSkKCm9sZCA9ICIiIiAgICAgICAgLy8gRklUIGlzIHRoZSBkZWZhdWx0IGZ1bGxzY3JlZW4gcHJlc2VudGF0aW9uLiBUaGUgY29udHJvbCBidXR0b24gbGV0cwogICAgICAgIC8vIHRoZSB1c2VyIGNob29zZSBGaWxsL1pvb20gbWFudWFsbHkgd2l0aG91dCBmb3JjaW5nIGEgY3JvcHBlZCBpbWFnZS4KICAgICAgICBpZiAoIWluTWluaVBpcCkgewogICAgICAgICAgICBiLnByZXZpZXdQbGF5ZXIucmVzaXplTW9kZSA9IEFzcGVjdFJhdGlvRnJhbWVMYXlvdXQuUkVTSVpFX01PREVfRklUCiAgICAgICAgfQogICAgICAgIGIucHJldmlld1BsYXllci5wbGF5ZXIgPSBQbGF5YmFja0VuZ2luZS5wbGF5ZXIKIiIiCm5ldyA9ICIiIiAgICAgICAgLy8gTmV2ZXIgb3ZlcndyaXRlIHRoZSB1c2VyJ3MgRnVsbHNjcmVlbiBkaXNwbGF5IG1vZGUgb24gY2hhbm5lbCBjaGFuZ2UsCiAgICAgICAgLy8gY29udHJvbHMgdmlzaWJpbGl0eSBjaGFuZ2VzLCBQaVAgcmV0dXJuLCBvciBVSSBleHBhbnNpb24uCiAgICAgICAgaWYgKCFpbk1pbmlQaXAgJiYgbGl2ZUZ1bGxzY3JlZW5Nb2RlKSB7CiAgICAgICAgICAgIGIucHJldmlld1BsYXllci5yZXNpemVNb2RlID0gbGl2ZUZ1bGxzY3JlZW5SZXNpemVNb2RlCiAgICAgICAgfQogICAgICAgIGIucHJldmlld1BsYXllci5wbGF5ZXIgPSBQbGF5YmFja0VuZ2luZS5wbGF5ZXIKIiIiCmlmIG9sZCBub3QgaW4gczoKICAgIHJhaXNlIFN5c3RlbUV4aXQoImV4cGFuZGVkIFVJIGZvcmNlZC1GSVQgYmxvY2sgbWlzc2luZyIpCnMgPSBzLnJlcGxhY2Uob2xkLCBuZXcsIDEpCgprdC53cml0ZV90ZXh0KHMsIGVuY29kaW5nPSJ1dGYtOCIpCgpnID0gZ3JhZGxlLnJlYWRfdGV4dChlbmNvZGluZz0idXRmLTgiKQppZiAndmVyc2lvbkNvZGUgPSAzNicgbm90IGluIGcgb3IgJ3ZlcnNpb25OYW1lID0gIjUuMS4xIicgbm90IGluIGc6CiAgICByYWlzZSBTeXN0ZW1FeGl0KCJFeHBlY3RlZCA1LjEuMSAvIDM2IGJhc2VsaW5lIG5vdCBmb3VuZCIpCmcgPSBnLnJlcGxhY2UoJ3ZlcnNpb25Db2RlID0gMzYnLCAndmVyc2lvbkNvZGUgPSAzNycsIDEpCmcgPSBnLnJlcGxhY2UoJ3ZlcnNpb25OYW1lID0gIjUuMS4xIicsICd2ZXJzaW9uTmFtZSA9ICI1LjEuMiInLCAxKQpncmFkbGUud3JpdGVfdGV4dChnLCBlbmNvZGluZz0idXRmLTgiKQoKcHJpbnQoIlBlcnNpc3RlbnQgTGl2ZSBmdWxsc2NyZWVuIHNpemluZyBmaXggYXBwbGllZCIpCg==' | base64 -d > /tmp/fix_live_fullscreen.py
+          python3 /tmp/fix_live_fullscreen.py
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle 9.5.0
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: '9.5.0'
+
+      - name: Compile validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          gradle --no-daemon :app:compileDebugKotlin
+
+      - name: Verify exact fullscreen fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          FILE="app/src/main/java/com/adwio/player/ui/library/LibraryActivity.kt"
+          grep -q 'liveFullscreenResizeMode = AspectRatioFrameLayout.RESIZE_MODE_FILL' "$FILE"
+          grep -q 'b.previewPlayer.resizeMode = liveFullscreenResizeMode' "$FILE"
+          grep -q 'versionCode = 37' app/build.gradle.kts
+          grep -q 'versionName = "5.1.2"' app/build.gradle.kts
+          rm -f .github/workflows/fix-live-fullscreen-persistence.yml
+
+      - name: Commit only after compile succeeds
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Fix persistent Live fullscreen sizing across channel changes"
+          git push origin HEAD:main
