@@ -1,0 +1,17 @@
+ADWIO Sports Center
+
+New independent sports module:
+- Matches card on Home.
+- Today / Tomorrow / All.
+- Match times shown in device local timezone.
+- Live/finished status and scores when available.
+- Favorite matches.
+- Reminder 15 minutes before kickoff.
+- Independent from Xtream/M3U.
+- Version bumped to 4.3.0 / versionCode 20.
+
+Required GitHub repository secret:
+FOOTBALL_DATA_TOKEN
+
+The build workflow exposes this secret only to Gradle during build.
+The current provider integration uses football-data.org API v4.

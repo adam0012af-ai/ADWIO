@@ -1,0 +1,16 @@
+ADWIO 5.0.1 Final Completion RC
+
+Implemented in this package:
+- Movie trailer button from Xtream server metadata when available.
+- youtube_trailer / trailer / trailer_url / youtube ID parsing.
+- Series episodes explicitly ordered by season then episode.
+- Auto-next information is passed to the player using the next ordered episode.
+- Movies/Series: +15 / -15 second seek buttons.
+- Long press repeats 15-second seeks; playback speed stays 1.0x.
+- PiP lifecycle guard keeps PlaybackEngine alive while entering PiP.
+- Screen position remains saved by existing PlaybackHistory logic.
+- New strings for English/Arabic for trailer, information, cast/director and seek controls.
+- versionCode 24 / versionName 5.0.1.
+
+Build workflow is unchanged.
+Use the new Apply workflow only.

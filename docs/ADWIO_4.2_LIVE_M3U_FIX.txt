@@ -1,0 +1,15 @@
+ADWIO 4.2 Live + M3U Fix Overlay
+
+Changes:
+- M3U full scan: removes the 700-item/160k-line cutoff for per-type loading.
+- Better M3U Movies/Series classification.
+- Hidden subtitle/status text beneath section titles.
+- Tap/OK on Live mini-player opens fullscreen.
+- Double selecting the same Live channel continues to open fullscreen via existing LibraryActivity behavior.
+- Fullscreen channel overlay remains open while switching channels.
+- Touch/OK on right side closes fullscreen channel overlay.
+- Clear floating fullscreen Back button.
+- No background playback: leaving ADWIO or moving away from the active player stops playback.
+- Moving from Live to Movies/Series/Home stops Live audio immediately.
+
+This package is an overlay for the existing ADWIO 4.2 source.

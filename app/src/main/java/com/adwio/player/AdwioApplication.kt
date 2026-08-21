@@ -21,33 +21,14 @@ class AdwioApplication : Application() {
     private var resumedActivities = 0
 
     private val stopWhenBackground = Runnable {
-        if (resumedActivities != 0) return@Runnable
-
-        // HOME / PiP is not an app exit for LIVE.
-        // Keep the same ExoPlayer session alive so audio/video continue and
-        // LibraryActivity can re-attach it when the user returns.
-        val activeLive =
-            PlaybackEngine.player != null &&
-            PlaybackEngine.currentType == MediaType.LIVE &&
-            PlaybackEngine.currentUrl.isNotBlank()
-
-        if (activeLive) {
-            PlaybackEngine.player?.let { player ->
-                player.playWhenReady = true
-                player.play()
-            }
-            return@Runnable
-        }
-
-        stopPlaybackCompletely()
+        if (resumedActivities == 0) stopPlaybackCompletely()
     }
 
     override fun onCreate() {
         super.onCreate()
 
-        // Non-Live playback is stopped when the app leaves the foreground.
-        // Active LIVE playback is intentionally preserved for Android PiP/Home
-        // and is stopped explicitly when the user actually exits Live.
+        // ADWIO policy: playback must never keep running when the app is in background.
+        // Live is preserved only between its Library mini-player and fullscreen PlayerActivity.
         registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
             override fun onActivityResumed(activity: Activity) {
                 resumedActivities++

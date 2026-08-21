@@ -1,0 +1,12 @@
+ADWIO M3U CONTENT FIX
+
+This overlay changes M3U only. Xtream code is untouched.
+
+Fixes:
+- Removes short total timeout for large M3U playlists.
+- Adds multiple loading fallbacks so an Active M3U account does not open empty sections.
+- Rejects invalid/HTML cache files.
+- Deletes corrupt empty M3U cache automatically.
+- Full remote scan -> full cache download -> full direct load fallback.
+- Improves Movies/Series classification from common M3U group/path patterns.
+- Normalizes copied URLs containing &amp;.

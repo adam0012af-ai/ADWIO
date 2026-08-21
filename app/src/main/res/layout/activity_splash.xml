@@ -1,78 +1,14 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="#020714">
-
-    <ImageView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:scaleType="centerCrop"
-        android:src="@drawable/splash_premium_bg"/>
-
-    <LinearLayout
-        android:id="@+id/splashContent"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:gravity="center"
-        android:orientation="vertical"
-        android:alpha="0">
-
-        <ImageView
-            android:id="@+id/splashLogo"
-            android:layout_width="110dp"
-            android:layout_height="110dp"
-            android:scaleType="centerInside"
-            android:src="@drawable/ic_adwio"/>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:letterSpacing="0.10"
-            android:text="ADWIO"
-            android:textColor="#FFFFFFFF"
-            android:textSize="30sp"
-            android:textStyle="bold"/>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:letterSpacing="0.48"
-            android:text="PLAYER"
-            android:textColor="#B9C4D4E6"
-            android:textSize="8sp"/>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:letterSpacing="0.12"
-            android:text="@string/premium_streaming_experience"
-            android:textColor="#8FB3C1D8"
-            android:textSize="7sp"/>
-
-        <FrameLayout
-            android:layout_width="118dp"
-            android:layout_height="3dp"
-            android:layout_marginTop="23dp"
-            android:background="#2235D6FF">
-
-            <View
-                android:id="@+id/loaderBar"
-                android:layout_width="34dp"
-                android:layout_height="match_parent"
-                android:background="@drawable/bg_splash_loader"/>
-        </FrameLayout>
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@drawable/bg_gradient">
+    <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_gravity="center" android:gravity="center" android:orientation="vertical">
+        <ImageView android:layout_width="120dp" android:layout_height="120dp" android:src="@drawable/ic_adwio"/>
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="ADWIO" android:textColor="@color/adwio_text" android:textSize="42sp"
+            android:textStyle="bold" android:letterSpacing="0.12"/>
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="PLAYER" android:textColor="@color/adwio_cyan" android:textSize="14sp"
+            android:letterSpacing="0.35"/>
     </LinearLayout>
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|center_horizontal"
-        android:layout_marginBottom="18dp"
-        android:letterSpacing="0.18"
-        android:text="FAST  •  SECURE  •  PREMIUM"
-        android:textColor="#627A8EA9"
-        android:textSize="6sp"/>
 </FrameLayout>

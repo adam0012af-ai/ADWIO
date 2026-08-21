@@ -2,97 +2,73 @@ package com.adwio.player.ui.splash
 
 import android.content.Intent
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
-import android.view.animation.AccelerateDecelerateInterpolator
-import com.adwio.player.data.AppResumeState
-import com.adwio.player.data.LiveSessionStore
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
+import androidx.lifecycle.lifecycleScope
+import com.adwio.player.R
 import com.adwio.player.data.SessionStore
+import com.adwio.player.data.AppSettings
 import com.adwio.player.data.model.MediaType
-import com.adwio.player.databinding.ActivitySplashBinding
 import com.adwio.player.ui.BaseFullscreenActivity
 import com.adwio.player.ui.home.HomeActivity
 import com.adwio.player.ui.library.LibraryActivity
-import com.adwio.player.ui.login.LoginActivity
+import com.adwio.player.ui.playlist.PlaylistActivity
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class SplashActivity : BaseFullscreenActivity() {
-    private lateinit var b: ActivitySplashBinding
-    private val handler = Handler(Looper.getMainLooper())
-
     override fun onCreate(savedInstanceState: Bundle?) {
-    super.onCreate(savedInstanceState)
+        super.onCreate(savedInstanceState)
 
-    // Existing task: reveal the current screen immediately.
-    if (!isTaskRoot) {
-        finish()
-        overridePendingTransition(0, 0)
-        return
-    }
+        runCatching {
+            setContentView(R.layout.activity_splash)
 
-    val live = LiveSessionStore(this).load()
-    val session = SessionStore(this).load()
-
-    if (session != null && live.active && live.url.isNotBlank()) {
-        startActivity(Intent(this, LibraryActivity::class.java).apply {
-            putExtra(LibraryActivity.EXTRA_TYPE, MediaType.LIVE.name)
-            putExtra(
-                LibraryActivity.EXTRA_RESTORE_FULLSCREEN,
-                live.mode == LiveSessionStore.MODE_FULLSCREEN
-            )
-            addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-        })
-        finish()
-        overridePendingTransition(0, 0)
-        return
-    }
-
-    b = ActivitySplashBinding.inflate(layoutInflater)
-    setContentView(b.root)
-
-    b.splashContent.scaleX = 0.94f
-    b.splashContent.scaleY = 0.94f
-    b.splashContent.animate()
-        .alpha(1f)
-        .scaleX(1f)
-        .scaleY(1f)
-        .setDuration(520L)
-        .setInterpolator(AccelerateDecelerateInterpolator())
-        .start()
-
-    b.loaderBar.translationX = -60f
-    b.loaderBar.animate()
-        .translationX(82f)
-        .setDuration(900L)
-        .setInterpolator(AccelerateDecelerateInterpolator())
-        .start()
-
-    handler.postDelayed({ routeColdStart() }, 1050L)
-}
-
-private fun routeColdStart() {
-    val session = SessionStore(this).load()
-    val live = LiveSessionStore(this).load()
-
-    val target = when {
-        session == null -> Intent(this, LoginActivity::class.java)
-        live.active && live.url.isNotBlank() ->
-            Intent(this, LibraryActivity::class.java).apply {
-                putExtra(LibraryActivity.EXTRA_TYPE, MediaType.LIVE.name)
-                putExtra(
-                    LibraryActivity.EXTRA_RESTORE_FULLSCREEN,
-                    live.mode == LiveSessionStore.MODE_FULLSCREEN
-                )
-                addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            lifecycleScope.launch {
+                delay(80)
+                runCatching {
+                    val settings = AppSettings(this@SplashActivity)
+                    val locales = if (settings.language == "system") LocaleListCompat.getEmptyLocaleList() else LocaleListCompat.forLanguageTags(settings.language)
+                    AppCompatDelegate.setApplicationLocales(locales)
+                    val hasSession = SessionStore(this@SplashActivity).load() != null
+                    if (!hasSession) {
+                        startActivity(Intent(this@SplashActivity, PlaylistActivity::class.java))
+                    } else {
+                        when (settings.startupScreen) {
+                            "live" -> openLibrary(MediaType.LIVE)
+                            "movies" -> openLibrary(MediaType.MOVIE)
+                            "series" -> openLibrary(MediaType.SERIES)
+                            else -> startActivity(Intent(this@SplashActivity, HomeActivity::class.java))
+                        }
+                    }
+                    finish()
+                }.onFailure { showStartupError(it) }
             }
-        else -> Intent(this, HomeActivity::class.java)
+        }.onFailure { showStartupError(it) }
     }
 
-    startActivity(target)
-    finish()
-}
+    private fun showStartupError(error: Throwable) {
+        if (isFinishing) return
+        getSharedPreferences("adwio_crash", MODE_PRIVATE).edit()
+            .putString("last_crash", error.stackTraceToString().take(9000))
+            .apply()
+        AlertDialog.Builder(this)
+            .setTitle("ADWIO")
+            .setMessage("Unable to start the app. You can retry or clear the saved session.")
+            .setCancelable(false)
+            .setPositiveButton("Retry") { _, _ -> recreate() }
+            .setNegativeButton("Reset session") { _, _ ->
+                SessionStore(this).clear()
+                startActivity(Intent(this, PlaylistActivity::class.java))
+                finish()
+            }
+            .setNeutralButton("Close") { _, _ -> finish() }
+            .show()
+    }
 
-    override fun onDestroy() {
-        handler.removeCallbacksAndMessages(null)
-        super.onDestroy()
+    private fun openLibrary(type: MediaType) {
+        startActivity(Intent(this, LibraryActivity::class.java).apply {
+            putExtra(LibraryActivity.EXTRA_TYPE, type.name)
+        })
     }
 }
