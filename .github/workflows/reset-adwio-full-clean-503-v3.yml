@@ -1,0 +1,204 @@
+name: Reset ADWIO to Full Clean 5.0.3
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  reset-full-503:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository with full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify original 5.0.3 commit
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          SOURCE_COMMIT="4f1026235929afc428c5b92f95e45e165b3e23ff"
+
+          git cat-file -e "${SOURCE_COMMIT}^{commit}"
+
+          echo "Using full repository snapshot:"
+          git show -s --format='%H %s' "$SOURCE_COMMIT"
+
+      - name: Export complete 5.0.3 repository snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          SOURCE_COMMIT="4f1026235929afc428c5b92f95e45e165b3e23ff"
+
+          rm -rf /tmp/adwio503-full
+          mkdir -p /tmp/adwio503-full
+
+          git archive "$SOURCE_COMMIT" | tar -x -C /tmp/adwio503-full
+
+          test -f /tmp/adwio503-full/app/src/main/AndroidManifest.xml
+          test -f /tmp/adwio503-full/app/build.gradle.kts || \
+            test -f /tmp/adwio503-full/app/build.gradle
+          test -f /tmp/adwio503-full/settings.gradle.kts || \
+            test -f /tmp/adwio503-full/settings.gradle
+
+          echo "Full 5.0.3 source snapshot exported successfully."
+
+      - name: Remove current repository content
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          find . -mindepth 1 -maxdepth 1 \
+            ! -name ".git" \
+            -exec rm -rf {} +
+
+          echo "Current working tree removed."
+
+      - name: Restore full 5.0.3 source
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          cp -a /tmp/adwio503-full/. .
+
+          echo "Full 5.0.3 repository restored."
+
+      - name: Remove old APK ZIP builds and old workflows
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Delete packaged APK/AAB files.
+          find . -type f \( \
+            -iname "*.apk" -o \
+            -iname "*.aab" \
+          \) -delete
+
+          # Delete historical update ZIP/RAR archives from repository.
+          find . -type f \( \
+            -iname "*.zip" -o \
+            -iname "*.rar" -o \
+            -iname "*.7z" \
+          \) -delete
+
+          # Delete generated build/cache directories.
+          find . -type d \( \
+            -name "build" -o \
+            -name ".gradle" \
+          \) -prune -exec rm -rf {} +
+
+          # Delete all historical workflows and create one clean folder.
+          rm -rf .github/workflows
+          mkdir -p .github/workflows
+
+          echo "Old APKs, archives, build outputs and workflows removed."
+
+      - name: Validate full clean 5.0.3 project
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test -f app/src/main/AndroidManifest.xml
+          test -f app/build.gradle.kts || test -f app/build.gradle
+          test -f settings.gradle.kts || test -f settings.gradle
+
+          if [ -f app/build.gradle.kts ]; then
+            grep -q 'versionName = "5.0.3"' app/build.gradle.kts || {
+              echo "ERROR: restored project is not version 5.0.3"
+              grep -n "versionName" app/build.gradle.kts || true
+              exit 1
+            }
+          fi
+
+          echo "Full clean ADWIO 5.0.3 validation passed."
+
+      - name: Add clean APK build workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          cat > .github/workflows/build-adwio-clean.yml <<'YAML'
+          name: Build ADWIO Clean APK
+
+          on:
+            workflow_dispatch:
+
+          permissions:
+            contents: read
+
+          jobs:
+            build:
+              runs-on: ubuntu-latest
+
+              steps:
+                - name: Checkout repository
+                  uses: actions/checkout@v4
+
+                - name: Set up Java 17
+                  uses: actions/setup-java@v4
+                  with:
+                    distribution: temurin
+                    java-version: '17'
+
+                - name: Set up Gradle 9.5.0
+                  uses: gradle/actions/setup-gradle@v6
+                  with:
+                    gradle-version: '9.5.0'
+
+                - name: Build APK
+                  shell: bash
+                  run: |
+                    set -euo pipefail
+                    gradle --no-daemon :app:assembleDebug
+
+                - name: Upload APK
+                  uses: actions/upload-artifact@v4
+                  with:
+                    name: ADWIO-5.0.3-Clean-APK
+                    path: app/build/outputs/apk/debug/*.apk
+                    if-no-files-found: error
+          YAML
+
+      - name: Ensure repository is clean from old packages
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          FOUND="$(find . -type f \( \
+            -iname "*.apk" -o \
+            -iname "*.aab" -o \
+            -iname "*.zip" -o \
+            -iname "*.rar" -o \
+            -iname "*.7z" \
+          \) -print)"
+
+          if [ -n "$FOUND" ]; then
+            echo "ERROR: unwanted packaged files remain:"
+            echo "$FOUND"
+            exit 1
+          fi
+
+          echo "No old APK/ZIP/RAR/AAB files remain."
+
+      - name: Commit clean full 5.0.3 source
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add -A
+
+          if git diff --cached --quiet; then
+            echo "Nothing changed."
+            exit 0
+          fi
+
+          git commit -m "Reset repository to full clean ADWIO 5.0.3 source"
+          git push origin HEAD:main
