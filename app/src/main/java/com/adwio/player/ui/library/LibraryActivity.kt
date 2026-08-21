@@ -484,7 +484,7 @@ class LibraryActivity : BaseFullscreenActivity() {
         categories += CategoryModel(RECENT_WATCHED_ID, getString(R.string.recent_watched_channels))
         categories += CategoryModel(RECENT_LIVE_ID, getString(R.string.recently_added))
         categories += CategoryModel(FAVORITES_ID, getString(R.string.favorites))
-        categories += allItems.map { CategoryModel(it.categoryId, it.categoryName) }.filter { it.id.isNotBlank() && it.name.isNotBlank() }.distinctBy { it.id }
+        categories += LiveCatalog.categories().filter { it.id.isNotBlank() && it.name.isNotBlank() }.distinctBy { it.id }
         fullscreenCategoryAdapter.submit(categories)
         val list = if (selectedCategory.isBlank() || selectedCategory.startsWith("__")) allItems else allItems.filter { it.categoryId == selectedCategory }
         fullscreenChannelAdapter.submit(list)
