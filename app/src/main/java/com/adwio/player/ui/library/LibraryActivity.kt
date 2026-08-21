@@ -6,6 +6,10 @@ import android.content.res.Configuration
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import androidx.media3.common.C
+import androidx.media3.common.TrackSelectionOverride
 import android.util.Rational
 import android.view.View
 import android.view.ViewGroup
@@ -84,6 +88,24 @@ class LibraryActivity : BaseFullscreenActivity() {
     private var wasMiniPip = false
     private var previewOriginalParams: LinearLayout.LayoutParams? = null
     private var liveFullscreenMode = false
+    private lateinit var fullscreenCategoryAdapter: CategoryAdapter
+    private lateinit var fullscreenChannelAdapter: MediaAdapter
+    private val liveControlsHandler = Handler(Looper.getMainLooper())
+    private var liveStartedAt = 0L
+    private var liveControlsVisible = true
+    private val liveClockRunnable = object : Runnable {
+        override fun run() {
+  if (type == MediaType.LIVE && liveStartedAt > 0L) {
+      val elapsed = ((System.currentTimeMillis() - liveStartedAt) / 1000L).coerceAtLeast(0L)
+      val h = elapsed / 3600L
+      val m = (elapsed % 3600L) / 60L
+      val s = elapsed % 60L
+      b.previewWatchTime.text = if (h > 0) "%02d:%02d:%02d".format(h, m, s) else "%02d:%02d".format(m, s)
+  }
+  liveControlsHandler.postDelayed(this, 1000L)
+        }
+    }
+    private val hideLiveControlsRunnable = Runnable { setLiveControlsVisible(false) }
 
     private val type: MediaType by lazy {
         runCatching { MediaType.valueOf(intent.getStringExtra(EXTRA_TYPE) ?: "LIVE") }
@@ -117,13 +139,24 @@ class LibraryActivity : BaseFullscreenActivity() {
             // for preview, fullscreen and PiP. Fullscreen is a UI mode, not a new Activity.
             b.previewPlayer.setKeepContentOnPlayerReset(true)
             b.previewPlayer.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
-            b.previewPlayer.onFullscreenRequested = { enterLiveFullscreenInPlace() }
+            b.previewPlayer.onFullscreenRequested = {
+                if (liveFullscreenMode) toggleLiveControls() else enterLiveFullscreenInPlace()
+            }
             b.previewFullscreenButton.setOnClickListener {
-                if (liveFullscreenMode) exitLiveFullscreenInPlace()
-                else enterLiveFullscreenInPlace()
+                if (liveFullscreenMode) exitLiveFullscreenInPlace() else enterLiveFullscreenInPlace()
             }
             b.previewBackButton.setOnClickListener { exitLiveFullscreenInPlace() }
             b.previewAspectButton.setOnClickListener { cycleLiveAspectRatio() }
+            b.previewChannelsButton.setOnClickListener { toggleFullscreenChannels() }
+            b.previewAudioButton.setOnClickListener { showLiveTrackPicker(C.TRACK_TYPE_AUDIO, "Audio") }
+            b.previewSubtitleButton.setOnClickListener { showLiveTrackPicker(C.TRACK_TYPE_TEXT, "Subtitles") }
+            fullscreenCategoryAdapter = CategoryAdapter(::applyFullscreenCategory)
+            fullscreenChannelAdapter = MediaAdapter(favorites, ::openFullscreenChannel, ::previewLive)
+            b.fullscreenCategoryRecycler.layoutManager = LinearLayoutManager(this)
+            b.fullscreenCategoryRecycler.adapter = fullscreenCategoryAdapter
+            b.fullscreenChannelRecycler.layoutManager = LinearLayoutManager(this)
+            b.fullscreenChannelRecycler.adapter = fullscreenChannelAdapter
+            liveControlsHandler.post(liveClockRunnable)
 
             onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
                 override fun handleOnBackPressed() {
@@ -421,6 +454,89 @@ class LibraryActivity : BaseFullscreenActivity() {
         if (type == MediaType.LIVE) b.previewChannelName.text = item.name
     }
 
+    private fun openFullscreenChannel(item: MediaItemModel) {
+        val changed = PlaybackEngine.currentId.removePrefix("LIVE:") != item.id
+        openItem(item)
+        if (changed) liveStartedAt = System.currentTimeMillis()
+        b.fullscreenChannelsOverlay.visibility = View.GONE
+        scheduleLiveControlsHide()
+    }
+
+    private fun applyFullscreenCategory(category: CategoryModel) {
+        selectedCategory = category.id
+        LiveCatalog.selectCategory(category.id)
+        val list = when {
+  category.id == RECENT_WATCHED_ID -> recentWatchedItems()
+  category.id == RECENT_LIVE_ID -> recentlyAdded(allItems).take(40)
+  category.id == FAVORITES_ID -> allItems.filter { favorites.isFavorite(it.id, it.type) }
+  category.id.isBlank() -> allItems
+  category.id.startsWith("__") -> allItems
+  else -> allItems.filter { it.categoryId == category.id }
+        }
+        fullscreenChannelAdapter.submit(list)
+    }
+
+    private fun refreshFullscreenCatalog() {
+        if (type != MediaType.LIVE || !::fullscreenCategoryAdapter.isInitialized) return
+        val total = java.text.NumberFormat.getIntegerInstance().format(allItems.size)
+        val categories = mutableListOf<CategoryModel>()
+        categories += CategoryModel("", "${getString(R.string.all_channels)} ($total)")
+        categories += CategoryModel(RECENT_WATCHED_ID, getString(R.string.recent_watched_channels))
+        categories += CategoryModel(RECENT_LIVE_ID, getString(R.string.recently_added))
+        categories += CategoryModel(FAVORITES_ID, getString(R.string.favorites))
+        categories += allItems.map { CategoryModel(it.categoryId, it.categoryName) }.filter { it.id.isNotBlank() && it.name.isNotBlank() }.distinctBy { it.id }
+        fullscreenCategoryAdapter.submit(categories)
+        val list = if (selectedCategory.isBlank() || selectedCategory.startsWith("__")) allItems else allItems.filter { it.categoryId == selectedCategory }
+        fullscreenChannelAdapter.submit(list)
+    }
+
+    private fun toggleFullscreenChannels() {
+        if (!liveFullscreenMode) return
+        refreshFullscreenCatalog()
+        b.fullscreenChannelsOverlay.visibility = if (b.fullscreenChannelsOverlay.visibility == View.VISIBLE) View.GONE else View.VISIBLE
+        setLiveControlsVisible(true)
+        scheduleLiveControlsHide()
+    }
+
+    private fun toggleLiveControls() {
+        if (!liveFullscreenMode) return
+        setLiveControlsVisible(!liveControlsVisible)
+        if (liveControlsVisible) scheduleLiveControlsHide()
+    }
+
+    private fun setLiveControlsVisible(visible: Boolean) {
+        liveControlsVisible = visible
+        b.previewFooter.visibility = if (visible && !inMiniPip) View.VISIBLE else View.GONE
+        if (!visible) b.fullscreenChannelsOverlay.visibility = View.GONE
+    }
+
+    private fun scheduleLiveControlsHide() {
+        liveControlsHandler.removeCallbacks(hideLiveControlsRunnable)
+        liveControlsHandler.postDelayed(hideLiveControlsRunnable, 3000L)
+    }
+
+    private fun showLiveTrackPicker(trackType: Int, title: String) {
+        val player = PlaybackEngine.player ?: return
+        val choices = mutableListOf<Pair<String, TrackSelectionOverride>>()
+        player.currentTracks.groups.filter { it.type == trackType }.forEach { group ->
+  for (i in 0 until group.length) {
+      if (!group.isTrackSupported(i)) continue
+      val format = group.getTrackFormat(i)
+      val label = format.label?.takeIf { it.isNotBlank() } ?: format.language?.uppercase() ?: if (trackType == C.TRACK_TYPE_AUDIO) "Audio ${choices.size + 1}" else "Subtitle ${choices.size + 1}"
+      choices += label to TrackSelectionOverride(group.mediaTrackGroup, listOf(i))
+  }
+        }
+        if (choices.isEmpty()) {
+  android.widget.Toast.makeText(this, "$title unavailable", android.widget.Toast.LENGTH_SHORT).show()
+  return
+        }
+        AlertDialog.Builder(this).setTitle(title).setItems(choices.map { it.first }.toTypedArray()) { _, which ->
+  player.trackSelectionParameters = player.trackSelectionParameters.buildUpon().setOverrideForType(choices[which].second).build()
+  scheduleLiveControlsHide()
+        }.show()
+    }
+
+
     private fun activateLivePreview(item: MediaItemModel) {
         previewJob?.cancel()
         activePreviewLiveId = item.id
@@ -589,15 +705,32 @@ class LibraryActivity : BaseFullscreenActivity() {
 
         b.previewBackButton.visibility = View.VISIBLE
         b.previewAspectButton.visibility = View.VISIBLE
+        b.previewChannelsButton.visibility = View.VISIBLE
+        b.previewAudioButton.visibility = View.VISIBLE
+        b.previewSubtitleButton.visibility = View.VISIBLE
+        b.previewQualityText.visibility = View.VISIBLE
+        b.previewWatchTime.visibility = View.VISIBLE
+        if (liveStartedAt == 0L) liveStartedAt = System.currentTimeMillis()
+        val height = PlaybackEngine.player?.videoFormat?.height ?: 0
+        b.previewQualityText.text = if (height > 0) "${height}p" else "AUTO"
         configureLiveAutoPip()
         applyExpandedLiveUi()
+        setLiveControlsVisible(true)
+        scheduleLiveControlsHide()
     }
 
     private fun exitLiveFullscreenInPlace() {
         if (type != MediaType.LIVE) return
         liveFullscreenMode = false
+        liveControlsHandler.removeCallbacks(hideLiveControlsRunnable)
+        b.fullscreenChannelsOverlay.visibility = View.GONE
         b.previewBackButton.visibility = View.GONE
         b.previewAspectButton.visibility = View.GONE
+        b.previewChannelsButton.visibility = View.GONE
+        b.previewAudioButton.visibility = View.GONE
+        b.previewSubtitleButton.visibility = View.GONE
+        b.previewQualityText.visibility = View.GONE
+        b.previewWatchTime.visibility = View.GONE
         restoreNormalLiveUi()
         b.previewPlayer.player = PlaybackEngine.player
         PlaybackEngine.player?.play()
