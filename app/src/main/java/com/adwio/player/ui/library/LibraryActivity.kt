@@ -143,10 +143,16 @@ class LibraryActivity : BaseFullscreenActivity() {
             b.previewPlayer.onFullscreenRequested = {
                 if (liveFullscreenMode) toggleLiveControls() else enterLiveFullscreenInPlace()
             }
-            b.previewFullscreenButton.setOnClickListener {
-                if (liveFullscreenMode) exitLiveFullscreenInPlace() else enterLiveFullscreenInPlace()
+            b.previewFullscreenButton.visibility = View.GONE
+            b.previewBackButton.setOnClickListener {
+                if (b.fullscreenChannelsOverlay.visibility == View.VISIBLE) {
+                    b.fullscreenChannelsOverlay.visibility = View.GONE
+                    setLiveControlsVisible(true)
+                    scheduleLiveControlsHide()
+                } else {
+                    exitLiveFullscreenInPlace()
+                }
             }
-            b.previewBackButton.setOnClickListener { exitLiveFullscreenInPlace() }
             b.previewAspectButton.setOnClickListener { cycleLiveAspectRatio() }
             b.previewChannelsButton.setOnClickListener { toggleFullscreenChannels() }
             b.previewAudioButton.setOnClickListener { showLiveTrackPicker(C.TRACK_TYPE_AUDIO, "Audio") }
@@ -161,12 +167,18 @@ class LibraryActivity : BaseFullscreenActivity() {
 
             onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
                 override fun handleOnBackPressed() {
-                    if (liveFullscreenMode) {
-                        exitLiveFullscreenInPlace()
-                    } else {
-                        PlaybackEngine.stopAndRelease()
-                        AppResumeState(this@LibraryActivity).clearPlaybackKeepingLibrary()
-                        finish()
+                    when {
+                        liveFullscreenMode && b.fullscreenChannelsOverlay.visibility == View.VISIBLE -> {
+                            b.fullscreenChannelsOverlay.visibility = View.GONE
+                            setLiveControlsVisible(true)
+                            scheduleLiveControlsHide()
+                        }
+                        liveFullscreenMode -> exitLiveFullscreenInPlace()
+                        else -> {
+                            PlaybackEngine.stopAndRelease()
+                            AppResumeState(this@LibraryActivity).clearPlaybackKeepingLibrary()
+                            finish()
+                        }
                     }
                 }
             })
@@ -504,9 +516,11 @@ class LibraryActivity : BaseFullscreenActivity() {
     private fun toggleFullscreenChannels() {
         if (!liveFullscreenMode) return
         refreshFullscreenCatalog()
-        b.fullscreenChannelsOverlay.visibility = if (b.fullscreenChannelsOverlay.visibility == View.VISIBLE) View.GONE else View.VISIBLE
+        val opening = b.fullscreenChannelsOverlay.visibility != View.VISIBLE
+        b.fullscreenChannelsOverlay.visibility = if (opening) View.VISIBLE else View.GONE
         setLiveControlsVisible(true)
-        scheduleLiveControlsHide()
+        liveControlsHandler.removeCallbacks(hideLiveControlsRunnable)
+        if (!opening) scheduleLiveControlsHide()
     }
 
     private fun toggleLiveControls() {
@@ -517,8 +531,9 @@ class LibraryActivity : BaseFullscreenActivity() {
 
     private fun setLiveControlsVisible(visible: Boolean) {
         liveControlsVisible = visible
-        b.previewFooter.visibility = if (visible && !inMiniPip) View.VISIBLE else View.GONE
-        if (!visible) b.fullscreenChannelsOverlay.visibility = View.GONE
+        b.previewFooter.visibility = if (visible && !inMiniPip && liveFullscreenMode) View.VISIBLE else View.GONE
+        b.previewBackButton.visibility = if (visible && !inMiniPip && liveFullscreenMode) View.VISIBLE else View.GONE
+        // Channels/Categories overlay remains independent from controls auto-hide.
     }
 
     private fun scheduleLiveControlsHide() {
@@ -779,7 +794,8 @@ class LibraryActivity : BaseFullscreenActivity() {
         // Premium overlay controls: visible on interaction, hidden in PiP.
         b.previewFooter.visibility = if (inMiniPip || !liveControlsVisible) View.GONE else View.VISIBLE
         val controlVisibility = if (inMiniPip) View.GONE else View.VISIBLE
-        b.previewBackButton.visibility = controlVisibility
+        b.previewBackButton.visibility = if (liveControlsVisible) controlVisibility else View.GONE
+        b.previewFullscreenButton.visibility = View.GONE
         b.previewChannelsButton.visibility = controlVisibility
         b.previewAudioButton.visibility = controlVisibility
         b.previewSubtitleButton.visibility = controlVisibility
@@ -828,7 +844,7 @@ class LibraryActivity : BaseFullscreenActivity() {
         b.previewAspectButton.visibility = View.GONE
         b.previewQualityText.visibility = View.GONE
         b.previewWatchTime.visibility = View.GONE
-        b.previewFullscreenButton.visibility = View.VISIBLE
+        b.previewFullscreenButton.visibility = View.GONE
 
         val density = resources.displayMetrics.density
         val rootPad = (7 * density).toInt()

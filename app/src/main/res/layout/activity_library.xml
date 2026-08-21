@@ -107,21 +107,35 @@
           app:surface_type="surface_view"
           app:use_controller="false"/>
 
-      <LinearLayout android:id="@+id/fullscreenChannelsOverlay" android:layout_width="430dp" android:layout_height="match_parent" android:layout_gravity="start" android:background="@drawable/bg_live_channels_overlay" android:orientation="horizontal" android:padding="8dp" android:visibility="gone">
-          <androidx.recyclerview.widget.RecyclerView android:id="@+id/fullscreenCategoryRecycler" android:layout_width="168dp" android:layout_height="match_parent"/>
+      <ImageButton
+          android:id="@+id/previewBackButton"
+          android:layout_width="42dp"
+          android:layout_height="42dp"
+          android:layout_gravity="top|start"
+          android:layout_marginStart="12dp"
+          android:layout_marginTop="12dp"
+          android:background="@drawable/bg_live_control_button"
+          android:contentDescription="@string/back"
+          android:elevation="12dp"
+          android:padding="10dp"
+          android:src="@drawable/ic_back"
+          android:visibility="gone"/>
+
+      <LinearLayout android:id="@+id/fullscreenChannelsOverlay" android:layout_width="450dp" android:layout_height="match_parent" android:layout_gravity="start" android:background="@drawable/bg_live_channels_overlay" android:elevation="10dp" android:orientation="horizontal" android:padding="12dp" android:visibility="gone">
+          <androidx.recyclerview.widget.RecyclerView android:id="@+id/fullscreenCategoryRecycler" android:layout_width="176dp" android:layout_height="match_parent"/>
           <androidx.recyclerview.widget.RecyclerView android:id="@+id/fullscreenChannelRecycler" android:layout_width="0dp" android:layout_height="match_parent" android:layout_marginStart="8dp" android:layout_weight="1"/>
       </LinearLayout>
 
-      <LinearLayout android:id="@+id/previewFooter" android:layout_width="match_parent" android:layout_height="52dp" android:layout_gravity="bottom" android:layout_marginStart="10dp" android:layout_marginEnd="10dp" android:layout_marginBottom="9dp" android:background="@drawable/bg_live_controls_premium" android:gravity="center_vertical" android:orientation="horizontal" android:paddingStart="8dp" android:paddingEnd="8dp">
-          <ImageButton android:id="@+id/previewBackButton" android:layout_width="38dp" android:layout_height="38dp" android:background="@drawable/bg_live_control_button" android:contentDescription="@string/back" android:padding="8dp" android:src="@drawable/ic_back" android:visibility="gone"/>
+      <LinearLayout android:id="@+id/previewFooter" android:layout_width="match_parent" android:layout_height="54dp" android:layout_gravity="bottom" android:layout_marginStart="14dp" android:layout_marginEnd="14dp" android:layout_marginBottom="12dp" android:background="@drawable/bg_live_controls_premium" android:gravity="center_vertical" android:orientation="horizontal" android:paddingStart="8dp" android:paddingEnd="8dp">
+          
           <TextView android:id="@+id/previewChannelName" android:layout_width="0dp" android:layout_height="match_parent" android:layout_marginStart="7dp" android:layout_weight="1" android:ellipsize="end" android:gravity="center_vertical" android:maxLines="1" android:textColor="@color/adwio_text" android:textSize="11sp" android:textStyle="bold"/>
           <TextView android:id="@+id/previewWatchTime" android:layout_width="wrap_content" android:layout_height="32dp" android:gravity="center" android:paddingStart="7dp" android:paddingEnd="7dp" android:textColor="@color/adwio_muted" android:textSize="9sp" android:visibility="gone"/>
           <TextView android:id="@+id/previewQualityText" android:layout_width="wrap_content" android:layout_height="28dp" android:gravity="center" android:paddingStart="7dp" android:paddingEnd="7dp" android:text="AUTO" android:textColor="@color/adwio_cyan" android:textSize="8sp" android:textStyle="bold" android:visibility="gone"/>
-          <ImageButton android:id="@+id/previewChannelsButton" android:layout_width="38dp" android:layout_height="38dp" android:background="@drawable/bg_live_control_button" android:contentDescription="Channels" android:padding="8dp" android:src="@drawable/ic_list" android:visibility="gone"/>
-          <ImageButton android:id="@+id/previewAudioButton" android:layout_width="38dp" android:layout_height="38dp" android:background="@drawable/bg_live_control_button" android:contentDescription="Audio" android:padding="8dp" android:src="@drawable/ic_volume" android:visibility="gone"/>
-          <ImageButton android:id="@+id/previewSubtitleButton" android:layout_width="38dp" android:layout_height="38dp" android:background="@drawable/bg_live_control_button" android:contentDescription="Subtitles" android:padding="8dp" android:src="@drawable/ic_subtitles" android:visibility="gone"/>
-          <ImageButton android:id="@+id/previewAspectButton" android:layout_width="38dp" android:layout_height="38dp" android:background="@drawable/bg_live_control_button" android:contentDescription="@string/aspect_ratio" android:padding="8dp" android:src="@drawable/ic_aspect_ratio_live" android:visibility="gone"/>
-          <ImageButton android:id="@+id/previewFullscreenButton" android:layout_width="38dp" android:layout_height="38dp" android:background="@drawable/bg_live_control_button" android:contentDescription="@string/fullscreen" android:padding="8dp" android:src="@drawable/ic_zoom"/>
+          <ImageButton android:id="@+id/previewChannelsButton" android:layout_width="40dp" android:layout_height="40dp" android:layout_marginStart="5dp" android:background="@drawable/bg_live_control_button" android:contentDescription="Channels" android:padding="8dp" android:src="@drawable/ic_list" android:visibility="gone"/>
+          <ImageButton android:id="@+id/previewAudioButton" android:layout_width="40dp" android:layout_height="40dp" android:layout_marginStart="5dp" android:background="@drawable/bg_live_control_button" android:contentDescription="Audio" android:padding="8dp" android:src="@drawable/ic_volume" android:visibility="gone"/>
+          <ImageButton android:id="@+id/previewSubtitleButton" android:layout_width="40dp" android:layout_height="40dp" android:layout_marginStart="5dp" android:background="@drawable/bg_live_control_button" android:contentDescription="Subtitles" android:padding="8dp" android:src="@drawable/ic_subtitles" android:visibility="gone"/>
+          <ImageButton android:id="@+id/previewAspectButton" android:layout_width="40dp" android:layout_height="40dp" android:layout_marginStart="5dp" android:background="@drawable/bg_live_control_button" android:contentDescription="@string/aspect_ratio" android:padding="8dp" android:src="@drawable/ic_aspect_ratio_live" android:visibility="gone"/>
+          <ImageButton android:id="@+id/previewFullscreenButton" android:layout_width="1dp" android:layout_height="1dp" android:contentDescription="@string/fullscreen" android:visibility="gone"/>
       </LinearLayout>
   </FrameLayout>
 
