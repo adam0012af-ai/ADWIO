@@ -28,6 +28,27 @@ class SplashActivity : BaseFullscreenActivity() {
         return
     }
 
+    val resume = AppResumeState(this).load()
+    val session = SessionStore(this).load()
+
+    if (session != null &&
+        resume.playbackActive &&
+        resume.mediaType == MediaType.LIVE &&
+        resume.url.isNotBlank()
+    ) {
+        startActivity(Intent(this, LibraryActivity::class.java).apply {
+            putExtra(LibraryActivity.EXTRA_TYPE, MediaType.LIVE.name)
+            putExtra(
+                LibraryActivity.EXTRA_RESTORE_FULLSCREEN,
+                resume.playbackMode == AppResumeState.MODE_FULLSCREEN
+            )
+            addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+        })
+        finish()
+        overridePendingTransition(0, 0)
+        return
+    }
+
     b = ActivitySplashBinding.inflate(layoutInflater)
     setContentView(b.root)
 

@@ -345,6 +345,11 @@ class LibraryActivity : BaseFullscreenActivity() {
     private fun restoreLiveStateOrDefault() {
         if (type != MediaType.LIVE) return
 
+        liveFullscreenResizeMode = liveUiState.getInt(
+            "resize_mode",
+            AspectRatioFrameLayout.RESIZE_MODE_FILL
+        )
+
         val resume = AppResumeState(this).load()
         val savedCategory = liveUiState.getString("category", null)
             ?: resume.categoryId.takeIf { resume.screen == AppResumeState.SCREEN_LIBRARY && resume.mediaType == MediaType.LIVE }
@@ -634,9 +639,22 @@ class LibraryActivity : BaseFullscreenActivity() {
         if (type == MediaType.LIVE && PlaybackEngine.player != null &&
             PlaybackEngine.currentType == MediaType.LIVE && PlaybackEngine.currentUrl.isNotBlank()
         ) {
+            val resume = AppResumeState(this).load()
+            liveFullscreenResizeMode = liveUiState.getInt(
+                "resize_mode",
+                AspectRatioFrameLayout.RESIZE_MODE_FILL
+            )
+            liveFullscreenMode =
+                resume.playbackActive &&
+                resume.mediaType == MediaType.LIVE &&
+                resume.playbackMode == AppResumeState.MODE_FULLSCREEN
+
             b.previewPlayer.player = PlaybackEngine.player
             b.previewChannelName.text = PlaybackEngine.currentTitle
             activePreviewLiveId = PlaybackEngine.currentId.removePrefix("LIVE:").ifBlank { activePreviewLiveId }
+            b.previewPlayer.resizeMode =
+                if (liveFullscreenMode) liveFullscreenResizeMode
+                else AspectRatioFrameLayout.RESIZE_MODE_FIT
             configureLiveAutoPip()
         }
     }
@@ -673,6 +691,10 @@ class LibraryActivity : BaseFullscreenActivity() {
     }
 
     override fun onUserLeaveHint() {
+        if (type == MediaType.LIVE) {
+            persistLiveUiState()
+        }
+
         val hasActiveLive =
             type == MediaType.LIVE &&
             PlaybackEngine.player != null &&
@@ -705,12 +727,26 @@ class LibraryActivity : BaseFullscreenActivity() {
             }
             prepareMiniPipUi()
         } else {
+            val resume = AppResumeState(this).load()
+            liveFullscreenResizeMode = liveUiState.getInt(
+                "resize_mode",
+                AspectRatioFrameLayout.RESIZE_MODE_FILL
+            )
+            liveFullscreenMode =
+                resume.playbackActive &&
+                resume.mediaType == MediaType.LIVE &&
+                resume.playbackMode == AppResumeState.MODE_FULLSCREEN
+
             PlaybackEngine.player?.let { player ->
                 b.previewPlayer.player = player
                 player.playWhenReady = true
                 player.play()
             }
             restoreMiniUi()
+            if (liveFullscreenMode) {
+                b.previewPlayer.resizeMode = liveFullscreenResizeMode
+                setLiveControlsVisible(false)
+            }
         }
     }
 
@@ -795,6 +831,7 @@ class LibraryActivity : BaseFullscreenActivity() {
         applyExpandedLiveUi()
         setLiveControlsVisible(true)
         scheduleLiveControlsHide()
+        persistLiveUiState()
     }
 
     private fun exitLiveFullscreenInPlace() {
@@ -813,6 +850,7 @@ class LibraryActivity : BaseFullscreenActivity() {
         b.previewPlayer.player = PlaybackEngine.player
         PlaybackEngine.player?.play()
         b.previewPlayer.requestFocus()
+        persistLiveUiState()
     }
 
     private fun cycleLiveAspectRatio() {
@@ -827,6 +865,8 @@ class LibraryActivity : BaseFullscreenActivity() {
                 AspectRatioFrameLayout.RESIZE_MODE_FILL
         }
         b.previewPlayer.resizeMode = liveFullscreenResizeMode
+        liveUiState.edit().putInt("resize_mode", liveFullscreenResizeMode).apply()
+        persistLiveUiState()
     }
 
     private fun applyExpandedLiveUi() {
@@ -927,6 +967,7 @@ class LibraryActivity : BaseFullscreenActivity() {
             .putString("category", selectedCategory)
             .putInt("scroll_position", position)
             .putString("channel_id", activePreviewLiveId)
+            .putInt("resize_mode", liveFullscreenResizeMode)
             .apply()
 
         val active = PlaybackEngine.currentType == MediaType.LIVE &&
@@ -977,10 +1018,10 @@ class LibraryActivity : BaseFullscreenActivity() {
     override fun onDestroy() {
         liveControlsHandler.removeCallbacks(liveClockRunnable)
         liveControlsHandler.removeCallbacks(hideLiveControlsRunnable)
-        if (wasMiniPip && isFinishing) {
-            PlaybackEngine.stopAndRelease()
-            AppResumeState(this).clearPlaybackKeepingLibrary()
-        }
+
+        // Activity recreation / PiP task transitions are not explicit playback exits.
+        // Playback is stopped by the existing Back path, never just because this
+        // Activity instance is being destroyed.
         super.onDestroy()
     }
 

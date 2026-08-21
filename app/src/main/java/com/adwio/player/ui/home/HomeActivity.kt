@@ -13,6 +13,7 @@ import com.adwio.player.databinding.ActivityHomeBinding
 import com.adwio.player.ui.BaseFullscreenActivity
 import com.adwio.player.ui.library.GlobalSearchActivity
 import com.adwio.player.ui.library.LibraryActivity
+import com.adwio.player.ui.player.PlaybackEngine
 import com.adwio.player.ui.profile.ProfileActivity
 import com.adwio.player.ui.playlist.UsersActivity
 import com.adwio.player.ui.settings.SettingsActivity
@@ -73,7 +74,17 @@ class HomeActivity : BaseFullscreenActivity() {
 
     override fun onStart() {
         super.onStart()
-        AppResumeState(this).saveHome()
+
+        // Never let the Home activity overwrite an active Live/PiP resume state.
+        val activeLive =
+            PlaybackEngine.player != null &&
+            PlaybackEngine.currentType == MediaType.LIVE &&
+            PlaybackEngine.currentUrl.isNotBlank()
+
+        if (!activeLive) {
+            AppResumeState(this).saveHome()
+        }
+
         handler.removeCallbacks(clockTick)
         handler.post(clockTick)
     }
