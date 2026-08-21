@@ -5,10 +5,13 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.animation.AccelerateDecelerateInterpolator
+import com.adwio.player.data.AppResumeState
 import com.adwio.player.data.SessionStore
+import com.adwio.player.data.model.MediaType
 import com.adwio.player.databinding.ActivitySplashBinding
 import com.adwio.player.ui.BaseFullscreenActivity
 import com.adwio.player.ui.home.HomeActivity
+import com.adwio.player.ui.library.LibraryActivity
 import com.adwio.player.ui.login.LoginActivity
 
 class SplashActivity : BaseFullscreenActivity() {
@@ -50,12 +53,20 @@ class SplashActivity : BaseFullscreenActivity() {
 
 private fun routeColdStart() {
     val session = SessionStore(this).load()
+    val resume = AppResumeState(this).load()
 
-    // True cold start always begins at Home.
-    val target = if (session == null) {
-        Intent(this, LoginActivity::class.java)
-    } else {
-        Intent(this, HomeActivity::class.java)
+    val target = when {
+        session == null -> Intent(this, LoginActivity::class.java)
+        resume.playbackActive &&
+            resume.mediaType == MediaType.LIVE &&
+            resume.url.isNotBlank() -> Intent(this, LibraryActivity::class.java).apply {
+                putExtra(LibraryActivity.EXTRA_TYPE, MediaType.LIVE.name)
+                putExtra(
+                    LibraryActivity.EXTRA_RESTORE_FULLSCREEN,
+                    resume.playbackMode == AppResumeState.MODE_FULLSCREEN
+                )
+            }
+        else -> Intent(this, HomeActivity::class.java)
     }
 
     startActivity(target)

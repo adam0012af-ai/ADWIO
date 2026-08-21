@@ -1,5 +1,7 @@
 package com.adwio.player.ui
 
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.view.View
 import android.view.WindowInsets
@@ -20,6 +22,8 @@ abstract class BaseFullscreenActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.setBackgroundDrawable(ColorDrawable(Color.BLACK))
+        window.decorView.setBackgroundColor(Color.BLACK)
         window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
         runCatching { applyFullscreen() }
     }

@@ -63,6 +63,7 @@ class LibraryActivity : BaseFullscreenActivity() {
         const val EXTRA_TYPE = "type"
         const val EXTRA_SEARCH = "search"
         const val EXTRA_FAVORITES = "favorites"
+        const val EXTRA_RESTORE_FULLSCREEN = "restore_fullscreen"
     }
 
     private lateinit var b: ActivityLibraryBinding
@@ -139,6 +140,8 @@ class LibraryActivity : BaseFullscreenActivity() {
             // Reference architecture: the same live PlayerView/ExoPlayer stays alive
             // for preview, fullscreen and PiP. Fullscreen is a UI mode, not a new Activity.
             b.previewPlayer.setKeepContentOnPlayerReset(true)
+            b.previewPlayer.setShutterBackgroundColor(Color.BLACK)
+            b.previewPlayer.setBackgroundColor(Color.BLACK)
             b.previewPlayer.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
             b.previewPlayer.onFullscreenRequested = {
                 if (liveFullscreenMode) toggleLiveControls() else enterLiveFullscreenInPlace()
@@ -359,11 +362,55 @@ class LibraryActivity : BaseFullscreenActivity() {
         }
 
         submitListForSelectedCategory()
+        restoreActiveLivePlaybackIfNeeded(resume)
 
         val position = liveUiState.getInt("scroll_position", 0).coerceAtLeast(0)
         b.contentRecycler.post {
             (b.contentRecycler.layoutManager as? LinearLayoutManager)
                 ?.scrollToPositionWithOffset(position, 0)
+        }
+    }
+
+    private fun restoreActiveLivePlaybackIfNeeded(resume: AppResumeState.State) {
+        if (type != MediaType.LIVE || !resume.playbackActive || resume.url.isBlank()) return
+
+        if (PlaybackEngine.player == null || PlaybackEngine.currentUrl.isBlank()) {
+            val savedId = resume.mediaId.removePrefix("LIVE:")
+            val item = allItems.firstOrNull { it.id == savedId }
+                ?: allItems.firstOrNull { it.streamUrl == resume.url }
+
+            if (item != null) {
+                activateLivePreview(item)
+            } else {
+                val player = PlaybackEngine.play(
+                    context = this,
+                    settings = AppSettings(this),
+                    url = resume.url,
+                    title = resume.title,
+                    id = resume.mediaId.ifBlank { "LIVE:resume" },
+                    type = MediaType.LIVE
+                )
+                b.previewPlayer.player = player
+                player.volume = 1f
+                activePreviewLiveId = savedId.ifBlank { activePreviewLiveId }
+                b.previewChannelName.text = resume.title
+                configureLiveAutoPip()
+            }
+        } else {
+            b.previewPlayer.player = PlaybackEngine.player
+            b.previewChannelName.text = PlaybackEngine.currentTitle
+        }
+
+        val restoreFullscreen =
+            intent.getBooleanExtra(EXTRA_RESTORE_FULLSCREEN, false) ||
+                resume.playbackMode == AppResumeState.MODE_FULLSCREEN
+
+        if (restoreFullscreen) {
+            b.previewPlayer.post {
+                if (!isFinishing && PlaybackEngine.currentUrl.isNotBlank()) {
+                    enterLiveFullscreenInPlace()
+                }
+            }
         }
     }
 
@@ -704,6 +751,10 @@ class LibraryActivity : BaseFullscreenActivity() {
 
     private fun prepareMiniPipUi() {
         if (type != MediaType.LIVE) return
+        window.decorView.setBackgroundColor(Color.BLACK)
+        b.libraryRoot.setBackgroundColor(Color.BLACK)
+        b.livePreviewPanel.setBackgroundColor(Color.BLACK)
+        b.previewPlayer.setBackgroundColor(Color.BLACK)
         applyExpandedLiveUi()
     }
 
@@ -885,6 +936,13 @@ class LibraryActivity : BaseFullscreenActivity() {
             categoryId = selectedCategory,
             scrollPosition = position,
             playbackActive = active,
+            playbackMode = if (active && liveFullscreenMode) {
+                AppResumeState.MODE_FULLSCREEN
+            } else if (active) {
+                AppResumeState.MODE_MINI
+            } else {
+                AppResumeState.MODE_NONE
+            },
             mediaId = if (active) PlaybackEngine.currentId else "",
             title = if (active) PlaybackEngine.currentTitle else "",
             url = if (active) PlaybackEngine.currentUrl else ""

@@ -41,6 +41,7 @@ class AppResumeState(context: Context) {
         categoryId: String,
         scrollPosition: Int,
         playbackActive: Boolean = false,
+        playbackMode: String = if (playbackActive) MODE_MINI else MODE_NONE,
         mediaId: String = "",
         title: String = "",
         url: String = ""
@@ -50,7 +51,7 @@ class AppResumeState(context: Context) {
             .putString("media_type", type.name)
             .putString("category_id", categoryId)
             .putInt("scroll_position", scrollPosition.coerceAtLeast(0))
-            .putString("playback_mode", if (playbackActive) MODE_MINI else MODE_NONE)
+            .putString("playback_mode", if (playbackActive) playbackMode else MODE_NONE)
             .putBoolean("playback_active", playbackActive)
             .putString("media_id", mediaId)
             .putString("title", title)
