@@ -455,11 +455,21 @@ class LibraryActivity : BaseFullscreenActivity() {
     }
 
     private fun openFullscreenChannel(item: MediaItemModel) {
+        recentChannels.add(item)
         val changed = PlaybackEngine.currentId.removePrefix("LIVE:") != item.id
-        openItem(item)
-        if (changed) liveStartedAt = System.currentTimeMillis()
+        if (changed) {
+            activateLivePreview(item)
+            liveStartedAt = System.currentTimeMillis()
+            b.subtitleText.text = item.name
+        }
+        liveFullscreenMode = true
+        b.previewPlayer.player = PlaybackEngine.player
+        b.previewPlayer.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
+        applyExpandedLiveUi()
         b.fullscreenChannelsOverlay.visibility = View.GONE
+        setLiveControlsVisible(true)
         scheduleLiveControlsHide()
+        persistLiveUiState()
     }
 
     private fun applyFullscreenCategory(category: CategoryModel) {
@@ -540,6 +550,7 @@ class LibraryActivity : BaseFullscreenActivity() {
     private fun activateLivePreview(item: MediaItemModel) {
         previewJob?.cancel()
         activePreviewLiveId = item.id
+        liveStartedAt = System.currentTimeMillis()
         b.previewChannelName.text = item.name
         val player = PlaybackEngine.play(
             context = this,
@@ -763,10 +774,16 @@ class LibraryActivity : BaseFullscreenActivity() {
         b.categoryPanel.visibility = View.GONE
         b.contentRecycler.visibility = View.GONE
 
-        // Keep the live control strip visible in fullscreen.
-        b.previewFooter.visibility = if (inMiniPip) View.GONE else View.VISIBLE
-        b.previewBackButton.visibility = if (inMiniPip) View.GONE else View.VISIBLE
-        b.previewAspectButton.visibility = if (inMiniPip) View.GONE else View.VISIBLE
+        // Premium overlay controls: visible on interaction, hidden in PiP.
+        b.previewFooter.visibility = if (inMiniPip || !liveControlsVisible) View.GONE else View.VISIBLE
+        val controlVisibility = if (inMiniPip) View.GONE else View.VISIBLE
+        b.previewBackButton.visibility = controlVisibility
+        b.previewChannelsButton.visibility = controlVisibility
+        b.previewAudioButton.visibility = controlVisibility
+        b.previewSubtitleButton.visibility = controlVisibility
+        b.previewAspectButton.visibility = controlVisibility
+        b.previewQualityText.visibility = controlVisibility
+        b.previewWatchTime.visibility = controlVisibility
 
         b.libraryRoot.setPadding(0, 0, 0, 0)
         (b.libraryContentRow.layoutParams as? LinearLayout.LayoutParams)?.let { row ->
@@ -803,7 +820,13 @@ class LibraryActivity : BaseFullscreenActivity() {
         b.contentRecycler.visibility = View.VISIBLE
         b.previewFooter.visibility = View.VISIBLE
         b.previewBackButton.visibility = View.GONE
+        b.previewChannelsButton.visibility = View.GONE
+        b.previewAudioButton.visibility = View.GONE
+        b.previewSubtitleButton.visibility = View.GONE
         b.previewAspectButton.visibility = View.GONE
+        b.previewQualityText.visibility = View.GONE
+        b.previewWatchTime.visibility = View.GONE
+        b.previewFullscreenButton.visibility = View.VISIBLE
 
         val density = resources.displayMetrics.density
         val rootPad = (7 * density).toInt()
@@ -876,6 +899,8 @@ class LibraryActivity : BaseFullscreenActivity() {
     }
 
     override fun onDestroy() {
+        liveControlsHandler.removeCallbacks(liveClockRunnable)
+        liveControlsHandler.removeCallbacks(hideLiveControlsRunnable)
         if (wasMiniPip && isFinishing) {
             PlaybackEngine.stopAndRelease()
             AppResumeState(this).clearPlaybackKeepingLibrary()
