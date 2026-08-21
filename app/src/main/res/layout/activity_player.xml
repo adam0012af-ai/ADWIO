@@ -16,16 +16,13 @@
         app:surface_type="surface_view"
         app:use_controller="false"/>
 
-    <androidx.media3.ui.PlayerView
-        android:id="@+id/pipPlayerView"
+    <SurfaceView
+        android:id="@+id/pipSurface"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="#000000"
         android:keepScreenOn="true"
-        android:visibility="gone"
-        app:surface_type="surface_view"
-        app:use_controller="false"
-        app:resize_mode="fit"/>
+        android:visibility="gone"/>
 
     <ImageButton
         android:id="@+id/backControlButton"

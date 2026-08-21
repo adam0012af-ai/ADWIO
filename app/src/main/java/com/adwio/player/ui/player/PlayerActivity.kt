@@ -159,9 +159,7 @@ class PlayerActivity : BaseFullscreenActivity() {
     private fun setupUi() {
         b.playerView.useController = false
         b.playerView.setKeepContentOnPlayerReset(true)
-        b.pipPlayerView.useController = false
-        b.pipPlayerView.setKeepContentOnPlayerReset(true)
-        b.pipPlayerView.visibility = View.GONE
+        b.pipSurface.visibility = View.GONE
         b.playPauseButton.visibility = if (type == MediaType.LIVE) View.INVISIBLE else View.VISIBLE
         b.browseButton.visibility = if (type == MediaType.LIVE) View.VISIBLE else View.INVISIBLE
         b.progressBar.visibility = if (type == MediaType.LIVE) View.INVISIBLE else View.VISIBLE
@@ -357,8 +355,9 @@ class PlayerActivity : BaseFullscreenActivity() {
 
         if (!keepPlayer) {
             PlaybackEngine.player?.removeListener(playerListener)
+            PlaybackEngine.player?.clearVideoSurfaceView(b.pipSurface)
             b.playerView.player = null
-            b.pipPlayerView.player = null
+            b.pipSurface.visibility = View.GONE
         }
 
         if (!returningToLivePreview && !keepPlayer && !wasInPip) {
@@ -599,17 +598,17 @@ class PlayerActivity : BaseFullscreenActivity() {
     private fun preparePipSurface() {
         val active = PlaybackEngine.player ?: return
         b.playerView.player = null
-        b.pipPlayerView.visibility = View.VISIBLE
-        b.pipPlayerView.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
-        b.pipPlayerView.player = active
+        b.playerView.visibility = View.GONE
+        b.pipSurface.visibility = View.VISIBLE
+        active.setVideoSurfaceView(b.pipSurface)
         active.playWhenReady = true
         active.play()
     }
 
     private fun restoreMainPlayerSurface() {
         val active = PlaybackEngine.player
-        b.pipPlayerView.player = null
-        b.pipPlayerView.visibility = View.GONE
+        active?.clearVideoSurfaceView(b.pipSurface)
+        b.pipSurface.visibility = View.GONE
         b.playerView.visibility = View.VISIBLE
         b.playerView.player = active
         b.playerView.resizeMode = resizeMode

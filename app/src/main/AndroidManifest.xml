@@ -46,7 +46,7 @@
             android:screenOrientation="sensorLandscape"
             android:launchMode="singleTop"
             android:supportsPictureInPicture="true"
-            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|uiMode|keyboardHidden"
             android:exported="false" />
         <activity android:name=".ui.details.MovieDetailsActivity" android:screenOrientation="sensorLandscape" android:exported="false" />
         <activity android:name=".ui.details.SeriesDetailsActivity" android:screenOrientation="sensorLandscape" android:exported="false" />
@@ -55,7 +55,7 @@
             android:name=".ui.library.LibraryActivity"
             android:screenOrientation="sensorLandscape"
             android:supportsPictureInPicture="true"
-            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|uiMode|keyboardHidden"
             android:launchMode="singleTask"
             android:exported="false" />
         <activity android:name=".ui.home.HomeActivity" android:screenOrientation="sensorLandscape" android:exported="false" />

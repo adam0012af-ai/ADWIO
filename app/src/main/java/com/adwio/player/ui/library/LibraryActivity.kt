@@ -170,11 +170,8 @@ class LibraryActivity : BaseFullscreenActivity() {
             b.previewPlayer.setShutterBackgroundColor(Color.BLACK)
             b.previewPlayer.setBackgroundColor(Color.BLACK)
             b.previewPlayer.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
-            b.livePipPlayer.setKeepContentOnPlayerReset(true)
-            b.livePipPlayer.setShutterBackgroundColor(Color.BLACK)
-            b.livePipPlayer.setBackgroundColor(Color.BLACK)
-            b.livePipPlayer.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
-            b.livePipPlayer.visibility = View.GONE
+            b.livePipSurface.setBackgroundColor(Color.BLACK)
+            b.livePipSurface.visibility = View.GONE
             b.previewPlayer.onFullscreenRequested = {
                 if (liveFullscreenMode) toggleLiveControls() else enterLiveFullscreenInPlace()
             }
@@ -810,10 +807,11 @@ class LibraryActivity : BaseFullscreenActivity() {
     private fun prepareLivePipSurface() {
         if (type != MediaType.LIVE) return
         val active = PlaybackEngine.player ?: return
+
         b.previewPlayer.player = null
-        b.livePipPlayer.visibility = View.VISIBLE
-        b.livePipPlayer.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
-        b.livePipPlayer.player = active
+        b.previewPlayer.visibility = View.GONE
+        b.livePipSurface.visibility = View.VISIBLE
+        active.setVideoSurfaceView(b.livePipSurface)
         active.playWhenReady = true
         active.play()
     }
@@ -821,8 +819,9 @@ class LibraryActivity : BaseFullscreenActivity() {
     private fun restoreLiveMainSurface() {
         if (type != MediaType.LIVE) return
         val active = PlaybackEngine.player
-        b.livePipPlayer.player = null
-        b.livePipPlayer.visibility = View.GONE
+
+        active?.clearVideoSurfaceView(b.livePipSurface)
+        b.livePipSurface.visibility = View.GONE
         b.previewPlayer.visibility = View.VISIBLE
         b.previewPlayer.player = active
         b.previewPlayer.resizeMode =
@@ -1113,8 +1112,9 @@ class LibraryActivity : BaseFullscreenActivity() {
         val keepPlayerAttached = keepForPip || keepForBackground
 
         if (!keepPlayerAttached) {
+            PlaybackEngine.player?.clearVideoSurfaceView(b.livePipSurface)
             b.previewPlayer.player = null
-            b.livePipPlayer.player = null
+            b.livePipSurface.visibility = View.GONE
         }
         super.onStop()
     }
