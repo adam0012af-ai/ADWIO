@@ -1,0 +1,154 @@
+name: Reset ADWIO to Clean 5.0.3 V4
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  reset-clean-503:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository with full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Export full ADWIO 5.0.3 snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          SOURCE_COMMIT="4f1026235929afc428c5b92f95e45e165b3e23ff"
+
+          git cat-file -e "${SOURCE_COMMIT}^{commit}"
+
+          rm -rf /tmp/adwio503-full
+          mkdir -p /tmp/adwio503-full
+
+          git archive "$SOURCE_COMMIT" | tar -x -C /tmp/adwio503-full
+
+          test -f /tmp/adwio503-full/app/src/main/AndroidManifest.xml
+          test -f /tmp/adwio503-full/app/build.gradle.kts || \
+            test -f /tmp/adwio503-full/app/build.gradle
+          test -f /tmp/adwio503-full/settings.gradle.kts || \
+            test -f /tmp/adwio503-full/settings.gradle
+
+          echo "Full 5.0.3 snapshot exported."
+
+      - name: Preserve current workflows
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          rm -rf /tmp/current-workflows
+          mkdir -p /tmp/current-workflows
+
+          if [ -d .github/workflows ]; then
+            cp -a .github/workflows/. /tmp/current-workflows/
+          fi
+
+          echo "Current workflows preserved."
+
+      - name: Replace old project with 5.0.3 source
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Delete everything except Git metadata and .github.
+          find . -mindepth 1 -maxdepth 1 \
+            ! -name ".git" \
+            ! -name ".github" \
+            -exec rm -rf {} +
+
+          # Restore the full 5.0.3 repository snapshot EXCEPT its workflow folder.
+          find /tmp/adwio503-full -mindepth 1 -maxdepth 1 \
+            ! -name ".github" \
+            -exec cp -a {} . \;
+
+          # Restore non-workflow .github content from 5.0.3 if present,
+          # but never modify .github/workflows.
+          if [ -d /tmp/adwio503-full/.github ]; then
+            mkdir -p .github
+            find /tmp/adwio503-full/.github -mindepth 1 -maxdepth 1 \
+              ! -name "workflows" \
+              -exec cp -a {} .github/ \;
+          fi
+
+          echo "5.0.3 source restored without touching workflows."
+
+      - name: Remove old APK ZIP archives and build output
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          find . -type f \( \
+            -iname "*.apk" -o \
+            -iname "*.aab" -o \
+            -iname "*.zip" -o \
+            -iname "*.rar" -o \
+            -iname "*.7z" \
+          \) \
+          ! -path "./.git/*" \
+          ! -path "./.github/workflows/*" \
+          -delete
+
+          find . -type d \( -name "build" -o -name ".gradle" \) \
+            ! -path "./.git/*" \
+            -prune -exec rm -rf {} +
+
+          echo "Old packaged files and build outputs removed."
+
+      - name: Validate clean 5.0.3 source
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test -f app/src/main/AndroidManifest.xml
+          test -f app/build.gradle.kts || test -f app/build.gradle
+          test -f settings.gradle.kts || test -f settings.gradle
+
+          if [ -f app/build.gradle.kts ]; then
+            grep -q 'versionName = "5.0.3"' app/build.gradle.kts || {
+              echo "ERROR: versionName is not 5.0.3"
+              grep -n "versionName" app/build.gradle.kts || true
+              exit 1
+            }
+          fi
+
+          echo "Clean 5.0.3 project validated."
+
+      - name: Confirm workflows were not changed
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ -d /tmp/current-workflows ]; then
+            diff -qr /tmp/current-workflows .github/workflows || {
+              echo "ERROR: .github/workflows changed unexpectedly."
+              exit 1
+            }
+          fi
+
+          echo "Workflow folder unchanged."
+
+      - name: Commit clean 5.0.3 source only
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Never stage workflow changes.
+          git add -A -- . ':(exclude).github/workflows'
+
+          if git diff --cached --quiet; then
+            echo "No source changes to commit."
+            exit 0
+          fi
+
+          git commit -m "Reset source to clean ADWIO 5.0.3"
+          git push origin HEAD:main
