@@ -1,0 +1,49 @@
+name: Fix ADWIO Live Premium Compile Error V2
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fix exact current category line
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          from pathlib import Path
+          p = Path("app/src/main/java/com/adwio/player/ui/library/LibraryActivity.kt")
+          s = p.read_text(encoding="utf-8")
+          old = '        categories += allItems.map { CategoryModel(it.categoryId, it.categoryName) }.filter { it.id.isNotBlank() && it.name.isNotBlank() }.distinctBy { it.id }\n'
+          new = '        categories += LiveCatalog.categories().filter { it.id.isNotBlank() && it.name.isNotBlank() }.distinctBy { it.id }\n'
+          if old not in s:
+              raise SystemExit("Exact current category line not found")
+          p.write_text(s.replace(old, new, 1), encoding="utf-8")
+          PY
+
+      - name: Verify exact fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          FILE="app/src/main/java/com/adwio/player/ui/library/LibraryActivity.kt"
+          ! grep -q 'CategoryModel(it.categoryId, it.categoryName)' "$FILE"
+          grep -q 'categories += LiveCatalog.categories()' "$FILE"
+          rm -f .github/workflows/fix-live-premium-compile-v2.yml
+
+      - name: Commit fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Fix exact Live Premium category compile error"
+          git push origin HEAD:main
