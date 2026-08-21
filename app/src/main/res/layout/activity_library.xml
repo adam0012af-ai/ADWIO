@@ -107,6 +107,16 @@
           app:surface_type="surface_view"
           app:use_controller="false"/>
 
+      <androidx.media3.ui.PlayerView
+          android:id="@+id/livePipPlayer"
+          android:layout_width="match_parent"
+          android:layout_height="match_parent"
+          android:background="#000000"
+          android:visibility="gone"
+          app:surface_type="surface_view"
+          app:use_controller="false"
+          app:resize_mode="fit"/>
+
       <ImageButton
           android:id="@+id/previewBackButton"
           android:layout_width="42dp"

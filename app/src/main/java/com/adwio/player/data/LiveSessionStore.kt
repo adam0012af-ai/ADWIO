@@ -56,7 +56,7 @@ class LiveSessionStore(context: Context) {
             .putString("mode", mode)
             .putInt("resize_mode", resizeMode)
             .putLong("updated_at", System.currentTimeMillis())
-            .apply()
+            .commit()
     }
 
     fun clear() {

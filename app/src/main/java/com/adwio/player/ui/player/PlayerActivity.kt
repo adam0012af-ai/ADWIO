@@ -158,6 +158,10 @@ class PlayerActivity : BaseFullscreenActivity() {
 
     private fun setupUi() {
         b.playerView.useController = false
+        b.playerView.setKeepContentOnPlayerReset(true)
+        b.pipPlayerView.useController = false
+        b.pipPlayerView.setKeepContentOnPlayerReset(true)
+        b.pipPlayerView.visibility = View.GONE
         b.playPauseButton.visibility = if (type == MediaType.LIVE) View.INVISIBLE else View.VISIBLE
         b.browseButton.visibility = if (type == MediaType.LIVE) View.VISIBLE else View.INVISIBLE
         b.progressBar.visibility = if (type == MediaType.LIVE) View.INVISIBLE else View.VISIBLE
@@ -284,12 +288,12 @@ class PlayerActivity : BaseFullscreenActivity() {
             PlaybackEngine.player != null &&
             PlaybackEngine.currentUrl.isNotBlank()
 
-        if (type == MediaType.LIVE &&
-            hasActivePlayback &&
-            Build.VERSION.SDK_INT < Build.VERSION_CODES.S
-        ) {
+        if (hasActivePlayback && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             enteringPip = true
-            maybeEnterPip()
+            preparePipSurface()
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+                maybeEnterPip()
+            }
         }
         super.onUserLeaveHint()
     }
@@ -300,16 +304,14 @@ class PlayerActivity : BaseFullscreenActivity() {
         enteringPip = false
         if (inPip) {
             wasInPip = true
+            preparePipSurface()
             b.playerControls.visibility = View.GONE
             b.backControlButton.visibility = View.GONE
             b.liveBrowseOverlay.visibility = View.GONE
+            b.nextEpisodePanel.visibility = View.GONE
             b.statusText.visibility = View.GONE
         } else {
-            PlaybackEngine.player?.let { activePlayer ->
-                b.playerView.player = activePlayer
-                b.playerView.resizeMode = resizeMode
-                activePlayer.playWhenReady = true
-            }
+            restoreMainPlayerSurface()
             showControls()
         }
     }
@@ -356,6 +358,7 @@ class PlayerActivity : BaseFullscreenActivity() {
         if (!keepPlayer) {
             PlaybackEngine.player?.removeListener(playerListener)
             b.playerView.player = null
+            b.pipPlayerView.player = null
         }
 
         if (!returningToLivePreview && !keepPlayer && !wasInPip) {
@@ -396,7 +399,7 @@ class PlayerActivity : BaseFullscreenActivity() {
         b.playerView.player = p
         b.playerView.resizeMode = resizeMode
         p.playWhenReady = true
-        configureFullscreenLiveAutoPip()
+        configureAutoPip()
         updateQuality()
         updatePlayPauseIcon()
     }
@@ -593,8 +596,31 @@ class PlayerActivity : BaseFullscreenActivity() {
         history.save(mediaId, title, url, type, p.currentPosition, p.duration.coerceAtLeast(0L))
     }
 
-    private fun configureFullscreenLiveAutoPip() {
-        if (type != MediaType.LIVE || Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+    private fun preparePipSurface() {
+        val active = PlaybackEngine.player ?: return
+        b.playerView.player = null
+        b.pipPlayerView.visibility = View.VISIBLE
+        b.pipPlayerView.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
+        b.pipPlayerView.player = active
+        active.playWhenReady = true
+        active.play()
+    }
+
+    private fun restoreMainPlayerSurface() {
+        val active = PlaybackEngine.player
+        b.pipPlayerView.player = null
+        b.pipPlayerView.visibility = View.GONE
+        b.playerView.visibility = View.VISIBLE
+        b.playerView.player = active
+        b.playerView.resizeMode = resizeMode
+        active?.let {
+            it.playWhenReady = true
+            it.play()
+        }
+    }
+
+    private fun configureAutoPip() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         if (PlaybackEngine.currentUrl.isBlank()) return
 
         runCatching {
@@ -634,9 +660,13 @@ class PlayerActivity : BaseFullscreenActivity() {
                     .build()
             )
             inPip = entered
-            if (!entered) enteringPip = false
+            if (!entered) {
+                enteringPip = false
+                restoreMainPlayerSurface()
+            }
         }.onFailure {
             enteringPip = false
+            restoreMainPlayerSurface()
         }
     }
 

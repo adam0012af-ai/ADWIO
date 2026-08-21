@@ -170,6 +170,11 @@ class LibraryActivity : BaseFullscreenActivity() {
             b.previewPlayer.setShutterBackgroundColor(Color.BLACK)
             b.previewPlayer.setBackgroundColor(Color.BLACK)
             b.previewPlayer.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
+            b.livePipPlayer.setKeepContentOnPlayerReset(true)
+            b.livePipPlayer.setShutterBackgroundColor(Color.BLACK)
+            b.livePipPlayer.setBackgroundColor(Color.BLACK)
+            b.livePipPlayer.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
+            b.livePipPlayer.visibility = View.GONE
             b.previewPlayer.onFullscreenRequested = {
                 if (liveFullscreenMode) toggleLiveControls() else enterLiveFullscreenInPlace()
             }
@@ -555,6 +560,7 @@ class LibraryActivity : BaseFullscreenActivity() {
 
     private fun openFullscreenChannel(item: MediaItemModel) {
         recentChannels.add(item)
+        liveFullscreenMode = true
         val changed = PlaybackEngine.currentId.removePrefix("LIVE:") != item.id
         if (changed) {
             activateLivePreview(item)
@@ -753,11 +759,11 @@ class LibraryActivity : BaseFullscreenActivity() {
             PlaybackEngine.currentType == MediaType.LIVE &&
             PlaybackEngine.currentUrl.isNotBlank()
 
-        if (hasActiveLive &&
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
-            Build.VERSION.SDK_INT < Build.VERSION_CODES.S
-        ) {
-            enterMiniPictureInPicture()
+        if (hasActiveLive && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            prepareLivePipSurface()
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+                enterMiniPictureInPicture()
+            }
         }
         super.onUserLeaveHint()
     }
@@ -772,13 +778,14 @@ class LibraryActivity : BaseFullscreenActivity() {
 
         if (isInPictureInPictureMode) {
             wasMiniPip = true
+            prepareLivePipSurface()
             PlaybackEngine.player?.let { player ->
                 player.playWhenReady = true
                 player.play()
-                b.previewPlayer.player = player
             }
             prepareMiniPipUi()
         } else {
+            restoreLiveMainSurface()
             val session = liveSession.load()
             liveFullscreenResizeMode = session.resizeMode
             liveFullscreenMode =
@@ -797,6 +804,33 @@ class LibraryActivity : BaseFullscreenActivity() {
             } else {
                 restoreNormalLiveUi()
             }
+        }
+    }
+
+    private fun prepareLivePipSurface() {
+        if (type != MediaType.LIVE) return
+        val active = PlaybackEngine.player ?: return
+        b.previewPlayer.player = null
+        b.livePipPlayer.visibility = View.VISIBLE
+        b.livePipPlayer.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
+        b.livePipPlayer.player = active
+        active.playWhenReady = true
+        active.play()
+    }
+
+    private fun restoreLiveMainSurface() {
+        if (type != MediaType.LIVE) return
+        val active = PlaybackEngine.player
+        b.livePipPlayer.player = null
+        b.livePipPlayer.visibility = View.GONE
+        b.previewPlayer.visibility = View.VISIBLE
+        b.previewPlayer.player = active
+        b.previewPlayer.resizeMode =
+            if (liveFullscreenMode) liveFullscreenResizeMode
+            else AspectRatioFrameLayout.RESIZE_MODE_FIT
+        active?.let {
+            it.playWhenReady = true
+            it.play()
         }
     }
 
@@ -820,6 +854,7 @@ class LibraryActivity : BaseFullscreenActivity() {
     private fun enterMiniPictureInPicture() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         enteringMiniPip = true
+        prepareLivePipSurface()
         prepareMiniPipUi()
         val entered = runCatching {
             enterPictureInPictureMode(
@@ -831,6 +866,7 @@ class LibraryActivity : BaseFullscreenActivity() {
         inMiniPip = entered
         if (!entered) {
             enteringMiniPip = false
+            restoreLiveMainSurface()
             restoreMiniUi()
         }
     }
@@ -866,7 +902,6 @@ class LibraryActivity : BaseFullscreenActivity() {
             PlaybackEngine.currentUrl.isBlank()
         ) return
 
-        persistLiveUiState()
         liveFullscreenMode = true
         b.previewPlayer.player = PlaybackEngine.player
 
@@ -971,7 +1006,9 @@ class LibraryActivity : BaseFullscreenActivity() {
         if (!inMiniPip && liveFullscreenMode) {
             b.previewPlayer.resizeMode = liveFullscreenResizeMode
         }
-        b.previewPlayer.player = PlaybackEngine.player
+        if (!inMiniPip && !enteringMiniPip) {
+            b.previewPlayer.player = PlaybackEngine.player
+        }
         PlaybackEngine.player?.let { player ->
             player.playWhenReady = true
             player.play()
@@ -1077,6 +1114,7 @@ class LibraryActivity : BaseFullscreenActivity() {
 
         if (!keepPlayerAttached) {
             b.previewPlayer.player = null
+            b.livePipPlayer.player = null
         }
         super.onStop()
     }
