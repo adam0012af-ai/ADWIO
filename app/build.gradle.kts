@@ -10,8 +10,8 @@ android {
         applicationId = "com.adwio.player"
         minSdk = 23
         targetSdk = 36
-        versionCode = 36
-        versionName = "5.1.1"
+        versionCode = 37
+        versionName = "5.1.2"
         buildConfigField("String", "APP_NAME", "\"ADWIO Player\"")
         buildConfigField("String", "CONTROL_API_URL", "\"${System.getenv("ADWIO_CONTROL_API_URL") ?: ""}\"")
     }

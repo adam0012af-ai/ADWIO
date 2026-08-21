@@ -88,6 +88,7 @@ class LibraryActivity : BaseFullscreenActivity() {
     private var wasMiniPip = false
     private var previewOriginalParams: LinearLayout.LayoutParams? = null
     private var liveFullscreenMode = false
+    private var liveFullscreenResizeMode = AspectRatioFrameLayout.RESIZE_MODE_FILL
     private lateinit var fullscreenCategoryAdapter: CategoryAdapter
     private lateinit var fullscreenChannelAdapter: MediaAdapter
     private val liveControlsHandler = Handler(Looper.getMainLooper())
@@ -464,7 +465,7 @@ class LibraryActivity : BaseFullscreenActivity() {
         }
         liveFullscreenMode = true
         b.previewPlayer.player = PlaybackEngine.player
-        b.previewPlayer.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
+        b.previewPlayer.resizeMode = liveFullscreenResizeMode
         applyExpandedLiveUi()
         b.fullscreenChannelsOverlay.visibility = View.GONE
         setLiveControlsVisible(true)
@@ -710,9 +711,9 @@ class LibraryActivity : BaseFullscreenActivity() {
         liveFullscreenMode = true
         b.previewPlayer.player = PlaybackEngine.player
 
-        // Fullscreen means the player occupies the complete device area.
-        // Keep the video aspect ratio by default; do not crop/over-zoom.
-        b.previewPlayer.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
+        // Fullscreen uses the saved Live display mode. Default is FILL so the
+        // video occupies the complete physical player area without forced ZOOM.
+        b.previewPlayer.resizeMode = liveFullscreenResizeMode
 
         b.previewBackButton.visibility = View.VISIBLE
         b.previewAspectButton.visibility = View.VISIBLE
@@ -751,14 +752,15 @@ class LibraryActivity : BaseFullscreenActivity() {
     private fun cycleLiveAspectRatio() {
         if (type != MediaType.LIVE) return
 
-        b.previewPlayer.resizeMode = when (b.previewPlayer.resizeMode) {
-            AspectRatioFrameLayout.RESIZE_MODE_FIT ->
-                AspectRatioFrameLayout.RESIZE_MODE_FILL
+        liveFullscreenResizeMode = when (liveFullscreenResizeMode) {
             AspectRatioFrameLayout.RESIZE_MODE_FILL ->
                 AspectRatioFrameLayout.RESIZE_MODE_ZOOM
-            else ->
+            AspectRatioFrameLayout.RESIZE_MODE_ZOOM ->
                 AspectRatioFrameLayout.RESIZE_MODE_FIT
+            else ->
+                AspectRatioFrameLayout.RESIZE_MODE_FILL
         }
+        b.previewPlayer.resizeMode = liveFullscreenResizeMode
     }
 
     private fun applyExpandedLiveUi() {
@@ -800,10 +802,10 @@ class LibraryActivity : BaseFullscreenActivity() {
         b.livePreviewPanel.setPadding(0, 0, 0, 0)
         b.livePreviewPanel.setBackgroundColor(Color.BLACK)
 
-        // FIT is the default fullscreen presentation. The control button lets
-        // the user choose Fill/Zoom manually without forcing a cropped image.
-        if (!inMiniPip) {
-            b.previewPlayer.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
+        // Never overwrite the user's Fullscreen display mode on channel change,
+        // controls visibility changes, PiP return, or UI expansion.
+        if (!inMiniPip && liveFullscreenMode) {
+            b.previewPlayer.resizeMode = liveFullscreenResizeMode
         }
         b.previewPlayer.player = PlaybackEngine.player
         PlaybackEngine.player?.let { player ->
