@@ -56,7 +56,7 @@
             android:screenOrientation="sensorLandscape"
             android:supportsPictureInPicture="true"
             android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
-            android:launchMode="singleTop"
+            android:launchMode="singleTask"
             android:exported="false" />
         <activity android:name=".ui.home.HomeActivity" android:screenOrientation="sensorLandscape" android:exported="false" />
         <activity android:name=".ui.login.LoginActivity" android:screenOrientation="sensorLandscape" android:exported="false" />

@@ -116,6 +116,31 @@ class LibraryActivity : BaseFullscreenActivity() {
             .getOrDefault(MediaType.LIVE)
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+
+        if (type != MediaType.LIVE) return
+
+        val session = liveSession.load()
+        if (!session.active || session.url.isBlank()) return
+
+        liveFullscreenMode = session.mode == LiveSessionStore.MODE_FULLSCREEN
+        liveFullscreenResizeMode = session.resizeMode
+
+        PlaybackEngine.player?.let { player ->
+            b.previewPlayer.player = player
+            player.playWhenReady = true
+            player.play()
+        }
+
+        if (allItems.isNotEmpty()) {
+            restoreLiveSession(session)
+        } else {
+            restoreLiveOnResume = true
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         b = ActivityLibraryBinding.inflate(layoutInflater)
@@ -674,15 +699,29 @@ class LibraryActivity : BaseFullscreenActivity() {
 
     override fun onResume() {
         super.onResume()
-        if (type == MediaType.LIVE && !inMiniPip &&
-            PlaybackEngine.player != null && PlaybackEngine.currentType == MediaType.LIVE
-        ) {
-            b.previewPlayer.player = PlaybackEngine.player
-            PlaybackEngine.player?.let { player ->
-                player.playWhenReady = true
-                player.play()
+
+        if (type == MediaType.LIVE && !inMiniPip) {
+            val session = liveSession.load()
+
+            if (session.active && session.url.isNotBlank()) {
+                liveFullscreenMode =
+                    session.mode == LiveSessionStore.MODE_FULLSCREEN
+                liveFullscreenResizeMode = session.resizeMode
+
+                PlaybackEngine.player?.let { player ->
+                    b.previewPlayer.player = player
+                    player.playWhenReady = true
+                    player.play()
+                }
+
+                if (allItems.isNotEmpty()) {
+                    restoreLiveSession(session)
+                } else {
+                    restoreLiveOnResume = true
+                }
             }
         }
+
         if (type == MediaType.LIVE && restoreLiveOnResume && allItems.isNotEmpty()) {
             restoreLiveOnResume = false
             restoreLiveStateOrDefault()
@@ -807,8 +846,15 @@ class LibraryActivity : BaseFullscreenActivity() {
 
     private fun restoreMiniUi() {
         if (type != MediaType.LIVE) return
+
+        val session = liveSession.load()
+        liveFullscreenMode =
+            session.active && session.mode == LiveSessionStore.MODE_FULLSCREEN
+        liveFullscreenResizeMode = session.resizeMode
+
         if (liveFullscreenMode) {
             applyExpandedLiveUi()
+            b.previewPlayer.resizeMode = liveFullscreenResizeMode
         } else {
             restoreNormalLiveUi()
         }
