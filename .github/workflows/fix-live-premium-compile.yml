@@ -1,0 +1,68 @@
+name: Fix ADWIO Live Premium Compile Error
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fix category compile error only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          from pathlib import Path
+
+          file = Path("app/src/main/java/com/adwio/player/ui/library/LibraryActivity.kt")
+          text = file.read_text(encoding="utf-8")
+
+          old = '''        categories += allItems.map { CategoryModel(it.categoryId, it.categoryName) }
+            .filter { it.id.isNotBlank() && it.name.isNotBlank() }
+            .distinctBy { it.id }'''
+
+          new = '''        categories += LiveCatalog.categories()
+            .filter { it.id.isNotBlank() && it.name.isNotBlank() }
+            .distinctBy { it.id }'''
+
+          if old not in text:
+              raise SystemExit("Expected compile-error block not found")
+
+          file.write_text(text.replace(old, new, 1), encoding="utf-8")
+          print("Live Premium compile error fixed.")
+          PY
+
+      - name: Verify fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          FILE="app/src/main/java/com/adwio/player/ui/library/LibraryActivity.kt"
+          ! grep -q 'it.categoryName' "$FILE"
+          grep -q 'categories += LiveCatalog.categories()' "$FILE"
+          rm -f .github/workflows/fix-live-premium-compile.yml
+
+      - name: Commit compile fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+
+          ALLOWED='^(app/src/main/java/com/adwio/player/ui/library/LibraryActivity.kt|.github/workflows/fix-live-premium-compile.yml)$'
+          BAD="$(git diff --cached --name-only | grep -Ev "$ALLOWED" || true)"
+          if [ -n "$BAD" ]; then
+            echo "Unexpected files changed:"
+            echo "$BAD"
+            exit 1
+          fi
+
+          git commit -m "Fix Live Premium category compile error"
+          git push origin HEAD:main
