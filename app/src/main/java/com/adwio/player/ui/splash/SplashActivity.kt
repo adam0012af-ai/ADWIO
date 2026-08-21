@@ -6,6 +6,7 @@ import android.os.Handler
 import android.os.Looper
 import android.view.animation.AccelerateDecelerateInterpolator
 import com.adwio.player.data.AppResumeState
+import com.adwio.player.data.LiveSessionStore
 import com.adwio.player.data.SessionStore
 import com.adwio.player.data.model.MediaType
 import com.adwio.player.databinding.ActivitySplashBinding
@@ -28,21 +29,17 @@ class SplashActivity : BaseFullscreenActivity() {
         return
     }
 
-    val resume = AppResumeState(this).load()
+    val live = LiveSessionStore(this).load()
     val session = SessionStore(this).load()
 
-    if (session != null &&
-        resume.playbackActive &&
-        resume.mediaType == MediaType.LIVE &&
-        resume.url.isNotBlank()
-    ) {
+    if (session != null && live.active && live.url.isNotBlank()) {
         startActivity(Intent(this, LibraryActivity::class.java).apply {
             putExtra(LibraryActivity.EXTRA_TYPE, MediaType.LIVE.name)
             putExtra(
                 LibraryActivity.EXTRA_RESTORE_FULLSCREEN,
-                resume.playbackMode == AppResumeState.MODE_FULLSCREEN
+                live.mode == LiveSessionStore.MODE_FULLSCREEN
             )
-            addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+            addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         })
         finish()
         overridePendingTransition(0, 0)
@@ -74,18 +71,18 @@ class SplashActivity : BaseFullscreenActivity() {
 
 private fun routeColdStart() {
     val session = SessionStore(this).load()
-    val resume = AppResumeState(this).load()
+    val live = LiveSessionStore(this).load()
 
     val target = when {
         session == null -> Intent(this, LoginActivity::class.java)
-        resume.playbackActive &&
-            resume.mediaType == MediaType.LIVE &&
-            resume.url.isNotBlank() -> Intent(this, LibraryActivity::class.java).apply {
+        live.active && live.url.isNotBlank() ->
+            Intent(this, LibraryActivity::class.java).apply {
                 putExtra(LibraryActivity.EXTRA_TYPE, MediaType.LIVE.name)
                 putExtra(
                     LibraryActivity.EXTRA_RESTORE_FULLSCREEN,
-                    resume.playbackMode == AppResumeState.MODE_FULLSCREEN
+                    live.mode == LiveSessionStore.MODE_FULLSCREEN
                 )
+                addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP)
             }
         else -> Intent(this, HomeActivity::class.java)
     }

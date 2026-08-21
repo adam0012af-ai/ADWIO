@@ -26,6 +26,7 @@ import com.adwio.player.data.AppResumeState
 import com.adwio.player.data.AppSettings
 import com.adwio.player.data.FavoritesStore
 import com.adwio.player.data.LibrarySnapshotCache
+import com.adwio.player.data.LiveSessionStore
 import com.adwio.player.data.M3uCache
 import com.adwio.player.data.M3uClient
 import com.adwio.player.data.RecentChannelsStore
@@ -83,6 +84,7 @@ class LibraryActivity : BaseFullscreenActivity() {
     private var activePreviewLiveId: String? = null
     private var hasVisibleContent = false
     private val liveUiState by lazy { getSharedPreferences("adwio_live_ui_state", MODE_PRIVATE) }
+    private val liveSession by lazy { LiveSessionStore(this) }
     private var restoreLiveOnResume = false
     private var enteringMiniPip = false
     private var inMiniPip = false
@@ -178,6 +180,7 @@ class LibraryActivity : BaseFullscreenActivity() {
                         }
                         liveFullscreenMode -> exitLiveFullscreenInPlace()
                         else -> {
+                            liveSession.clear()
                             PlaybackEngine.stopAndRelease()
                             AppResumeState(this@LibraryActivity).clearPlaybackKeepingLibrary()
                             finish()
@@ -345,14 +348,11 @@ class LibraryActivity : BaseFullscreenActivity() {
     private fun restoreLiveStateOrDefault() {
         if (type != MediaType.LIVE) return
 
-        liveFullscreenResizeMode = liveUiState.getInt(
-            "resize_mode",
-            AspectRatioFrameLayout.RESIZE_MODE_FILL
-        )
+        val session = liveSession.load()
+        liveFullscreenResizeMode = session.resizeMode
 
-        val resume = AppResumeState(this).load()
-        val savedCategory = liveUiState.getString("category", null)
-            ?: resume.categoryId.takeIf { resume.screen == AppResumeState.SCREEN_LIBRARY && resume.mediaType == MediaType.LIVE }
+        val savedCategory = session.categoryId.takeIf { it.isNotBlank() }
+            ?: liveUiState.getString("category", null)
         val recent = recentWatchedItems()
 
         selectedCategory = when {
@@ -361,28 +361,35 @@ class LibraryActivity : BaseFullscreenActivity() {
                  savedCategory == RECENT_LIVE_ID ||
                  savedCategory == FAVORITES_ID ||
                  allItems.any { it.categoryId == savedCategory }) -> savedCategory
-
             recent.isNotEmpty() -> RECENT_WATCHED_ID
             else -> ""
         }
 
         submitListForSelectedCategory()
-        restoreActiveLivePlaybackIfNeeded(resume)
+        restoreLiveSession(session)
 
-        val position = liveUiState.getInt("scroll_position", 0).coerceAtLeast(0)
+        val position = if (session.active) session.scrollPosition
+            else liveUiState.getInt("scroll_position", 0).coerceAtLeast(0)
+
         b.contentRecycler.post {
             (b.contentRecycler.layoutManager as? LinearLayoutManager)
                 ?.scrollToPositionWithOffset(position, 0)
         }
     }
 
-    private fun restoreActiveLivePlaybackIfNeeded(resume: AppResumeState.State) {
-        if (type != MediaType.LIVE || !resume.playbackActive || resume.url.isBlank()) return
+    private fun restoreLiveSession(session: LiveSessionStore.State) {
+        if (type != MediaType.LIVE || !session.active || session.url.isBlank()) return
 
-        if (PlaybackEngine.player == null || PlaybackEngine.currentUrl.isBlank()) {
-            val savedId = resume.mediaId.removePrefix("LIVE:")
+        liveFullscreenMode = session.mode == LiveSessionStore.MODE_FULLSCREEN
+        liveFullscreenResizeMode = session.resizeMode
+
+        if (PlaybackEngine.player == null ||
+            PlaybackEngine.currentUrl.isBlank() ||
+            PlaybackEngine.currentUrl != session.url
+        ) {
+            val savedId = session.mediaId.removePrefix("LIVE:")
             val item = allItems.firstOrNull { it.id == savedId }
-                ?: allItems.firstOrNull { it.streamUrl == resume.url }
+                ?: allItems.firstOrNull { it.streamUrl == session.url }
 
             if (item != null) {
                 activateLivePreview(item)
@@ -390,32 +397,34 @@ class LibraryActivity : BaseFullscreenActivity() {
                 val player = PlaybackEngine.play(
                     context = this,
                     settings = AppSettings(this),
-                    url = resume.url,
-                    title = resume.title,
-                    id = resume.mediaId.ifBlank { "LIVE:resume" },
+                    url = session.url,
+                    title = session.title,
+                    id = session.mediaId.ifBlank { "LIVE:resume" },
                     type = MediaType.LIVE
                 )
                 b.previewPlayer.player = player
-                player.volume = 1f
+                b.previewChannelName.text = session.title
                 activePreviewLiveId = savedId.ifBlank { activePreviewLiveId }
-                b.previewChannelName.text = resume.title
                 configureLiveAutoPip()
             }
         } else {
             b.previewPlayer.player = PlaybackEngine.player
-            b.previewChannelName.text = PlaybackEngine.currentTitle
+            b.previewChannelName.text = PlaybackEngine.currentTitle.ifBlank { session.title }
+            activePreviewLiveId =
+                PlaybackEngine.currentId.removePrefix("LIVE:").ifBlank { activePreviewLiveId }
         }
 
-        val restoreFullscreen =
-            intent.getBooleanExtra(EXTRA_RESTORE_FULLSCREEN, false) ||
-                resume.playbackMode == AppResumeState.MODE_FULLSCREEN
-
-        if (restoreFullscreen) {
+        if (liveFullscreenMode) {
             b.previewPlayer.post {
                 if (!isFinishing && PlaybackEngine.currentUrl.isNotBlank()) {
-                    enterLiveFullscreenInPlace()
+                    applyExpandedLiveUi()
+                    b.previewPlayer.resizeMode = liveFullscreenResizeMode
+                    setLiveControlsVisible(false)
                 }
             }
+        } else {
+            restoreNormalLiveUi()
+            b.previewPlayer.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
         }
     }
 
@@ -631,27 +640,31 @@ class LibraryActivity : BaseFullscreenActivity() {
         b.previewPlayer.player = player
         player.volume = 1f
         configureLiveAutoPip()
+        persistLiveUiState()
         b.previewPlayer.requestFocus()
     }
 
     override fun onStart() {
         super.onStart()
-        if (type == MediaType.LIVE && PlaybackEngine.player != null &&
-            PlaybackEngine.currentType == MediaType.LIVE && PlaybackEngine.currentUrl.isNotBlank()
-        ) {
-            val resume = AppResumeState(this).load()
-            liveFullscreenResizeMode = liveUiState.getInt(
-                "resize_mode",
-                AspectRatioFrameLayout.RESIZE_MODE_FILL
-            )
-            liveFullscreenMode =
-                resume.playbackActive &&
-                resume.mediaType == MediaType.LIVE &&
-                resume.playbackMode == AppResumeState.MODE_FULLSCREEN
+        if (type != MediaType.LIVE) return
 
+        val session = liveSession.load()
+        if (!session.active || session.url.isBlank()) return
+
+        liveFullscreenMode = session.mode == LiveSessionStore.MODE_FULLSCREEN
+        liveFullscreenResizeMode = session.resizeMode
+
+        if (PlaybackEngine.player != null &&
+            PlaybackEngine.currentType == MediaType.LIVE &&
+            PlaybackEngine.currentUrl.isNotBlank()
+        ) {
             b.previewPlayer.player = PlaybackEngine.player
-            b.previewChannelName.text = PlaybackEngine.currentTitle
-            activePreviewLiveId = PlaybackEngine.currentId.removePrefix("LIVE:").ifBlank { activePreviewLiveId }
+            b.previewChannelName.text =
+                PlaybackEngine.currentTitle.ifBlank { session.title }
+            activePreviewLiveId =
+                PlaybackEngine.currentId.removePrefix("LIVE:").ifBlank {
+                    session.mediaId.removePrefix("LIVE:")
+                }
             b.previewPlayer.resizeMode =
                 if (liveFullscreenMode) liveFullscreenResizeMode
                 else AspectRatioFrameLayout.RESIZE_MODE_FIT
@@ -727,25 +740,23 @@ class LibraryActivity : BaseFullscreenActivity() {
             }
             prepareMiniPipUi()
         } else {
-            val resume = AppResumeState(this).load()
-            liveFullscreenResizeMode = liveUiState.getInt(
-                "resize_mode",
-                AspectRatioFrameLayout.RESIZE_MODE_FILL
-            )
+            val session = liveSession.load()
+            liveFullscreenResizeMode = session.resizeMode
             liveFullscreenMode =
-                resume.playbackActive &&
-                resume.mediaType == MediaType.LIVE &&
-                resume.playbackMode == AppResumeState.MODE_FULLSCREEN
+                session.active && session.mode == LiveSessionStore.MODE_FULLSCREEN
 
             PlaybackEngine.player?.let { player ->
                 b.previewPlayer.player = player
                 player.playWhenReady = true
                 player.play()
             }
-            restoreMiniUi()
+
             if (liveFullscreenMode) {
+                applyExpandedLiveUi()
                 b.previewPlayer.resizeMode = liveFullscreenResizeMode
                 setLiveControlsVisible(false)
+            } else {
+                restoreNormalLiveUi()
             }
         }
     }
@@ -959,30 +970,39 @@ class LibraryActivity : BaseFullscreenActivity() {
 
     private fun persistLiveUiState() {
         if (type != MediaType.LIVE) return
+
         val position = (b.contentRecycler.layoutManager as? LinearLayoutManager)
             ?.findFirstVisibleItemPosition()
             ?.coerceAtLeast(0) ?: 0
 
-        liveUiState.edit()
-            .putString("category", selectedCategory)
-            .putInt("scroll_position", position)
-            .putString("channel_id", activePreviewLiveId)
-            .putInt("resize_mode", liveFullscreenResizeMode)
-            .apply()
-
-        val active = PlaybackEngine.currentType == MediaType.LIVE &&
+        val active =
+            PlaybackEngine.currentType == MediaType.LIVE &&
             PlaybackEngine.currentUrl.isNotBlank()
+
+        val mode =
+            if (liveFullscreenMode) LiveSessionStore.MODE_FULLSCREEN
+            else LiveSessionStore.MODE_MINI
+
+        liveSession.save(
+            active = active,
+            mediaId = if (active) PlaybackEngine.currentId else "",
+            title = if (active) PlaybackEngine.currentTitle else "",
+            url = if (active) PlaybackEngine.currentUrl else "",
+            categoryId = selectedCategory,
+            scrollPosition = position,
+            mode = mode,
+            resizeMode = liveFullscreenResizeMode
+        )
+
         AppResumeState(this).saveLibrary(
             type = MediaType.LIVE,
             categoryId = selectedCategory,
             scrollPosition = position,
             playbackActive = active,
-            playbackMode = if (active && liveFullscreenMode) {
+            playbackMode = if (liveFullscreenMode) {
                 AppResumeState.MODE_FULLSCREEN
-            } else if (active) {
-                AppResumeState.MODE_MINI
             } else {
-                AppResumeState.MODE_NONE
+                AppResumeState.MODE_MINI
             },
             mediaId = if (active) PlaybackEngine.currentId else "",
             title = if (active) PlaybackEngine.currentTitle else "",

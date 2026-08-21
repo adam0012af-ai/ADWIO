@@ -76,10 +76,8 @@ class HomeActivity : BaseFullscreenActivity() {
         super.onStart()
 
         // Never let the Home activity overwrite an active Live/PiP resume state.
-        val activeLive =
-            PlaybackEngine.player != null &&
-            PlaybackEngine.currentType == MediaType.LIVE &&
-            PlaybackEngine.currentUrl.isNotBlank()
+        val liveSession = LiveSessionStore(this).load()
+        val activeLive = liveSession.active && liveSession.url.isNotBlank()
 
         if (!activeLive) {
             AppResumeState(this).saveHome()
