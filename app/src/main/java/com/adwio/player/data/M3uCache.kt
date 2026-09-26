@@ -38,6 +38,27 @@ class M3uCache(private val context: Context) {
             .getOrDefault(emptyList())
     }
 
+    fun loadPreviewForType(
+        url: String,
+        type: MediaType,
+        maxItems: Int = 180
+    ): List<MediaItemModel> {
+        val k = key(url)
+        memory[k]?.takeIf { it.isNotEmpty() }?.let { cached ->
+            val typed = cached.filter { it.type == type }
+            if (typed.isNotEmpty()) return typed.take(maxItems)
+        }
+
+        val disk = readValidCache(cacheFile(url))
+        if (disk.isNotEmpty()) {
+            memory[k] = disk
+            val typed = disk.filter { it.type == type }
+            if (typed.isNotEmpty()) return typed.take(maxItems)
+        }
+
+        return client.loadPreviewForType(url, type, maxItems)
+    }
+
     fun loadForType(
         url: String,
         type: MediaType,
