@@ -121,7 +121,8 @@ class HomeActivity : BaseFullscreenActivity() {
 
                     val cache = M3uCache(this@HomeActivity)
                     cache.clear()
-                    cache.warm(bootstrap.playlistUrl)
+                    LibrarySnapshotCache(this@HomeActivity).clear()
+                    M3uWarmup.start(this@HomeActivity, bootstrap.playlistUrl)
                     true
                 }.getOrDefault(false)
             }
