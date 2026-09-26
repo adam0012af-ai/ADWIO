@@ -1,0 +1,22 @@
+#EXTM3U
+
+#EXTINF:-1 media-type="movie" group-title="Open Movies",Big Buck Bunny
+https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8
+
+#EXTINF:-1 media-type="movie" group-title="Open Movies",Tears of Steel
+https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8
+
+#EXTINF:-1 media-type="movie" group-title="Open Movies",Sintel
+https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8
+
+#EXTINF:-1 media-type="series" group-title="Blender Open Shorts" series-title="Blender Open Shorts",Blender Open Shorts S01E01 - Elephants Dream
+https://video.blender.org/static/webseed/cccc3e60-0291-4ecc-aa56-39b2e2c7d0d5-720.mp4
+
+#EXTINF:-1 media-type="series" group-title="Blender Open Shorts" series-title="Blender Open Shorts",Blender Open Shorts S01E02 - Cosmos Laundromat
+https://video.blender.org/static/webseed/f507dfdc-e73e-45a4-9778-d758cbe1ce96-720.mp4
+
+#EXTINF:-1 media-type="series" group-title="Blender Open Shorts" series-title="Blender Open Shorts",Blender Open Shorts S01E03 - Coffee Run
+https://video.blender.org/static/webseed/ff8fe61b-026f-4f07-b66b-2a790d6f6ab1-720.mp4
+
+#EXTINF:-1 media-type="series" group-title="Blender Open Shorts" series-title="Blender Open Shorts",Blender Open Shorts S01E04 - Caminandes Llamigos
+https://video.blender.org/static/webseed/23f3ef79-15dc-44c5-aa45-cf92e78a4509-720.mp4
