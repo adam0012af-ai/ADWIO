@@ -263,8 +263,8 @@ class LibraryActivity : BaseFullscreenActivity() {
             val first = if (latest.isNotEmpty()) latest else items.take(40)
             submit(first)
         } else {
-            selectedCategory = RECENTLY_ADDED_ID
-            submit(recentlyAdded(items))
+            selectedCategory = ""
+            submit(items)
         }
     }
 
