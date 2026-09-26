@@ -24,7 +24,7 @@ import kotlinx.coroutines.withContext
 class SplashActivity : BaseFullscreenActivity() {
     companion object {
         private const val DEFAULT_PLAYLIST_URL =
-            "https://iptv-org.github.io/iptv/index.m3u"
+            "https://adwio-control-panel.adam0012af.workers.dev/api/v1/content/playlist"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
