@@ -120,18 +120,25 @@ class LibraryActivity : BaseFullscreenActivity() {
     }
 
     private fun load() {
-        val session = store.load() ?: return finish()
-        val sourceKey = "${session.server.id}|${session.server.baseUrl}"
+        contentLoadJob?.cancel()
+        contentLoadJob = lifecycleScope.launch {
+            val session = withContext(Dispatchers.IO) { resolveManagedSession() }
+            if (session == null) {
+                allItems = emptyList()
+                submit(emptyList())
+                b.subtitleText.text = getString(R.string.load_failed_keep_cache)
+                return@launch
+            }
 
-        b.titleText.text = when (type) {
+            val sourceKey = "${session.server.id}|${session.server.baseUrl}"
+
+            b.titleText.text = when (type) {
             MediaType.LIVE -> getString(R.string.live_title)
             MediaType.MOVIE -> getString(R.string.movies_title)
             MediaType.SERIES -> getString(R.string.series_title)
         }
         b.subtitleText.text = getString(R.string.loading_content)
 
-        contentLoadJob?.cancel()
-        contentLoadJob = lifecycleScope.launch {
             val cached = withContext(Dispatchers.IO) { snapshotCache.load(sourceKey, type) }
             if (cached != null && cached.items.isNotEmpty()) {
                 renderLibrary(cached.categories, cached.items)
@@ -173,6 +180,38 @@ class LibraryActivity : BaseFullscreenActivity() {
                 b.subtitleText.text = getString(R.string.load_failed_keep_cache)
             }
         }
+    }
+
+    private fun resolveManagedSession(): com.adwio.player.data.model.Session? {
+        store.load()?.let { existing ->
+            if (existing.server.id == "m3u" && existing.server.baseUrl.isNotBlank()) {
+                return existing
+            }
+        }
+
+        val bootstrap = runCatching { RemoteContentClient().bootstrap() }.getOrNull()
+            ?: return null
+        if (!bootstrap.configured ||
+            !bootstrap.enabled ||
+            bootstrap.authEnabled ||
+            bootstrap.playlistUrl.isBlank()
+        ) return null
+
+        val session = com.adwio.player.data.model.Session(
+            username = "",
+            password = "",
+            server = com.adwio.player.data.model.ServerHost(
+                id = "m3u",
+                name = "ADWIO",
+                baseUrl = bootstrap.playlistUrl
+            ),
+            expiresAt = null,
+            status = "Active",
+            displayName = "ADWIO"
+        )
+        store.save(session)
+        M3uWarmup.start(this, bootstrap.playlistUrl)
+        return session
     }
 
     private suspend fun loadRemote(session: com.adwio.player.data.model.Session): Pair<List<CategoryModel>, List<MediaItemModel>>? {
