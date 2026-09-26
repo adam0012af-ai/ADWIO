@@ -7,6 +7,10 @@ import android.view.WindowInsetsController
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import com.adwio.player.data.LibrarySnapshotCache
+import com.adwio.player.data.M3uCache
+import com.adwio.player.data.M3uWarmup
+import com.adwio.player.data.RemoteContentClient
 import com.adwio.player.data.SessionStore
 import com.adwio.player.data.TelemetryClient
 import kotlinx.coroutines.Dispatchers
@@ -17,6 +21,7 @@ import kotlinx.coroutines.launch
 
 abstract class BaseFullscreenActivity : AppCompatActivity() {
     private var heartbeatJob: Job? = null
+    private var contentSyncJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -28,11 +33,14 @@ abstract class BaseFullscreenActivity : AppCompatActivity() {
         super.onStart()
         window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
         startHeartbeat()
+        startManagedContentSync()
     }
 
     override fun onStop() {
         heartbeatJob?.cancel()
         heartbeatJob = null
+        contentSyncJob?.cancel()
+        contentSyncJob = null
         super.onStop()
     }
 
@@ -51,6 +59,53 @@ abstract class BaseFullscreenActivity : AppCompatActivity() {
             while (isActive) {
                 TelemetryClient(this@BaseFullscreenActivity).heartbeat(session)
                 delay(60_000L)
+            }
+        }
+    }
+
+    protected open fun onManagedContentChanged() = Unit
+
+    private fun startManagedContentSync() {
+        contentSyncJob?.cancel()
+        contentSyncJob = lifecycleScope.launch(Dispatchers.IO) {
+            while (isActive) {
+                runCatching {
+                    val bootstrap = RemoteContentClient().bootstrap()
+                    if (!bootstrap.configured ||
+                        !bootstrap.enabled ||
+                        bootstrap.authEnabled ||
+                        bootstrap.playlistUrl.isBlank()
+                    ) return@runCatching
+
+                    val store = SessionStore(this@BaseFullscreenActivity)
+                    val current = store.load() ?: return@runCatching
+                    val currentUrl = current.server.baseUrl.trim()
+                    val nextUrl = bootstrap.playlistUrl.trim()
+
+                    if (currentUrl != nextUrl) {
+                        val updated = current.copy(
+                            server = current.server.copy(
+                                id = "m3u",
+                                name = "ADWIO",
+                                baseUrl = nextUrl
+                            ),
+                            username = "",
+                            password = "",
+                            status = "Active",
+                            displayName = "ADWIO"
+                        )
+                        store.save(updated)
+
+                        M3uCache(this@BaseFullscreenActivity).clear()
+                        LibrarySnapshotCache(this@BaseFullscreenActivity).clear()
+                        M3uWarmup.start(this@BaseFullscreenActivity, nextUrl)
+
+                        launch(Dispatchers.Main) {
+                            onManagedContentChanged()
+                        }
+                    }
+                }
+                delay(5_000L)
             }
         }
     }
