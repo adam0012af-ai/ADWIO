@@ -1,0 +1,103 @@
+version: 2.1
+
+jobs:
+  build-adwio-apk:
+    docker:
+      - image: cimg/android:2026.08
+    resource_class: large
+    working_directory: ~/project
+    environment:
+      GRADLE_VERSION: "9.5.0"
+      GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dfile.encoding=UTF-8 -Dorg.gradle.workers.max=2"
+
+    steps:
+      - checkout
+
+      - run:
+          name: Verify ADWIO project
+          command: |
+            echo "Commit: ${CIRCLE_SHA1}"
+            test -f app/build.gradle.kts
+            grep -q 'applicationId = "com.adwio.player"' app/build.gradle.kts
+            grep -q 'versionCode = 26' app/build.gradle.kts
+            grep -q 'versionName = "5.0.3"' app/build.gradle.kts
+            grep -q 'adwio-control-panel.adam0012af.workers.dev' app/build.gradle.kts
+
+      - restore_cache:
+          keys:
+            - adwio-gradle-v1-{{ checksum "build.gradle.kts" }}-{{ checksum "app/build.gradle.kts" }}
+            - adwio-gradle-v1-
+
+      - run:
+          name: Install Android SDK 36
+          command: |
+            yes | sdkmanager --licenses >/dev/null || true
+            sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - run:
+          name: Install Gradle 9.5
+          command: |
+            if [ ! -x "$HOME/gradle-${GRADLE_VERSION}/bin/gradle" ]; then
+              curl -fsSL "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" -o /tmp/gradle.zip
+              unzip -q /tmp/gradle.zip -d "$HOME"
+            fi
+            "$HOME/gradle-${GRADLE_VERSION}/bin/gradle" --version
+
+      - run:
+          name: Compile ADWIO APK
+          command: |
+            mkdir -p artifacts
+            set +e
+            "$HOME/gradle-${GRADLE_VERSION}/bin/gradle"               :app:assembleDebug               -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=768m -Dfile.encoding=UTF-8"               -Pkotlin.compiler.execution.strategy=in-process               --max-workers=2               --stacktrace               --console=plain               --no-daemon > artifacts/gradle-build.log 2>&1
+            echo "$?" > artifacts/gradle-exit-code.txt
+            exit 0
+
+      - run:
+          name: Prepare APK artifact
+          command: |
+            mkdir -p artifacts
+            APK_DIR="app/build/outputs/apk/debug"
+            APK_PATH=""
+            if [ -d "$APK_DIR" ]; then
+              APK_PATH="$(find "$APK_DIR" -maxdepth 1 -name '*.apk' -type f | head -n 1 || true)"
+            fi
+            if [ -n "$APK_PATH" ]; then
+              SHORT_SHA="$(echo "$CIRCLE_SHA1" | cut -c1-7)"
+              cp "$APK_PATH" "artifacts/adwio-managed-m3u-${SHORT_SHA}.apk"
+              echo "APK prepared: artifacts/adwio-managed-m3u-${SHORT_SHA}.apk"
+            else
+              echo "APK not produced; preserving Gradle log for diagnosis."
+            fi
+            ls -lh artifacts
+
+      - save_cache:
+          key: adwio-gradle-v1-{{ checksum "build.gradle.kts" }}-{{ checksum "app/build.gradle.kts" }}
+          paths:
+            - ~/.gradle/caches
+
+      - store_artifacts:
+          path: artifacts
+          destination: adwio-apk
+
+      - run:
+          name: Report compiler error
+          command: |
+            CODE="$(cat artifacts/gradle-exit-code.txt)"
+            if [ "$CODE" != "0" ]; then
+              echo "===== ADWIO BUILD ERROR ====="
+              grep -E '(^e: |^error: |Compilation error|FAILURE:|What went wrong|Execution failed for task|Caused by:)' artifacts/gradle-build.log | tail -n 160 || true
+              echo "===== LAST 120 LOG LINES ====="
+              tail -n 120 artifacts/gradle-build.log
+              echo "===== END BUILD ERROR ====="
+              exit "$CODE"
+            fi
+            echo "Gradle build completed successfully."
+
+workflows:
+  adwio-test-apk:
+    jobs:
+      - build-adwio-apk:
+          filters:
+            branches:
+              only:
+                - feat/panel-managed-m3u
