@@ -64,6 +64,7 @@ class LibraryActivity : BaseFullscreenActivity() {
     private var allItems: List<MediaItemModel> = emptyList()
     private var selectedCategory = ""
     private var previewJob: Job? = null
+    private var contentLoadJob: Job? = null
     private var activePreviewLiveId: String? = null
     private var hasVisibleContent = false
 
@@ -129,7 +130,8 @@ class LibraryActivity : BaseFullscreenActivity() {
         }
         b.subtitleText.text = getString(R.string.loading_content)
 
-        lifecycleScope.launch {
+        contentLoadJob?.cancel()
+        contentLoadJob = lifecycleScope.launch {
             val cached = withContext(Dispatchers.IO) { snapshotCache.load(sourceKey, type) }
             if (cached != null && cached.items.isNotEmpty()) {
                 renderLibrary(cached.categories, cached.items)
@@ -156,12 +158,12 @@ class LibraryActivity : BaseFullscreenActivity() {
                 snapshotCache.save(sourceKey, type, cats, items)
                 renderLibrary(cats, items)
                 hasVisibleContent = true
-                b.subtitleText.text = if (type == MediaType.LIVE) {
-                    getString(R.string.recently_added)
-                } else {
-                    getString(R.string.recently_added)
-                }
+                b.subtitleText.text = getString(R.string.recently_added)
                 applyLaunchIntent()
+
+                if (session.server.id == "m3u") {
+                    refreshFullM3u(session, sourceKey, items.size)
+                }
             } else if (hasVisibleContent) {
                 b.subtitleText.text = getString(R.string.showing_saved_content)
                 applyLaunchIntent()
@@ -175,13 +177,13 @@ class LibraryActivity : BaseFullscreenActivity() {
 
     private suspend fun loadRemote(session: com.adwio.player.data.model.Session): Pair<List<CategoryModel>, List<MediaItemModel>>? {
         return if (session.server.id == "m3u") {
-            val fast = m3uCache.loadFast(session.server.baseUrl, 1800).filter { it.type == type }
-            if (fast.isNotEmpty()) {
-                val cats = m3u.categories(fast, type)
-                // Full refresh is still requested once, but only after we have usable local/partial content.
-                val full = m3uCache.loadForType(session.server.baseUrl, type)
-                val finalItems = if (full.isNotEmpty()) full else fast
-                m3u.categories(finalItems, type) to finalItems
+            val preview = m3uCache.loadPreviewForType(
+                session.server.baseUrl,
+                type,
+                if (type == MediaType.LIVE) 240 else 180
+            )
+            if (preview.isNotEmpty()) {
+                m3u.categories(preview, type) to preview
             } else {
                 val full = m3uCache.loadForType(session.server.baseUrl, type)
                 if (full.isEmpty()) null else m3u.categories(full, type) to full
@@ -201,6 +203,39 @@ class LibraryActivity : BaseFullscreenActivity() {
                 if (items.isEmpty()) null else cats to items
             }
         }
+    }
+
+    private fun refreshFullM3u(
+        session: com.adwio.player.data.model.Session,
+        sourceKey: String,
+        previewCount: Int
+    ) {
+        lifecycleScope.launch {
+            val full = withContext(Dispatchers.IO) {
+                m3uCache.loadForType(session.server.baseUrl, type)
+            }
+
+            if (full.isEmpty() || full.size <= previewCount) return@launch
+
+            val currentUrl = store.load()?.server?.baseUrl?.trim()
+            if (currentUrl != session.server.baseUrl.trim()) return@launch
+
+            val cats = m3u.categories(full, type)
+            snapshotCache.save(sourceKey, type, cats, full)
+            renderLibrary(cats, full)
+            hasVisibleContent = true
+            b.subtitleText.text = getString(R.string.results_count, full.size)
+            applyLaunchIntent()
+        }
+    }
+
+    override fun onManagedContentChanged() {
+        allItems = emptyList()
+        hasVisibleContent = false
+        selectedCategory = ""
+        submit(emptyList())
+        b.subtitleText.text = getString(R.string.loading_content)
+        load()
     }
 
     private fun renderLibrary(cats: List<CategoryModel>, items: List<MediaItemModel>) {
