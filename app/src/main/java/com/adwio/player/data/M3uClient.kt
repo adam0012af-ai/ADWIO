@@ -100,6 +100,38 @@ class M3uClient {
         }.getOrDefault(emptyList())
     }
 
+    fun loadPreviewForType(
+        url: String,
+        type: MediaType,
+        maxItems: Int = 180
+    ): List<MediaItemModel> {
+        return runCatching {
+            fastClient.newCall(request(url)).execute().use { response ->
+                if (!response.isSuccessful) return@use emptyList()
+                val source = response.body?.source() ?: return@use emptyList()
+                val out = ArrayList<MediaItemModel>(maxItems.coerceAtMost(500))
+                var info: String? = null
+
+                while (out.size < maxItems) {
+                    val raw = source.readUtf8Line() ?: break
+                    val line = raw.trim()
+                    if (line.isEmpty()) continue
+                    if (line.startsWith("#EXTINF", true)) {
+                        info = line
+                        continue
+                    }
+                    if (line.startsWith("#")) continue
+
+                    val meta = info ?: continue
+                    info = null
+                    val item = parseEntry(meta, line) ?: continue
+                    if (item.type == type) out += item
+                }
+                out
+            }
+        }.getOrDefault(emptyList())
+    }
+
     /**
      * Reliable type loader for large M3U lists.
      *
