@@ -13,7 +13,7 @@ android {
         versionCode = 26
         versionName = "5.0.3"
         buildConfigField("String", "APP_NAME", "\"ADWIO Player\"")
-        buildConfigField("String", "CONTROL_API_URL", "\"${System.getenv("ADWIO_CONTROL_API_URL") ?: ""}\"")
+        buildConfigField("String", "CONTROL_API_URL", "\"${System.getenv("ADWIO_CONTROL_API_URL") ?: "https://adwio-control-panel.adam0012af.workers.dev"}\"")
     }
 
     val keystorePath = System.getenv("ADWIO_KEYSTORE_PATH")
