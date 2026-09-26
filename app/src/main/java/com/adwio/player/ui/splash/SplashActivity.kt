@@ -2,7 +2,6 @@ package com.adwio.player.ui.splash
 
 import android.content.Intent
 import android.os.Bundle
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.lifecycleScope
@@ -23,6 +22,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class SplashActivity : BaseFullscreenActivity() {
+    companion object {
+        private const val DEFAULT_PLAYLIST_URL =
+            "https://iptv-org.github.io/iptv/index.m3u"
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -41,18 +45,27 @@ class SplashActivity : BaseFullscreenActivity() {
                         }
                     AppCompatDelegate.setApplicationLocales(locales)
 
-                    val bootstrap = withContext(Dispatchers.IO) {
-                        RemoteContentClient().bootstrap()
-                    }
+                    val sessionStore = SessionStore(this@SplashActivity)
+                    val savedSession = sessionStore.load()
 
-                    check(bootstrap.configured && bootstrap.enabled) {
-                        "Content is not available"
-                    }
-                    check(bootstrap.playlistUrl.isNotBlank()) {
-                        "Content source is not configured"
-                    }
-                    check(!bootstrap.authEnabled) {
-                        "This app version does not require user sign-in"
+                    val bootstrap = runCatching {
+                        withContext(Dispatchers.IO) {
+                            RemoteContentClient().bootstrap()
+                        }
+                    }.getOrNull()
+
+                    val playlistUrl = when {
+                        bootstrap != null &&
+                            bootstrap.configured &&
+                            bootstrap.enabled &&
+                            !bootstrap.authEnabled &&
+                            bootstrap.playlistUrl.isNotBlank() -> bootstrap.playlistUrl
+
+                        savedSession?.server?.id.equals("m3u", ignoreCase = true) &&
+                            !savedSession?.server?.baseUrl.isNullOrBlank() ->
+                            savedSession!!.server.baseUrl
+
+                        else -> DEFAULT_PLAYLIST_URL
                     }
 
                     val session = Session(
@@ -61,15 +74,15 @@ class SplashActivity : BaseFullscreenActivity() {
                         server = ServerHost(
                             id = "m3u",
                             name = "ADWIO",
-                            baseUrl = bootstrap.playlistUrl
+                            baseUrl = playlistUrl
                         ),
                         expiresAt = null,
                         status = "Active",
                         displayName = "ADWIO"
                     )
 
-                    SessionStore(this@SplashActivity).save(session)
-                    M3uWarmup.start(this@SplashActivity, bootstrap.playlistUrl)
+                    sessionStore.save(session)
+                    M3uWarmup.start(this@SplashActivity, playlistUrl)
 
                     when (settings.startupScreen) {
                         "live" -> openLibrary(MediaType.LIVE)
@@ -91,13 +104,26 @@ class SplashActivity : BaseFullscreenActivity() {
             .putString("last_crash", error.stackTraceToString().take(9000))
             .apply()
 
-        AlertDialog.Builder(this)
-            .setTitle("ADWIO")
-            .setMessage("Content is temporarily unavailable. Please try again.")
-            .setCancelable(false)
-            .setPositiveButton("Retry") { _, _ -> recreate() }
-            .setNegativeButton("Close") { _, _ -> finish() }
-            .show()
+        runCatching {
+            val fallbackSession = Session(
+                username = "",
+                password = "",
+                server = ServerHost(
+                    id = "m3u",
+                    name = "ADWIO",
+                    baseUrl = DEFAULT_PLAYLIST_URL
+                ),
+                expiresAt = null,
+                status = "Active",
+                displayName = "ADWIO"
+            )
+            SessionStore(this).save(fallbackSession)
+            M3uWarmup.start(this, DEFAULT_PLAYLIST_URL)
+            startActivity(Intent(this, HomeActivity::class.java))
+            finish()
+        }.onFailure {
+            finish()
+        }
     }
 
     private fun openLibrary(type: MediaType) {
